@@ -1,5 +1,4 @@
 import DashboardDefault from './dashboard';
-import SamplePage from './extra-pages/SamplePage';
 
 import {
   Error,
@@ -8,6 +7,7 @@ import {
   MarkdownPage,
   MinimalLayout
 } from "@digitalaidseattle/mui";
+import GrantsPage from './grants';
 
 const routes = [
   {
@@ -19,8 +19,8 @@ const routes = [
         element: <DashboardDefault />,
       },
       {
-        path: "sample-page",
-        element: <SamplePage />,
+        path: "grant-proposals",
+        element: <GrantsPage />,
       },
       {
         path: "privacy",

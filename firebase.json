@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site": "our-wave",
     "public": "dist",
     "ignore": [
       "firebase.json",

@@ -14,23 +14,21 @@ import { LayoutConfigurationProvider } from "@digitalaidseattle/mui";
 import React from 'react';
 import { RouterProvider, createBrowserRouter } from 'react-router-dom';
 
-import {
-  SupabaseAuthService,
-  SupabaseStorageService
-} from '@digitalaidseattle/supabase';
 import { routes } from './pages/routes';
 import { TemplateConfig } from './TemplateConfig';
 
 import "./App.css";
+import { FirebaseAuthService, firebaseClient, FirebaseStorageService } from "@digitalaidseattle/firebase";
 
 // ==============================|| APP - THEME, ROUTER, LOCAL  ||============================== //
 
 const router = createBrowserRouter(routes);
 
 const App: React.FC = () => {
+  console.log('firebaseClient', firebaseClient);
   return (
-    <AuthServiceProvider authService={new SupabaseAuthService()} >
-      <StorageServiceProvider storageService={new SupabaseStorageService()} >
+    <AuthServiceProvider authService={new FirebaseAuthService()} >
+      <StorageServiceProvider storageService={new FirebaseStorageService()} >
         <UserContextProvider>
           <LayoutConfigurationProvider configuration={TemplateConfig()}>
             <RouterProvider router={router} />

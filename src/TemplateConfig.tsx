@@ -1,16 +1,15 @@
 
 
 import {
-    ChromeOutlined,
-    DashboardOutlined
+    DashboardOutlined,
+    FormOutlined
 } from '@ant-design/icons';
-import logo from "./assets/images/logo-light-icon.svg";
+import logo from "./assets/images/our-wave-logo.jpeg";
 
 import { MenuItem } from "@digitalaidseattle/mui";
-import Notification from "./Notification";
 
 export const TemplateConfig = () => {
-    const dashboard = {
+    const topLevel = {
         id: 'group-dashboard',
         title: 'Navigation',
         type: 'group',
@@ -21,32 +20,26 @@ export const TemplateConfig = () => {
                 type: 'item',
                 url: '/',
                 icon: <DashboardOutlined />
-            }
-        ]
+            },
+            {
+                id: 'GRNT',
+                title: 'Grant Proposals',
+                type: 'item',
+                url: '/grant-proposals',
+                icon: <FormOutlined />,
+            } as MenuItem,
+        ],
     } as MenuItem;
 
-    const pages = {
-        id: 'example',
-        title: 'Examples',
-        type: 'group',
-        children: [
-            {
-                id: 'sample-page',
-                title: 'Sample Page',
-                type: 'item',
-                url: '/sample-page',
-                icon: <ChromeOutlined />
-            } as MenuItem
-        ]
-    } as MenuItem;
+
 
     return ({
-        appName: 'DAS',
+        appName: 'Our Wave',
         logoUrl: logo,
         drawerWidth: 240,
-        menuItems: [dashboard, pages],
+        menuItems: [topLevel],
         toolbarItems: [
-            <Notification key={1} />
-        ]
+        ],
+        version: '0.0.1'
     });
 }
