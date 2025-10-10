@@ -42,6 +42,6 @@ export type GrantProposal = Entity & {
     grantRecipeId: string;
     rating: number | null;  // Allow User to rate the response
     textResponse?: string;  // Store AI respons3
-    structuredResponse?: Map<string, string>; // Store AI structured response
+    structuredResponse?: { [key: string]: string }; // Store AI structured response
 }
 
