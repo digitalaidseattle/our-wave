@@ -2,13 +2,12 @@ import { FirestoreService } from "@digitalaidseattle/firebase";
 import type { GrantRecipe } from "../types";
 import type { Identifier, User } from "@digitalaidseattle/core";
 
-// Handles all Firestore operations for the "grant-recipes" collection
 class GrantRecipeService extends FirestoreService<GrantRecipe> {
   constructor() {
-    super("grant-recipes"); // sets the Firestore collection name
+    super("grant-recipes");
   }
 
-  // Creates a blank GrantRecipe object with default values
+  // Creates a blank recipe with default values
   empty(): GrantRecipe {
     const now = new Date();
     return {
@@ -28,57 +27,42 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
     };
   }
 
-  // Adds a new recipe to Firestore and includes timestamps and user info
+  // Create: adds timestamps and user info before saving
   async insert(entity: GrantRecipe, select?: string, user?: User): Promise<GrantRecipe> {
+    if (!user?.email) throw new Error("grantRecipeService.insert: user.email is required");
     const now = new Date();
-    const email = user?.email ?? entity.createdBy ?? "";
     return super.insert(
       {
         ...entity,
         createdAt: now,
         updatedAt: now,
-        createdBy: email,
-        updatedBy: email,
+        createdBy: user.email,
+        updatedBy: user.email,
       },
       select,
       user
     );
   }
 
-  // Gets all recipes from Firestore (optionally limit or filter fields)
-  async getAll(count?: number, select?: string): Promise<GrantRecipe[]> {
-    return super.getAll(count, select);
-  }
-
-  // Gets a single recipe by its document ID
-  async getById(id: string, select?: string): Promise<GrantRecipe> {
-    return super.getById(id, select);
-  }
-
-  // Updates a recipe and refreshes the last updated info
+  // Update: updates fields and refreshes metadata
   async update(
     entityId: Identifier,
     updatedFields: GrantRecipe,
     select?: string,
     user?: User
   ): Promise<GrantRecipe> {
-    const email = user?.email ?? updatedFields.updatedBy ?? "";
+    if (!user?.email) throw new Error("grantRecipeService.update: user.email is required");
     return super.update(
       entityId,
       {
         ...updatedFields,
         updatedAt: new Date(),
-        updatedBy: email,
+        updatedBy: user.email,
       },
       select,
       user
     );
   }
-
-  // Deletes a recipe by its ID
-  async delete(entityId: Identifier): Promise<void> {
-    return super.delete(entityId);
-  }
 }
-// Export a single instance for use across the app
+
 export const grantRecipeService = new GrantRecipeService();
