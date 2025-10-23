@@ -8,7 +8,7 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
     super("grant-proposal"); // Firestore collection name
   }
 
-  // Returns a blank proposal with default values
+  // Returns a blank proposal with default values with optional fields (textResponse, structuredResponse)
   empty(): GrantProposal {
     const now = new Date();
     return {
@@ -17,8 +17,6 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
       createdBy: "",
       grantRecipeId: "",
       rating: null,
-      textResponse: "",
-      structuredResponse: {}, // key-value pairs for structured AI data
     };
   }
 
