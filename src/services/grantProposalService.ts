@@ -1,4 +1,5 @@
-import { FirestoreService } from "@digitalaidseattle/firebase";
+import { FirestoreService, firebaseClient } from "@digitalaidseattle/firebase";
+import { collection, getDocs, query as firestoreQuery, getFirestore } from "firebase/firestore";
 import type { GrantProposal } from "../types";
 import type { Identifier, User } from "@digitalaidseattle/core";
 
@@ -54,6 +55,29 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
       select,
       user
     );
+  }
+
+  // Fetch all proposals
+  async findAll(): Promise<GrantProposal[]> {
+    try {
+      const db = getFirestore(firebaseClient);
+      const proposalsCollection = collection(db, "grant-proposal");
+      const q = firestoreQuery(proposalsCollection);
+      const querySnapshot = await getDocs(q);
+      
+      return querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as GrantProposal[];
+    } catch (error) {
+      console.error("Error fetching all proposals:", error);
+      throw error;
+    }
+  }
+
+  // Delete a proposal
+  async delete(entityId: Identifier, user?: User): Promise<void> {
+    return super.delete(entityId, user);
   }
 }
 

@@ -1,4 +1,5 @@
-import { FirestoreService } from "@digitalaidseattle/firebase";
+import { FirestoreService, firebaseClient } from "@digitalaidseattle/firebase";
+import { collection, getDocs, query as firestoreQuery, getFirestore } from "firebase/firestore";
 import type { GrantRecipe } from "../types";
 import type { Identifier, User } from "@digitalaidseattle/core";
 
@@ -31,14 +32,16 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
   async insert(entity: GrantRecipe, select?: string, user?: User): Promise<GrantRecipe> {
     if (!user?.email) throw new Error("grantRecipeService.insert: user.email is required");
     const now = new Date();
+    // Remove id field as Firestore will auto-generate it
+    const { id, ...entityWithoutId } = entity;
     return super.insert(
       {
-        ...entity,
+        ...entityWithoutId,
         createdAt: now,
         updatedAt: now,
         createdBy: user.email,
         updatedBy: user.email,
-      },
+      } as GrantRecipe,
       select,
       user
     );
@@ -62,6 +65,29 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
       select,
       user
     );
+  }
+
+  // Fetch all recipes
+  async findAll(): Promise<GrantRecipe[]> {
+    try {
+      const db = getFirestore(firebaseClient);
+      const recipesCollection = collection(db, "grant-recipes");
+      const q = firestoreQuery(recipesCollection);
+      const querySnapshot = await getDocs(q);
+      
+      return querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as GrantRecipe[];
+    } catch (error) {
+      console.error("Error fetching all recipes:", error);
+      throw error;
+    }
+  }
+
+  // Delete a recipe
+  async delete(entityId: Identifier, user?: User): Promise<void> {
+    return super.delete(entityId, user);
   }
 }
 
