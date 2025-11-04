@@ -181,7 +181,7 @@ const GrantRecipesListPage: React.FC = () => {
       
       const recipeToInsert = recipeWithoutId as GrantRecipe;
 
-      const insertedRecipe = await grantRecipeService.insert(recipeToInsert, undefined, user);
+      await grantRecipeService.insert(recipeToInsert, undefined, user);
       
       // Refresh the list to show the newly uploaded recipe
       await fetchRecipes();
@@ -219,7 +219,7 @@ const GrantRecipesListPage: React.FC = () => {
     }
 
     try {
-      await grantRecipeService.delete(id, user);
+      await grantRecipeService.delete(id);
       // Refresh the list after deletion
       await fetchRecipes();
       alert("Recipe deleted successfully!");
@@ -275,9 +275,10 @@ const GrantRecipesListPage: React.FC = () => {
       headerName: "Date",
       width: 150,
       editable: true,
-      valueGetter: (value, row) => formatDate(row.updatedAt),
-      valueParser: (value) => {
+      valueGetter: (_value, row) => formatDate(row.updatedAt),
+      valueParser: (_value) => {
         // Parse date string (MM/DD/YYYY) to Date object
+        const value = _value;
         if (typeof value === "string") {
           const dateParts = value.split("/");
           if (dateParts.length === 3) {
@@ -299,7 +300,7 @@ const GrantRecipesListPage: React.FC = () => {
         <GridActionsCellItem
           icon={<DeleteOutlined />}
           label="Delete"
-          onClick={() => handleDelete(params.row.id)}
+          onClick={() => handleDelete(typeof params.row.id === "string" ? params.row.id : String(params.row.id))}
           disabled={!user}
           showInMenu={false}
         />,

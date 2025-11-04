@@ -76,8 +76,8 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
   }
 
   // Delete a proposal
-  async delete(entityId: Identifier, user?: User): Promise<void> {
-    return super.delete(entityId, user);
+  async delete(entityId: Identifier): Promise<void> {
+    return super.delete(entityId);
   }
 }
 

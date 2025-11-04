@@ -86,8 +86,8 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
   }
 
   // Delete a recipe
-  async delete(entityId: Identifier, user?: User): Promise<void> {
-    return super.delete(entityId, user);
+  async delete(entityId: Identifier): Promise<void> {
+    return super.delete(entityId);
   }
 }
 
