@@ -9,6 +9,8 @@ import {
 } from "@digitalaidseattle/mui";
 import GrantRecipesListPage from './grants/GrantRecipesListPage';
 import GrantRecipesDetailPage from './grants/GrantRecipesDetailPage';
+import GrantProposalsListPage from './grants/GrantProposalsListPage';
+import GrantProposalsDetailPage from './grants/GrantProposalsDetailPage';
 
 const routes = [
   {
@@ -26,6 +28,14 @@ const routes = [
       {
         path: "grant-recipes/:id",
         element: <GrantRecipesDetailPage />,
+      },
+      {
+        path: "grant-proposals",
+        element: <GrantProposalsListPage />,
+      },
+      {
+        path: "grant-proposals/:id",
+        element: <GrantProposalsDetailPage />,
       },
       {
         path: "privacy",
