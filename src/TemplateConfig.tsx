@@ -22,12 +22,13 @@ export const TemplateConfig = () => {
                 icon: <DashboardOutlined />
             },
             {
-                id: 'GRNT',
-                title: 'Grant Proposals',
+                id: 'GRNT-RECIPES',
+                title: 'Grant Recipes',
                 type: 'item',
-                url: '/grant-proposals',
+                url: '/grant-recipes',
                 icon: <FormOutlined />,
-            } as MenuItem,
+            } as MenuItem
+           
         ],
     } as MenuItem;
 
