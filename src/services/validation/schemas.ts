@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { MSG, VALIDATION } from "../../constants/validation";
 
-// required trimmed text (e.g., "Title is required")
+// required trimmed text ("Title is required", etc)
 const req = (label: string) =>
   z.string().trim().min(VALIDATION.MIN_LEN, { message: MSG.required(label) });
 

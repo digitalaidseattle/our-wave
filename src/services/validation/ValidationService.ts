@@ -13,7 +13,7 @@ export type ValidationResult = { valid: boolean; errors: Record<string, string> 
 const mapIssues = (issues: z.ZodError["issues"]): Record<string, string> => {
   const out: Record<string, string> = {};
   for (const issue of issues) {
-    const key = issue.path.join("."); // e.g., "description" or "inputParameters.0.key"
+    const key = issue.path.join("."); // "description" or "inputParameters.0.key"
     if (!out[key]) out[key] = issue.message;
   }
   return out;
