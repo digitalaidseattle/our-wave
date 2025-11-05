@@ -7,7 +7,8 @@ import {
   MarkdownPage,
   MinimalLayout
 } from "@digitalaidseattle/mui";
-import GrantsPage from './grants';
+import GrantRecipesListPage from './grants/GrantRecipesListPage';
+import GrantRecipesDetailPage from './grants/GrantRecipesDetailPage';
 
 const routes = [
   {
@@ -19,8 +20,12 @@ const routes = [
         element: <DashboardDefault />,
       },
       {
-        path: "grant-proposals",
-        element: <GrantsPage />,
+        path: "grant-recipes",
+        element: <GrantRecipesListPage />,
+      },
+      {
+        path: "grant-recipes/:id",
+        element: <GrantRecipesDetailPage />,
       },
       {
         path: "privacy",
