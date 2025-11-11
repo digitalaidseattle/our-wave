@@ -29,6 +29,7 @@ const GrantRecipesDetailPage: React.FC = () => {
 
   const notifications = useNotifications();
   const navigate = useNavigate();
+
   const { loading, setLoading } = useContext(LoadingContext);
   const authService = useAuthService();
   const [user, setUser] = useState<User>();
