@@ -1,9 +1,10 @@
 import { FirestoreService } from "@digitalaidseattle/firebase";
-import type { GrantProposal } from "../types";
+import type { GrantProposal, GrantRecipe } from "../types";
 import type { Identifier, User } from "@digitalaidseattle/core";
 
 // Firestore service for "grant-proposal" collection
 class GrantProposalService extends FirestoreService<GrantProposal> {
+
   constructor() {
     super("grant-proposal"); // Firestore collection name
   }
@@ -54,6 +55,12 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
       select,
       user
     );
+  }
+
+  // Consider moving to a service independent of this one.  
+  // That service map depend on multiple services (e.g. validation, entity-management)
+  async generate(_recipe: GrantRecipe): Promise<GrantProposal> {
+    throw new Error("Method not implemented.");
   }
 }
 
