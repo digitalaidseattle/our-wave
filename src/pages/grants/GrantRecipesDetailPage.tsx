@@ -22,7 +22,7 @@ const GrantRecipesDetailPage: React.FC = () => {
     }
   }, [dirty]);
 
-  const handleOutputFieldChange = (index: number, field: 'name' | 'maxWords', value: string | number) => {
+  const handleOutputFieldChange = (_index: number, _field: 'name' | 'maxWords', _value: string | number) => {
     setDirty(true);
   };
 
