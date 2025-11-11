@@ -30,7 +30,11 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
   }
 
   // Create: adds timestamps and user info before saving
-  async insert(entity: GrantRecipe, select?: string, mapper?: (json: any) => GrantRecipe, user?: User): Promise<GrantRecipe> {
+  async insert(
+    entity: GrantRecipe,
+    select?: string,
+    mapper?: (json: any) => GrantRecipe,
+    user?: User): Promise<GrantRecipe> {
     if (!user?.email) throw new Error("grantRecipeService.insert: user.email is required");
     const now = new Date();
     // Remove id field as Firestore will auto-generate it
