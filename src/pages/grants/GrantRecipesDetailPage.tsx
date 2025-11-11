@@ -86,23 +86,19 @@ const GrantRecipesDetailPage: React.FC = () => {
     }
   }
 
-  function handleClone() {
-    if (recipe) {
-      setLoading(true);
-      grantRecipeService.clone(recipe)
-        .then(cloned => {
-          navigate(`grant-recipes/${cloned.id}`);
-          notifications.success(`${recipe.description} has been successfully cloned.`)
-        })
-        .catch(err => {
-          console.error(err)
-          notifications.error(`Could not clone this recipe. ${err.message}`)
-        })
-        .finally(() => setLoading(false))
+  useEffect(() => {
+    if (dirty) {
+      // debounce a bit
+      const id = setInterval(doSave, 2000);
+      return () => clearInterval(id);
     }
-  }
+  }, [dirty]);
 
-  function handleGenerate() {
+  const handleOutputFieldChange = (_index: number, _field: 'name' | 'maxWords', _value: string | number) => {
+    setDirty(true);
+  };
+
+  function doSave() {
     if (recipe) {
       setLoading(true);
       grantProposalService.generate(recipe)
