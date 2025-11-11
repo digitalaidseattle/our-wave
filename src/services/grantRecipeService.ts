@@ -3,6 +3,7 @@ import type { GrantRecipe } from "../types";
 import type { Identifier, User } from "@digitalaidseattle/core";
 
 class GrantRecipeService extends FirestoreService<GrantRecipe> {
+
   constructor() {
     super("grant-recipes");
   }
@@ -65,6 +66,11 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
       mapper,
       user
     );
+  }
+
+  async clone(recipe: GrantRecipe): Promise<GrantRecipe> {
+    console.log('recipe', recipe);
+    throw new Error("Method not implemented.");
   }
 }
 

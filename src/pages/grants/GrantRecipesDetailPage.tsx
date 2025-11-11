@@ -1,47 +1,64 @@
-/**
- *  GrantRecipesDetailPage.tsx
- *
- *  @copyright 2025 Digital Aid Seattle
- *
- */
-import { Button, Typography } from "@mui/material";
-import { useEffect, useState } from "react";
+import { LoadingContext, useNotifications } from "@digitalaidseattle/core";
+import { Box, Button, Card, CardActions, CardContent, CardHeader } from "@mui/material";
+import { useContext, useState } from "react";
+import { useNavigate } from "react-router";
 import { grantRecipeService } from "../../services/grantRecipeService";
 import { GrantRecipe } from "../../types";
+import { grantProposalService } from "../../services/grantProposalService";
 
 const GrantRecipesDetailPage: React.FC = () => {
-  const [recipe, setRecipe] = useState<GrantRecipe>();
-  const [dirty, setDirty] = useState<boolean>(false);
+  const notifications = useNotifications();
+  const navigate = useNavigate();
+  const { loading, setLoading } = useContext(LoadingContext);
+  const [recipe] = useState<GrantRecipe>({ id: 'test', description: 'test' } as GrantRecipe);
 
-
-  useEffect(() => {
-    if (dirty) {
-      // debounce a bit
-      const id = setInterval(doSave, 2000);
-      return () => clearInterval(id);
-    }
-  }, [dirty]);
-
-  const handleOutputFieldChange = (_index: number, _field: 'name' | 'maxWords', _value: string | number) => {
-    setDirty(true);
-  };
-
-  function doSave() {
+  function handleClone() {
     if (recipe) {
-      grantRecipeService.update(recipe.id!, recipe)
-        .then(updated => {
-          setRecipe(updated);  // May have to worry about state here, inputs may update unexpectantly
-          setDirty(false);
+      setLoading(true);
+      grantRecipeService.clone(recipe)
+        .then(cloned => {
+          navigate(`grant-recipes/${cloned.id}`);
+          notifications.success(`${recipe.description} has been successfully cloned.`)
         })
+        .catch(err => {
+          console.error(err)
+          notifications.error(`Could not clone this recipe. ${err.message}`)
+        })
+        .finally(() => setLoading(false))
     }
   }
 
+  function handleGenerate() {
+    if (recipe) {
+      setLoading(true);
+      grantProposalService.generate(recipe)
+        .then(_generated => {
+          // Add generated to list of proposals?
+          notifications.success(`A proposal for ${recipe.description} has been successfully generated.`)
+        })
+        .catch(err => {
+          console.error(err)
+          notifications.error(`Could not generate a proposal for his recipe. ${err.message}`)
+        })
+        .finally(() => setLoading(false))
+    }
+    setLoading(true);
+  }
+
   return (
-    <div>
-      <Typography variant="h4">Grant Recipe Detail</Typography>
-      <Typography>This is a blank detail page for grant recipes.</Typography>
-      <Button onClick={() => handleOutputFieldChange(1, 'name', 'newName')}>Test</Button>
-    </div>
+    <Card>
+      <CardHeader title="Grant Recipe Detail" />
+      <CardContent>
+        <Box>Description goes here</Box>
+        <Box>Prompt goes here</Box>
+        <Box>inputs goes here</Box>
+        <Box>Outputs goes here</Box>
+      </CardContent>
+      <CardActions>
+        <Button variant="contained" disabled={loading} onClick={() => handleClone()}>Clone</Button>
+        <Button variant="contained" disabled={loading} onClick={() => handleGenerate()}>Generate</Button>
+      </CardActions>
+    </Card>
   );
 };
 
