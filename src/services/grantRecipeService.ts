@@ -29,7 +29,11 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
   }
 
   // Create: adds timestamps and user info before saving
-  async insert(entity: GrantRecipe, select?: string, user?: User): Promise<GrantRecipe> {
+  async insert(
+    entity: GrantRecipe,
+    select?: string,
+    mapper?: (json: any) => GrantRecipe,
+    user?: User): Promise<GrantRecipe> {
     if (!user?.email) throw new Error("grantRecipeService.insert: user.email is required");
     const now = new Date();
     return super.insert(
@@ -41,6 +45,7 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
         updatedBy: user.email,
       },
       select,
+      mapper,
       user
     );
   }
@@ -50,6 +55,7 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
     entityId: Identifier,
     updatedFields: GrantRecipe,
     select?: string,
+    mapper?: (json: any) => GrantRecipe,
     user?: User
   ): Promise<GrantRecipe> {
     if (!user?.email) throw new Error("grantRecipeService.update: user.email is required");
@@ -61,6 +67,7 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
         updatedBy: user.email,
       },
       select,
+      mapper,
       user
     );
   }
