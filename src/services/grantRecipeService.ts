@@ -4,6 +4,7 @@ import type { GrantRecipe } from "../types";
 import type { Identifier, User } from "@digitalaidseattle/core";
 
 class GrantRecipeService extends FirestoreService<GrantRecipe> {
+
   constructor() {
     super("grant-recipes");
   }
@@ -70,27 +71,9 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
     );
   }
 
-  // Fetch all recipes
-  async findAll(): Promise<GrantRecipe[]> {
-    try {
-      const db = getFirestore(firebaseClient);
-      const recipesCollection = collection(db, "grant-recipes");
-      const q = firestoreQuery(recipesCollection);
-      const querySnapshot = await getDocs(q);
-      
-      return querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as GrantRecipe[];
-    } catch (error) {
-      console.error("Error fetching all recipes:", error);
-      throw error;
-    }
-  }
-
-  // Delete a recipe
-  async delete(entityId: Identifier): Promise<void> {
-    return super.delete(entityId);
+  async clone(recipe: GrantRecipe): Promise<GrantRecipe> {
+    console.log('recipe', recipe);
+    throw new Error("Method not implemented.");
   }
 }
 

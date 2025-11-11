@@ -1,10 +1,10 @@
-import { FirestoreService, firebaseClient } from "@digitalaidseattle/firebase";
-import { collection, getDocs, query as firestoreQuery, getFirestore } from "firebase/firestore";
-import type { GrantProposal } from "../types";
+import { FirestoreService } from "@digitalaidseattle/firebase";
+import type { GrantProposal, GrantRecipe } from "../types";
 import type { Identifier, User } from "@digitalaidseattle/core";
 
 // Firestore service for "grant-proposal" collection
 class GrantProposalService extends FirestoreService<GrantProposal> {
+
   constructor() {
     super("grant-proposal"); // Firestore collection name
   }
@@ -63,27 +63,10 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
     );
   }
 
-  // Fetch all proposals
-  async findAll(): Promise<GrantProposal[]> {
-    try {
-      const db = getFirestore(firebaseClient);
-      const proposalsCollection = collection(db, "grant-proposal");
-      const q = firestoreQuery(proposalsCollection);
-      const querySnapshot = await getDocs(q);
-      
-      return querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as GrantProposal[];
-    } catch (error) {
-      console.error("Error fetching all proposals:", error);
-      throw error;
-    }
-  }
-
-  // Delete a proposal
-  async delete(entityId: Identifier): Promise<void> {
-    return super.delete(entityId);
+  // Consider moving to a service independent of this one.  
+  // That service map depend on multiple services (e.g. validation, entity-management)
+  async generate(_recipe: GrantRecipe): Promise<GrantProposal> {
+    throw new Error("Method not implemented.");
   }
 }
 
