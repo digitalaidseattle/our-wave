@@ -12,6 +12,7 @@ import { grantProposalService } from "../../services/grantProposalService";
 import { grantRecipeService } from "../../services/grantRecipeService";
 import type { GrantOutput } from "../../types";
 import { GrantRecipe } from "../../types";
+import { grantProposalService } from "../../services/grantProposalService";
 
 const TEXT_RECIPE = {
   id: 'test',
