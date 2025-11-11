@@ -42,6 +42,7 @@ const GrantRecipesDetailPage: React.FC = () => {
 
   const notifications = useNotifications();
   const navigate = useNavigate();
+
   const { loading, setLoading } = useContext(LoadingContext);
   const [recipe, setRecipe] = useState<GrantRecipe>({ id: 'test', description: 'test' } as GrantRecipe);
 
