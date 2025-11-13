@@ -1,7 +1,7 @@
 import { LoadingContext, useNotifications } from "@digitalaidseattle/core";
 import { Box, Button, Card, CardActions, CardContent, CardHeader } from "@mui/material";
 import { useContext, useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate } from "react-router-dom";
 import { grantRecipeService } from "../../services/grantRecipeService";
 import { GrantRecipe } from "../../types";
 import { grantProposalService } from "../../services/grantProposalService";
@@ -42,7 +42,6 @@ const GrantRecipesDetailPage: React.FC = () => {
         })
         .finally(() => setLoading(false))
     }
-    setLoading(true);
   }
 
   return (
