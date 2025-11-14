@@ -204,6 +204,7 @@ const GrantRecipesDetailPage: React.FC = () => {
     const newFields = [...outputFields];
     newFields[index] = { ...newFields[index], [field]: value };
     setOutputFields(newFields);
+    setDirty(true);
   };
 
   const handleOutputUnitToggle = (index: number) => {
@@ -213,19 +214,21 @@ const GrantRecipesDetailPage: React.FC = () => {
       unit: newFields[index].unit === 'word' ? 'char' : 'word'
     };
     setOutputFields(newFields);
+    setDirty(true);
   };
 
   const handleAddOutputField = () => {
     setOutputFields([...outputFields, { name: "", maxWords: 500, unit: 'word' }]);
+    setDirty(true);
   };
 
   const handleRemoveOutputField = (index: number) => {
     setOutputFields(outputFields.filter((_, i) => i !== index));
+    setDirty(true);
   };
+
   return (
-    <div>
-      <Typography variant="h4">Grant Recipe Detail</Typography>
-      <Card>
+    <Card>
       <CardHeader title="Grant Recipe Detail" />
       <CardContent>
         <Stack gap={1}>
