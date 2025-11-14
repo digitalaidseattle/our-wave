@@ -22,7 +22,10 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
   }
 
   // Create: adds createdAt and createdBy before saving
-  async insert(entity: GrantProposal, select?: string, user?: User): Promise<GrantProposal> {
+  async insert(entity: GrantProposal,
+    select?: string,
+    mapper?: (json: any) => GrantProposal,
+    user?: User): Promise<GrantProposal> {
     if (!user?.email) throw new Error("grantProposalService.insert: user.email is required");
     const now = new Date();
 
@@ -33,6 +36,7 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
         createdBy: user.email,
       },
       select,
+      mapper,
       user
     );
   }
@@ -42,6 +46,7 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
     entityId: Identifier,
     updatedFields: GrantProposal,
     select?: string,
+    mapper?: (json: any) => GrantProposal,
     user?: User
   ): Promise<GrantProposal> {
     if (!user?.email) throw new Error("grantProposalService.update: user.email is required");
@@ -53,6 +58,7 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
         createdBy: user.email, // reuse same metadata pattern
       },
       select,
+      mapper,
       user
     );
   }
