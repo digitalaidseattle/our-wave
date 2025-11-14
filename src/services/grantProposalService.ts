@@ -22,8 +22,7 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
   }
 
   // Create: adds createdAt and createdBy before saving
-  async insert(
-    entity: GrantProposal,
+  async insert(entity: GrantProposal,
     select?: string,
     mapper?: (json: any) => GrantProposal,
     user?: User): Promise<GrantProposal> {
