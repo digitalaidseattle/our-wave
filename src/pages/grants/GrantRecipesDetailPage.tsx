@@ -163,8 +163,69 @@ const GrantRecipesDetailPage: React.FC = () => {
     setDirty(true);
   }
 
+  function handleGrantOutputChange(updated: GrantOutput[]): void {
+    setRecipe({
+      ...recipe,
+      outputsWithWordCount: updated
+    });
+    setDirty(true);
+  }
+
+  function handleDescriptionChange(updated: string): void {
+    setRecipe({
+      ...recipe,
+      description: updated
+    });
+    setDirty(true);
+  }
+
+  function handlePromptChange(updated: string): void {
+    setRecipe({
+      ...recipe,
+      prompt: updated
+    });
+    setDirty(true);
+  }
+
+  function handleGrantInputChange(inputs: GrantInput[]): void {
+    setRecipe({
+      ...recipe,
+      inputParameters: inputs
+    });
+    setDirty(true);
+  }
+
+  const [outputFields, setOutputFields] = useState<GrantOutput[]>([
+    { name: "description", maxWords: 500, unit: 'word' },
+    { name: "usage", maxWords: 500, unit: 'word' }
+  ]);
+
+  const handleOutputFieldChange = (index: number, field: 'name' | 'maxWords', value: string | number) => {
+    const newFields = [...outputFields];
+    newFields[index] = { ...newFields[index], [field]: value };
+    setOutputFields(newFields);
+  };
+
+  const handleOutputUnitToggle = (index: number) => {
+    const newFields = [...outputFields];
+    newFields[index] = {
+      ...newFields[index],
+      unit: newFields[index].unit === 'word' ? 'char' : 'word'
+    };
+    setOutputFields(newFields);
+  };
+
+  const handleAddOutputField = () => {
+    setOutputFields([...outputFields, { name: "", maxWords: 500, unit: 'word' }]);
+  };
+
+  const handleRemoveOutputField = (index: number) => {
+    setOutputFields(outputFields.filter((_, i) => i !== index));
+  };
   return (
-    <Card>
+    <div>
+      <Typography variant="h4">Grant Recipe Detail</Typography>
+      <Card>
       <CardHeader title="Grant Recipe Detail" />
       <CardContent>
         <Stack gap={1}>
