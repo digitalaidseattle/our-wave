@@ -15,9 +15,9 @@
   "dependencies": {
     "@ant-design/colors": "^7.0.2",
     "@ant-design/icons": "^5.3.0",
-    "@digitalaidseattle/core": "^1.0.8",
-    "@digitalaidseattle/firebase": "^1.0.4",
-    "@digitalaidseattle/mui": "^1.0.16",
+    "@digitalaidseattle/core": "^1.0.13",
+    "@digitalaidseattle/firebase": "^1.0.7",
+    "@digitalaidseattle/mui": "^1.0.28",
     "@mui/material": "^5.15.9",
     "react": "^18.2.0",
     "react-apexcharts": "^1.4.1",
