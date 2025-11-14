@@ -3,6 +3,7 @@ import type { GrantRecipe } from "../types";
 import type { Identifier, User } from "@digitalaidseattle/core";
 
 class GrantRecipeService extends FirestoreService<GrantRecipe> {
+
   constructor() {
     super("grant-recipes");
   }
@@ -28,7 +29,11 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
   }
 
   // Create: adds timestamps and user info before saving
-  async insert(entity: GrantRecipe, select?: string, mapper?: (json: any) => GrantRecipe, user?: User): Promise<GrantRecipe> {
+  async insert(
+    entity: GrantRecipe,
+    select?: string,
+    mapper?: (json: any) => GrantRecipe,
+    user?: User): Promise<GrantRecipe> {
     if (!user?.email) throw new Error("grantRecipeService.insert: user.email is required");
     const now = new Date();
     return super.insert(
@@ -65,6 +70,11 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
       mapper,
       user
     );
+  }
+
+  async clone(recipe: GrantRecipe): Promise<GrantRecipe> {
+    console.log('recipe', recipe);
+    throw new Error("Method not implemented.");
   }
 }
 
