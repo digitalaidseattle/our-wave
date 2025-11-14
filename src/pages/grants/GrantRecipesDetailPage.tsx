@@ -71,7 +71,6 @@ const GrantRecipesDetailPage: React.FC = () => {
   function saveRecipe(recipe: GrantRecipe) {
     // FIXME remove
     if (import.meta.env.MODE === 'development') {
-      console.log('saving', recipe);
       setDirty(false);
     } else {
       if (recipe && user) {
