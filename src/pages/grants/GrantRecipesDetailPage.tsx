@@ -51,6 +51,45 @@ const GrantRecipesDetailPage: React.FC = () => {
     }
   }, [id])
 
+  useEffect(() => {
+    if (authService) {
+      authService.getUser()
+        .then(u => setUser(u!));
+    }
+  }, [authService])
+
+  useEffect(() => {
+    if (recipe) {
+      setOutputFields(recipe.outputsWithWordCount);
+      setDirty(false);
+    }
+  }, [recipe])
+
+  useEffect(() => {
+    if (recipe && dirty) {
+      recipe.outputsWithWordCount = outputFields;
+      saveRecipe(recipe);
+    }
+  }, [dirty]);
+
+  function saveRecipe(recipe: GrantRecipe) {
+    // FIXME remove
+    if (import.meta.env.MODE === 'development') {
+      setDirty(false);
+    } else {
+      if (recipe && user) {
+        setLoading(true);
+        grantRecipeService.update(recipe.id!, recipe, undefined, undefined, user)
+          .then(saved => setRecipe(saved))
+          .catch(err => {
+            console.error(err)
+            notifications.error(`Could not save this recipe. ${err.message}`)
+          })
+          .finally(() => setLoading(false))
+      }
+    }
+  }
+
   function handleClone() {
     if (recipe) {
       setLoading(true);
