@@ -22,6 +22,8 @@ const TEXT_RECIPE = {
   ]
 } as GrantRecipe;
 
+const AUTO_SAVE_DELAY = 1000 * 2;
+
 const GrantRecipesDetailPage: React.FC = () => {
   const { id } = useParams();
 
@@ -64,13 +66,15 @@ const GrantRecipesDetailPage: React.FC = () => {
   useEffect(() => {
     if (recipe && dirty) {
       recipe.outputsWithWordCount = outputFields;
-      saveRecipe(recipe);
+      const id = setInterval(() => saveRecipe(recipe), AUTO_SAVE_DELAY);
+      return () => clearInterval(id);
     }
   }, [dirty]);
 
   function saveRecipe(recipe: GrantRecipe) {
     // FIXME remove
     if (import.meta.env.MODE === 'development') {
+      console.log('now saving', recipe)
       setDirty(false);
     } else {
       if (recipe && user) {
