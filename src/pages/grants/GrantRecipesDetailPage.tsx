@@ -2,6 +2,7 @@ import { LoadingContext, useNotifications } from "@digitalaidseattle/core";
 import { Button, Card, CardActions, CardContent, CardHeader, Stack, TextField } from "@mui/material";
 import { useContext, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { grantProposalService } from "../../services/grantProposalService";
 import { grantRecipeService } from "../../services/grantRecipeService";
 import type { GrantInput, GrantOutput } from "../../types";
 import { GrantRecipe } from "../../types";
