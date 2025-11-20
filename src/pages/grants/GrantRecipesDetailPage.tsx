@@ -1,52 +1,59 @@
-import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import { LoadingContext, useAuthService, useNotifications, User } from "@digitalaidseattle/core";
-import {
-  Box, Button, Card, CardActions, CardContent, CardHeader, FormControlLabel,
-  Stack,
-  Switch,
-  TextField
-} from "@mui/material";
+import { Button, Card, CardActions, CardContent, CardHeader, Stack, TextField } from "@mui/material";
 import { useContext, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { grantProposalService } from "../../services/grantProposalService";
 import { grantRecipeService } from "../../services/grantRecipeService";
-import type { GrantOutput } from "../../types";
+import type { GrantInput, GrantOutput } from "../../types";
 import { GrantRecipe } from "../../types";
-import { grantProposalService } from '../../services/grantProposalService';
+import { GrantInputEditor } from "./GrantInputEditor";
+import { GrantOutputEditor } from "./GrantOutputEditor";
 
-const TEXT_RECIPE = {
-  id: 'test',
-  description: 'test',
-  outputsWithWordCount: [
-    { name: "description", maxWords: 500, unit: 'word' },
-    { name: "usage", maxWords: 500, unit: 'word' }
-  ]
-} as GrantRecipe;
+const TEST_RECIPE =
+  {
+    id: 'test',
+    description: 'test',
+    prompt: 'Create a grant proposal ',
+    inputParameters: [
+      { key: 'From', value: 'Our Wave' },
+      { key: 'Mission statement', value: '' },
+    ],
+    outputsWithWordCount: [
+      { name: "description", maxWords: 500, unit: 'word' },
+      { name: "usage", maxWords: 500, unit: 'word' }
+    ]
+  } as GrantRecipe
+
+export const TextEditor = ({ title, value, onChange }: { title: string, value: string, onChange: (updated: string) => void }) => {
+  return (
+    <Card>
+      <CardHeader title={title} />
+      <CardContent>
+        <TextField fullWidth={true} value={value} onChange={(evt) => onChange(evt.target.value)} />
+      </CardContent>
+    </Card>
+  )
+}
 
 const AUTO_SAVE_DELAY = 1000 * 2;
 
 const GrantRecipesDetailPage: React.FC = () => {
-  const { id } = useParams();
+  const { id } = useParams<string>();
 
   const notifications = useNotifications();
   const navigate = useNavigate();
+  const authService = useAuthService();
 
   const { loading, setLoading } = useContext(LoadingContext);
-  const authService = useAuthService();
   const [user, setUser] = useState<User>();
+  const [recipe, setRecipe] = useState<GrantRecipe>({ id: 'test', description: 'test' } as GrantRecipe);
   const [dirty, setDirty] = useState<boolean>(false);
 
-  const [recipe, setRecipe] = useState<GrantRecipe>();
-  const [outputFields, setOutputFields] = useState<GrantOutput[]>([]);
-
   useEffect(() => {
-    // FIXME remove
-    if (import.meta.env.MODE === 'development') {
-      setRecipe(TEXT_RECIPE);
-    } else {
-      if (id) {
-        grantRecipeService.getById(id)
-          .then(resp => setRecipe(resp))
-      }
+    if (id) {
+      // grantRecipeService.getById(id)
+      //   .then(found => setRecipe(found));
+      setRecipe(TEST_RECIPE);
     }
   }, [id])
 
@@ -59,14 +66,12 @@ const GrantRecipesDetailPage: React.FC = () => {
 
   useEffect(() => {
     if (recipe) {
-      setOutputFields(recipe.outputsWithWordCount);
       setDirty(false);
     }
   }, [recipe])
 
   useEffect(() => {
     if (recipe && dirty) {
-      recipe.outputsWithWordCount = outputFields;
       const id = setInterval(() => saveRecipe(recipe), AUTO_SAVE_DELAY);
       return () => clearInterval(id);
     }
@@ -81,7 +86,10 @@ const GrantRecipesDetailPage: React.FC = () => {
       if (recipe && user) {
         setLoading(true);
         grantRecipeService.update(recipe.id!, recipe, undefined, undefined, user)
-          .then(saved => setRecipe(saved))
+          .then(saved => {
+            setRecipe(saved);
+            setDirty(false);
+          })
           .catch(err => {
             console.error(err)
             notifications.error(`Could not save this recipe. ${err.message}`)
@@ -123,87 +131,48 @@ const GrantRecipesDetailPage: React.FC = () => {
     }
   }
 
-  const handleOutputFieldChange = (index: number, field: 'name' | 'maxWords', value: string | number) => {
-    const newFields = [...outputFields];
-    newFields[index] = { ...newFields[index], [field]: value };
-    setOutputFields(newFields);
+  function handleGrantOutputChange(updated: GrantOutput[]): void {
+    setRecipe({
+      ...recipe,
+      outputsWithWordCount: updated
+    });
     setDirty(true);
-  };
+  }
 
-  const handleOutputUnitToggle = (index: number) => {
-    const newFields = [...outputFields];
-    newFields[index] = {
-      ...newFields[index],
-      unit: newFields[index].unit === 'word' ? 'char' : 'word'
-    };
-    setOutputFields(newFields);
+  function handleDescriptionChange(updated: string): void {
+    setRecipe({
+      ...recipe,
+      description: updated
+    });
     setDirty(true);
-  };
+  }
 
-  const handleAddOutputField = () => {
-    setOutputFields([...outputFields, { name: "", maxWords: 500, unit: 'word' }]);
+  function handlePromptChange(updated: string): void {
+    setRecipe({
+      ...recipe,
+      prompt: updated
+    });
     setDirty(true);
-  };
+  }
 
-  const handleRemoveOutputField = (index: number) => {
-    setOutputFields(outputFields.filter((_, i) => i !== index));
+  function handleGrantInputChange(inputs: GrantInput[]): void {
+    setRecipe({
+      ...recipe,
+      inputParameters: inputs
+    });
     setDirty(true);
-  };
+  }
 
   return (
     <Card>
       <CardHeader title="Grant Recipe Detail" />
       <CardContent>
-        <Box>Description goes here</Box>
-        <Box>Prompt goes here</Box>
-        <Box>inputs goes here</Box>
-        <fieldset style={{ border: '1px solid #ccc', borderRadius: '4px', padding: '16px', marginTop: '16px' }}>
-          <legend style={{ padding: '0 8px' }}>Output Fields: (field / max word count)</legend>
-          <Stack spacing={2} sx={{ mt: 2 }}>
-            {outputFields.map((field, index) => (
-              <Stack direction="row" spacing={2} key={index} alignItems="center">
-                <TextField
-                  label="Field"
-                  value={field.name}
-                  onChange={(e) => handleOutputFieldChange(index, 'name', e.target.value)}
-                  sx={{ width: '200px' }}
-                />
-                <TextField
-                  label={`Max ${field.unit === 'word' ? 'Words' : 'Characters'}`}
-                  type="number"
-                  value={field.maxWords}
-                  onChange={(e) => handleOutputFieldChange(index, 'maxWords', parseInt(e.target.value) || 0)}
-                  sx={{ width: '150px' }}
-                />
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={field.unit === 'char'}
-                      onChange={() => handleOutputUnitToggle(index)}
-                    />
-                  }
-                  label={field.unit === 'word' ? 'Words' : 'Chars'}
-                />
-                <Button
-                  color="error"
-                  onClick={() => handleRemoveOutputField(index)}
-                  startIcon={<DeleteOutlined />}
-                >
-                  Remove
-                </Button>
-              </Stack>
-            ))}
-            <Button
-              variant="outlined"
-              color="success"
-              onClick={handleAddOutputField}
-              startIcon={<PlusOutlined />}
-              sx={{ alignSelf: 'flex-start' }}
-            >
-              Add Output Field
-            </Button>
-          </Stack>
-        </fieldset>
+        <Stack gap={1}>
+          <TextEditor title="Description" value={recipe.description} onChange={handleDescriptionChange} />
+          <TextEditor title="Prompt" value={recipe.prompt} onChange={handlePromptChange} />
+          <GrantInputEditor recipeInputs={recipe.inputParameters} onChange={handleGrantInputChange} />
+          <GrantOutputEditor fields={recipe.outputsWithWordCount} onChange={handleGrantOutputChange} />
+        </Stack>
       </CardContent>
       <CardActions>
         <Button variant="contained" disabled={loading} onClick={() => handleClone()}>Clone</Button>
