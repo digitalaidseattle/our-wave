@@ -8,11 +8,10 @@ import {
 } from "@mui/material";
 import { useContext, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { grantProposalService } from "../../services/grantProposalService";
 import { grantRecipeService } from "../../services/grantRecipeService";
 import type { GrantOutput } from "../../types";
 import { GrantRecipe } from "../../types";
-import { grantProposalService } from "../../services/grantProposalService";
+import { grantProposalService } from '../../services/grantProposalService';
 
 const TEXT_RECIPE = {
   id: 'test',
@@ -92,19 +91,23 @@ const GrantRecipesDetailPage: React.FC = () => {
     }
   }
 
-  useEffect(() => {
-    if (dirty) {
-      // debounce a bit
-      const id = setInterval(doSave, 2000);
-      return () => clearInterval(id);
+  function handleClone() {
+    if (recipe) {
+      setLoading(true);
+      grantRecipeService.clone(recipe)
+        .then(cloned => {
+          navigate(`grant-recipes/${cloned.id}`);
+          notifications.success(`${recipe.description} has been successfully cloned.`)
+        })
+        .catch(err => {
+          console.error(err)
+          notifications.error(`Could not clone this recipe. ${err.message}`)
+        })
+        .finally(() => setLoading(false))
     }
-  }, [dirty]);
+  }
 
-  const handleOutputFieldChange = (_index: number, _field: 'name' | 'maxWords', _value: string | number) => {
-    setDirty(true);
-  };
-
-  function doSave() {
+  function handleGenerate() {
     if (recipe) {
       setLoading(true);
       grantProposalService.generate(recipe)
