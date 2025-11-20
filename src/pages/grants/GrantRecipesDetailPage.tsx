@@ -1,4 +1,4 @@
-import { LoadingContext, useNotifications } from "@digitalaidseattle/core";
+import { LoadingContext, useAuthService, useNotifications, User } from "@digitalaidseattle/core";
 import { Button, Card, CardActions, CardContent, CardHeader, Stack, TextField } from "@mui/material";
 import { useContext, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -42,15 +42,18 @@ const GrantRecipesDetailPage: React.FC = () => {
 
   const notifications = useNotifications();
   const navigate = useNavigate();
+  const authService = useAuthService();
 
   const { loading, setLoading } = useContext(LoadingContext);
+  const [user, setUser] = useState<User>();
   const [recipe, setRecipe] = useState<GrantRecipe>({ id: 'test', description: 'test' } as GrantRecipe);
+  const [dirty, setDirty] = useState<boolean>(false);
 
   useEffect(() => {
     if (id) {
       // grantRecipeService.getById(id)
       //   .then(found => setRecipe(found));
-      setRecipe(TEST_RECIPE)
+      setRecipe(TEST_RECIPE);
     }
   }, [id])
 
@@ -63,14 +66,12 @@ const GrantRecipesDetailPage: React.FC = () => {
 
   useEffect(() => {
     if (recipe) {
-      setOutputFields(recipe.outputsWithWordCount);
       setDirty(false);
     }
   }, [recipe])
 
   useEffect(() => {
     if (recipe && dirty) {
-      recipe.outputsWithWordCount = outputFields;
       const id = setInterval(() => saveRecipe(recipe), AUTO_SAVE_DELAY);
       return () => clearInterval(id);
     }
@@ -85,7 +86,10 @@ const GrantRecipesDetailPage: React.FC = () => {
       if (recipe && user) {
         setLoading(true);
         grantRecipeService.update(recipe.id!, recipe, undefined, undefined, user)
-          .then(saved => setRecipe(saved))
+          .then(saved => {
+            setRecipe(saved);
+            setDirty(false);
+          })
           .catch(err => {
             console.error(err)
             notifications.error(`Could not save this recipe. ${err.message}`)
@@ -132,6 +136,7 @@ const GrantRecipesDetailPage: React.FC = () => {
       ...recipe,
       outputsWithWordCount: updated
     });
+    setDirty(true);
   }
 
   function handleDescriptionChange(updated: string): void {
@@ -139,6 +144,7 @@ const GrantRecipesDetailPage: React.FC = () => {
       ...recipe,
       description: updated
     });
+    setDirty(true);
   }
 
   function handlePromptChange(updated: string): void {
@@ -146,6 +152,7 @@ const GrantRecipesDetailPage: React.FC = () => {
       ...recipe,
       prompt: updated
     });
+    setDirty(true);
   }
 
   function handleGrantInputChange(inputs: GrantInput[]): void {
@@ -153,6 +160,7 @@ const GrantRecipesDetailPage: React.FC = () => {
       ...recipe,
       inputParameters: inputs
     });
+    setDirty(true);
   }
 
   return (
