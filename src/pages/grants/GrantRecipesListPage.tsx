@@ -1,10 +1,11 @@
-import { DeleteOutlined, PlusCircleOutlined } from "@ant-design/icons";
-import { LoadingContext, useNotifications, UserContext } from "@digitalaidseattle/core";
-import { Box, IconButton, Stack, Toolbar, Tooltip, Typography } from "@mui/material";
-import { DataGrid, GridActionsCellItem, GridColDef, GridRowParams } from "@mui/x-data-grid";
-import dayjs from 'dayjs';
 import { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Box, IconButton, Stack, Toolbar, Tooltip, Typography } from "@mui/material";
+import { DataGrid, GridActionsCellItem, GridColDef, GridRowParams } from "@mui/x-data-grid";
+import { DeleteOutlined, PlusCircleOutlined } from "@ant-design/icons";
+
+import dayjs from 'dayjs';
+import { LoadingContext, useNotifications, UserContext } from "@digitalaidseattle/core";
 import { grantRecipeService } from "../../services/grantRecipeService";
 import type { GrantRecipe } from "../../types";
 
@@ -23,11 +24,9 @@ const GrantRecipesListPage: React.FC = () => {
     try {
       setLoading(true);
       const data = await grantRecipeService.getAll();
-      // Add test recipe at the beginning of the list
       setRecipes(data);
     } catch (error) {
       console.error("Error fetching grant recipes:", error);
-      // Even if fetch fails, show the test recipe
     } finally {
       setLoading(false);
     }
@@ -79,41 +78,23 @@ const GrantRecipesListPage: React.FC = () => {
       headerName: "Description",
       flex: 1,
       minWidth: 200,
-      editable: true,
     },
     {
       field: "tokenCount",
       headerName: "Token Count",
       width: 130,
       type: "number",
-      editable: true,
     },
     {
       field: "modelType",
       headerName: "Model Type",
       width: 180,
-      editable: true,
     },
     {
       field: "updatedAt",
-      headerName: "Date",
+      headerName: "Updated At",
       width: 150,
-      editable: true,
       valueGetter: (_value, row) => dayjs(new Date((row.updatedAt as any).seconds * 1000)).format("MM/DD/YYYY hh:mm"),
-      valueParser: (_value) => {
-        // Parse date string (MM/DD/YYYY) to Date object
-        const value = _value;
-        if (typeof value === "string") {
-          const dateParts = value.split("/");
-          if (dateParts.length === 3) {
-            const month = parseInt(dateParts[0]) - 1;
-            const day = parseInt(dateParts[1]);
-            const year = parseInt(dateParts[2]);
-            return new Date(year, month, day);
-          }
-        }
-        return value;
-      },
     },
     {
       field: "actions",
