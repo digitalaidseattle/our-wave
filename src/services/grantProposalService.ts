@@ -27,6 +27,7 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
     select?: string,
     mapper?: (json: any) => GrantProposal,
     user?: User): Promise<GrantProposal> {
+
     if (!user?.email) throw new Error("grantProposalService.insert: user.email is required");
     const now = new Date();
 

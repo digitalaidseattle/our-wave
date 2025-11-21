@@ -1,7 +1,6 @@
-import { FirestoreService, firebaseClient } from "@digitalaidseattle/firebase";
-import { collection, getDocs, query as firestoreQuery, getFirestore } from "firebase/firestore";
-import type { GrantRecipe } from "../types";
 import type { Identifier, User } from "@digitalaidseattle/core";
+import { FirestoreService } from "@digitalaidseattle/firebase";
+import type { GrantRecipe } from "../types";
 
 class GrantRecipeService extends FirestoreService<GrantRecipe> {
 
@@ -19,7 +18,7 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
       updatedAt: now,
       updatedBy: "",
       description: "",
-      prompt: "",
+      prompt: "Create a grant proposal",
       inputParameters: [],
       outputsWithWordCount: [],
       tokenString: "",

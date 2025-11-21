@@ -17,7 +17,7 @@ const GrantProposalsListPage: React.FC = () => {
   const fetchProposals = async () => {
     try {
       setLoading(true);
-      const data = await grantProposalService.findAll();
+      const data = await grantProposalService.getAll();
       setProposals(data || []);
     } catch (error) {
       console.error("Error fetching grant proposals:", error);
@@ -46,7 +46,7 @@ const GrantProposalsListPage: React.FC = () => {
     }
 
     try {
-      await grantProposalService.delete(id, user);
+      await grantProposalService.delete(id);
       // Refresh the list after deletion
       await fetchProposals();
       alert("Proposal deleted successfully!");
@@ -82,7 +82,7 @@ const GrantProposalsListPage: React.FC = () => {
 
     try {
       // Save the edited values
-      await grantProposalService.update(id, editedValues as GrantProposal, undefined, user);
+      await grantProposalService.update(id, editedValues as GrantProposal, undefined, undefined, user);
       // Clear edited values for this proposal
       const newEdited = new Map(editedProposals);
       newEdited.delete(id);
@@ -104,14 +104,14 @@ const GrantProposalsListPage: React.FC = () => {
 
     const { id, field, value } = params;
     const proposal = proposals.find((p) => p.id === id);
-    
+
     if (!proposal || !id) {
       return;
     }
 
     // Store edited value in local state (don't save to Firestore yet)
     const newEdited = new Map(editedProposals);
-    const existingEdited = newEdited.get(id) || {};
+    const existingEdited = newEdited.get(id.toString()) || {};
 
     let updatedFields: Partial<GrantProposal> = { ...existingEdited };
 
@@ -139,12 +139,12 @@ const GrantProposalsListPage: React.FC = () => {
     }
 
     // Store the edited values
-    newEdited.set(id, updatedFields);
+    newEdited.set(id.toString(), updatedFields);
     setEditedProposals(newEdited);
 
     // Update local state to show the change immediately
-    setProposals(proposals.map(p => 
-      p.id === id 
+    setProposals(proposals.map(p =>
+      p.id === id
         ? { ...p, ...updatedFields } as GrantProposal
         : p
     ));
@@ -177,16 +177,16 @@ const GrantProposalsListPage: React.FC = () => {
   };
 
   // Get description from textResponse (first 100 chars) or structuredResponse
-  const getDescription = (proposal: GrantProposal): string => {
-    if (proposal.textResponse) {
-      return proposal.textResponse.substring(0, 100) + (proposal.textResponse.length > 100 ? "..." : "");
-    }
-    if (proposal.structuredResponse) {
-      const firstValue = Object.values(proposal.structuredResponse)[0];
-      return firstValue ? String(firstValue).substring(0, 100) + (firstValue.length > 100 ? "..." : "") : "No description";
-    }
-    return "No description";
-  };
+  // const getDescription = (proposal: GrantProposal): string => {
+  //   if (proposal.textResponse) {
+  //     return proposal.textResponse.substring(0, 100) + (proposal.textResponse.length > 100 ? "..." : "");
+  //   }
+  //   if (proposal.structuredResponse) {
+  //     const firstValue = Object.values(proposal.structuredResponse)[0];
+  //     return firstValue ? String(firstValue).substring(0, 100) + (firstValue.length > 100 ? "..." : "") : "No description";
+  //   }
+  //   return "No description";
+  // };
 
   // Calculate token count from textResponse
   const getTokenCount = (proposal: GrantProposal): number => {
@@ -208,7 +208,7 @@ const GrantProposalsListPage: React.FC = () => {
       flex: 1,
       minWidth: 200,
       editable: true,
-      valueGetter: (value, row) => {
+      valueGetter: (_value, row) => {
         // Return full text for editing, or truncated for display
         return row.textResponse || (row.structuredResponse ? Object.values(row.structuredResponse)[0] : "") || "";
       },
@@ -219,14 +219,14 @@ const GrantProposalsListPage: React.FC = () => {
       width: 130,
       type: "number",
       editable: true,
-      valueGetter: (value, row) => getTokenCount(row),
+      valueGetter: (_value, row) => getTokenCount(row),
     },
     {
       field: "createdAt",
       headerName: "Date",
       width: 150,
       editable: true,
-      valueGetter: (value, row) => formatDate(row.createdAt),
+      valueGetter: (_value, row) => formatDate(row.createdAt),
       valueParser: (value) => {
         // Parse date string (MM/DD/YYYY) to Date object
         if (typeof value === "string") {
@@ -247,12 +247,13 @@ const GrantProposalsListPage: React.FC = () => {
       headerName: "Actions",
       width: 180,
       getActions: (params) => {
-        const hasEdits = editedProposals.has(params.row.id);
+        const row_id = params.row.id!.toString();
+        const hasEdits = editedProposals.has(row_id);
         return [
           <GridActionsCellItem
             icon={<SaveOutlined />}
             label="Save"
-            onClick={() => handleSave(params.row.id)}
+            onClick={() => handleSave(row_id)}
             disabled={!user || !hasEdits}
             showInMenu={false}
             color={hasEdits ? "primary" : "default"}
@@ -260,14 +261,14 @@ const GrantProposalsListPage: React.FC = () => {
           <GridActionsCellItem
             icon={<EditOutlined />}
             label="Edit"
-            onClick={() => handleEdit(params.row.id)}
+            onClick={() => handleEdit(row_id)}
             disabled={!user}
             showInMenu={false}
           />,
           <GridActionsCellItem
             icon={<DeleteOutlined />}
             label="Delete"
-            onClick={() => handleDelete(params.row.id)}
+            onClick={() => handleDelete(row_id)}
             disabled={!user}
             showInMenu={false}
           />,
