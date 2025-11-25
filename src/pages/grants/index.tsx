@@ -215,10 +215,10 @@ const GrantsPage: React.FC = ({ }) => {
                         <Stack gap={2} >
                             {Object.entries(structured).map(([key, value]) => (
                                 <Grid container spacing={2}>
-                                    <Grid item xs={2} >
+                                    <Grid size={2} >
                                         <Typography variant="h5"><strong>{key}:</strong></Typography>
                                     </Grid>
-                                    <Grid item xs={10}>
+                                    <Grid size={10}>
                                         <Typography>{JSON.stringify(value, null, 2)}</Typography>
                                     </Grid>
                                 </Grid>

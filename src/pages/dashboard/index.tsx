@@ -79,32 +79,32 @@ const DashboardDefault = () => {
   return (
     <Grid container rowSpacing={4.5} columnSpacing={2.75}>
       {/* row 1 */}
-      <Grid item xs={12} sx={{ mb: -2.25 }}>
+      <Grid size={12} sx={{ mb: -2.25 }}>
         <Typography variant="h5" color={theme.palette.text.primary}>Dashboard</Typography>
       </Grid>
-      <Grid item xs={12} sm={6} md={4} lg={3}>
+      <Grid size={3}>
         <AnalyticEcommerce title="Total Page Views" count="4,42,236" percentage={59.3} extra="35,000" />
       </Grid>
-      <Grid item xs={12} sm={6} md={4} lg={3}>
+      <Grid size={3}>
         <AnalyticEcommerce title="Total Users" count="78,250" percentage={70.5} extra="8,900" />
       </Grid>
-      <Grid item xs={12} sm={6} md={4} lg={3}>
+      <Grid size={3}>
         <AnalyticEcommerce title="Total Order" count="18,800" percentage={27.4} isLoss color="warning" extra="1,943" />
       </Grid>
-      <Grid item xs={12} sm={6} md={4} lg={3}>
+      <Grid size={3}>
         <AnalyticEcommerce title="Total Sales" count="$35,078" percentage={27.4} isLoss color="warning" extra="$20,395" />
       </Grid>
 
-      <Grid item md={8} sx={{ display: { sm: 'none', md: 'block', lg: 'none' } }} />
+      <Grid size={8} sx={{ display: { sm: 'none', md: 'block', lg: 'none' } }} />
 
       {/* row 2 */}
 
-      <Grid item xs={12} md={7} lg={8}>
+      <Grid size={8}>
         <Grid container alignItems="center" justifyContent="space-between">
-          <Grid item>
+          <Grid size={8}>
             <Typography variant="h5" color={theme.palette.text.primary}>Unique Visitor</Typography>
           </Grid>
-          <Grid item>
+          <Grid >
             <Stack direction="row" alignItems="center" spacing={0}>
               <Button
                 size="small"
@@ -131,12 +131,12 @@ const DashboardDefault = () => {
           </Box>
         </MainCard>
       </Grid>
-      <Grid item xs={12} md={5} lg={4}>
+      <Grid size={4}>
         <Grid container alignItems="center" justifyContent="space-between">
-          <Grid item>
+          <Grid >
             <Typography variant="h5" color={theme.palette.text.primary}>Income Overview</Typography>
           </Grid>
-          <Grid item />
+          <Grid />
         </Grid>
         <MainCard sx={{ mt: 2 }} content={false}>
           <Box sx={{ p: 3, pb: 0 }}>
@@ -152,12 +152,12 @@ const DashboardDefault = () => {
       </Grid>
 
       {/* row 3 */}
-      <Grid item xs={12} md={7} lg={8}>
+      <Grid size={8}>
         <Grid container alignItems="center" justifyContent="space-between">
-          <Grid item>
+          <Grid size={4}>
             <Typography variant="h5" color={theme.palette.text.primary}>Sales Report</Typography>
           </Grid>
-          <Grid item>
+          <Grid >
             <TextField
               id="standard-select-currency"
               size="small"
@@ -185,12 +185,12 @@ const DashboardDefault = () => {
         </MainCard>
       </Grid>
 
-      <Grid item xs={12} md={5} lg={4}>
+      <Grid size={4}>
         <Grid container alignItems="center" justifyContent="space-between">
-          <Grid item>
+          <Grid >
             <Typography variant="h5" color={theme.palette.text.primary}>Analytics Report</Typography>
           </Grid>
-          <Grid item />
+          <Grid />
         </Grid>
         <MainCard sx={{ mt: 2 }} content={false}>
           <List sx={{ p: 0, '& .MuiListItemButton-root': { py: 2 } }}>
@@ -212,15 +212,15 @@ const DashboardDefault = () => {
       </Grid>
 
       {/* row 4 */}
-      <Grid item xs={12} md={7} lg={8}>
+      <Grid size={8}>
         {/* Enbale orders table*/}
       </Grid>
-      <Grid item xs={12} md={5} lg={4}>
+      <Grid size={4} >
         <Grid container alignItems="center" justifyContent="space-between">
-          <Grid item>
+          <Grid >
             <Typography variant="h5" color={theme.palette.text.primary}>Transaction History</Typography>
           </Grid>
-          <Grid item />
+          <Grid />
         </Grid>
         <MainCard sx={{ mt: 2 }} content={false}>
           <List
@@ -309,7 +309,7 @@ const DashboardDefault = () => {
         <MainCard sx={{ mt: 2 }}>
           <Stack spacing={3}>
             <Grid container justifyContent="space-between" alignItems="center">
-              <Grid item>
+              <Grid >
                 <Stack>
                   <Typography variant="h5" noWrap>
                     Help & Support Chat
@@ -319,7 +319,7 @@ const DashboardDefault = () => {
                   </Typography>
                 </Stack>
               </Grid>
-              <Grid item>
+              <Grid >
                 <AvatarGroup sx={{ '& .MuiAvatar-root': { width: 32, height: 32 } }}>
                   <Avatar alt="Remy Sharp" src={avatar1} />
                   <Avatar alt="Travis Howard" src={avatar2} />
