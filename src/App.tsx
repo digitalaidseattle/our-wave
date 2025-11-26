@@ -20,6 +20,7 @@ import { FirebaseAuthService, firebaseClient } from "@digitalaidseattle/firebase
 import { routes } from './pages/routes';
 import { TemplateConfig } from './TemplateConfig';
 
+import { FirebaseAuthService, firebaseClient } from "@digitalaidseattle/firebase";
 import "./App.css";
 
 // ==============================|| APP - THEME, ROUTER, LOCAL  ||============================== //
