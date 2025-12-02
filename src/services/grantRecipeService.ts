@@ -1,6 +1,7 @@
 import type { Identifier, User } from "@digitalaidseattle/core";
 import { FirestoreService } from "@digitalaidseattle/firebase";
 import type { GrantRecipe } from "../types";
+import Handlebars from "handlebars";
 
 class GrantRecipeService extends FirestoreService<GrantRecipe> {
 
@@ -77,6 +78,14 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
   async clone(recipe: GrantRecipe): Promise<GrantRecipe> {
     console.log('recipe', recipe);
     throw new Error("Method not implemented.");
+  }
+
+  generatePromptWithInputs(recipe: GrantRecipe): string {
+    var template = Handlebars.compile(recipe.prompt);
+    return template({
+      inputs: recipe.inputParameters,
+      outputs: recipe.outputsWithWordCount
+    });
   }
 }
 
