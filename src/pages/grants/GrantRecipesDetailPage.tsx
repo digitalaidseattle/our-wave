@@ -1,4 +1,4 @@
-import { LoadingContext, useAuthService, useNotifications, User } from "@digitalaidseattle/core";
+import { LoadingContext, useNotifications, UserContext } from "@digitalaidseattle/core";
 import { Button, Card, CardActions, CardContent, CardHeader, Stack, TextField } from "@mui/material";
 import { useContext, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -8,21 +8,6 @@ import type { GrantInput, GrantOutput } from "../../types";
 import { GrantRecipe } from "../../types";
 import { GrantInputEditor } from "./GrantInputEditor";
 import { GrantOutputEditor } from "./GrantOutputEditor";
-
-const TEST_RECIPE =
-  {
-    id: 'test',
-    description: 'test',
-    prompt: 'Create a grant proposal ',
-    inputParameters: [
-      { key: 'From', value: 'Our Wave' },
-      { key: 'Mission statement', value: '' },
-    ],
-    outputsWithWordCount: [
-      { name: "description", maxWords: 500, unit: 'word' },
-      { name: "usage", maxWords: 500, unit: 'word' }
-    ]
-  } as GrantRecipe
 
 export const TextEditor = ({ title, value, onChange }: { title: string, value: string, onChange: (updated: string) => void }) => {
   return (
@@ -42,60 +27,42 @@ const GrantRecipesDetailPage: React.FC = () => {
 
   const notifications = useNotifications();
   const navigate = useNavigate();
-  const authService = useAuthService();
+  const { user } = useContext(UserContext);
 
   const { loading, setLoading } = useContext(LoadingContext);
-  const [user, setUser] = useState<User>();
   const [recipe, setRecipe] = useState<GrantRecipe>({ id: 'test', description: 'test' } as GrantRecipe);
   const [dirty, setDirty] = useState<boolean>(false);
 
   useEffect(() => {
     if (id) {
-      // grantRecipeService.getById(id)
-      //   .then(found => setRecipe(found));
-      setRecipe(TEST_RECIPE);
+      grantRecipeService.getById(id)
+        .then(found => {
+          setRecipe(found);
+          setDirty(false);
+        });
     }
   }, [id])
 
   useEffect(() => {
-    if (authService) {
-      authService.getUser()
-        .then(u => setUser(u!));
-    }
-  }, [authService])
-
-  useEffect(() => {
-    if (recipe) {
-      setDirty(false);
-    }
-  }, [recipe])
-
-  useEffect(() => {
     if (recipe && dirty) {
-      const id = setInterval(() => saveRecipe(recipe), AUTO_SAVE_DELAY);
+      const id = setInterval(() => saveRecipe(), AUTO_SAVE_DELAY);
       return () => clearInterval(id);
     }
-  }, [dirty]);
+  }, [recipe, dirty]);
 
-  function saveRecipe(recipe: GrantRecipe) {
-    // FIXME remove
-    if (import.meta.env.MODE === 'development') {
-      console.log('now saving', recipe)
-      setDirty(false);
-    } else {
-      if (recipe && user) {
-        setLoading(true);
-        grantRecipeService.update(recipe.id!, recipe, undefined, undefined, user)
-          .then(saved => {
-            setRecipe(saved);
-            setDirty(false);
-          })
-          .catch(err => {
-            console.error(err)
-            notifications.error(`Could not save this recipe. ${err.message}`)
-          })
-          .finally(() => setLoading(false))
-      }
+  function saveRecipe() {
+    if (recipe && user) {
+      setLoading(true);
+      grantRecipeService.update(recipe.id!, recipe, undefined, undefined, user)
+        .then(saved => {
+          setRecipe(saved);
+          setDirty(false);
+        })
+        .catch(err => {
+          console.error(err)
+          notifications.error(`Could not save this recipe. ${err.message}`)
+        })
+        .finally(() => setLoading(false))
     }
   }
 
@@ -156,6 +123,7 @@ const GrantRecipesDetailPage: React.FC = () => {
   }
 
   function handleGrantInputChange(inputs: GrantInput[]): void {
+    console.log(inputs)
     setRecipe({
       ...recipe,
       inputParameters: inputs

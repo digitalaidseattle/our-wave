@@ -1,6 +1,6 @@
+import type { Identifier, User } from "@digitalaidseattle/core";
 import { FirestoreService } from "@digitalaidseattle/firebase";
 import type { GrantRecipe } from "../types";
-import type { Identifier, User } from "@digitalaidseattle/core";
 
 class GrantRecipeService extends FirestoreService<GrantRecipe> {
 
@@ -18,7 +18,7 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
       updatedAt: now,
       updatedBy: "",
       description: "",
-      prompt: "",
+      prompt: "Create a grant proposal",
       inputParameters: [],
       outputsWithWordCount: [],
       tokenString: "",
@@ -36,14 +36,16 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
     user?: User): Promise<GrantRecipe> {
     if (!user?.email) throw new Error("grantRecipeService.insert: user.email is required");
     const now = new Date();
+    // Remove id field as Firestore will auto-generate it
+    const { id, ...entityWithoutId } = entity;
     return super.insert(
       {
-        ...entity,
+        ...entityWithoutId,
         createdAt: now,
         updatedAt: now,
         createdBy: user.email,
         updatedBy: user.email,
-      },
+      } as GrantRecipe,
       select,
       mapper,
       user

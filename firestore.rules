@@ -1,0 +1,58 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Grant Recipes Collection
+    match /grant-recipes/{recipeId} {
+      // Allow authenticated users to read all recipes
+      allow read: if request.auth != null;
+      
+      // Allow authenticated users to create recipes
+      allow create: if request.auth != null;
+      
+      // Allow authenticated users to update recipes (optionally restrict to creator)
+      allow update: if request.auth != null;
+      
+      // Allow authenticated users to delete recipes (optionally restrict to creator)
+      allow delete: if request.auth != null;
+    }
+    
+    // Grant Proposals Collection
+    match /grant-proposal/{proposalId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null;
+      allow delete: if request.auth != null;
+    }
+    
+    // Grant Requests Collection
+    match /grant-request/{requestId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null;
+      allow delete: if request.auth != null;
+    }
+    
+    // Default: deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+
+// TEMPORARY TESTING RULES (REMOVE IN PRODUCTION!)
+// If you need to test without authentication, temporarily use these rules instead:
+// rules_version = '2';
+// service cloud.firestore {
+//   match /databases/{database}/documents {
+//     match /grant-recipes/{document=**} {
+//       allow read, write: if true;
+//     }
+//     match /grant-proposal/{document=**} {
+//       allow read, write: if true;
+//     }
+//     match /grant-request/{document=**} {
+//       allow read, write: if true;
+//     }
+//   }
+// }
+
