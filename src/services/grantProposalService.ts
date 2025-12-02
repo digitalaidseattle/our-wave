@@ -1,0 +1,75 @@
+import { FirestoreService } from "@digitalaidseattle/firebase";
+import type { GrantProposal, GrantRecipe } from "../types";
+import type { Identifier, User } from "@digitalaidseattle/core";
+
+// Firestore service for "grant-proposal" collection
+class GrantProposalService extends FirestoreService<GrantProposal> {
+
+  constructor() {
+    super("grant-proposal"); // Firestore collection name
+  }
+
+  // Returns a blank proposal with default values with optional fields (textResponse, structuredResponse)
+  empty(): GrantProposal {
+    const now = new Date();
+    return {
+      id: undefined,
+      createdAt: now,
+      createdBy: "",
+      grantRecipeId: "",
+      rating: null,
+    };
+  }
+
+  // Create: adds createdAt and createdBy before saving
+  async insert(
+    entity: GrantProposal,
+    select?: string,
+    mapper?: (json: any) => GrantProposal,
+    user?: User): Promise<GrantProposal> {
+
+    if (!user?.email) throw new Error("grantProposalService.insert: user.email is required");
+    const now = new Date();
+
+    return super.insert(
+      {
+        ...entity,
+        createdAt: now,
+        createdBy: user.email,
+      },
+      select,
+      mapper,
+      user
+    );
+  }
+
+  // Update: refreshes createdBy if needed (optional behavior)
+  async update(
+    entityId: Identifier,
+    updatedFields: GrantProposal,
+    select?: string,
+    mapper?: (json: any) => GrantProposal,
+    user?: User
+  ): Promise<GrantProposal> {
+    if (!user?.email) throw new Error("grantProposalService.update: user.email is required");
+
+    return super.update(
+      entityId,
+      {
+        ...updatedFields,
+        createdBy: user.email, // reuse same metadata pattern
+      },
+      select,
+      mapper,
+      user
+    );
+  }
+
+  // Consider moving to a service independent of this one.  
+  // That service map depend on multiple services (e.g. validation, entity-management)
+  async generate(_recipe: GrantRecipe): Promise<GrantProposal> {
+    throw new Error("Method not implemented.");
+  }
+}
+
+export const grantProposalService = new GrantProposalService();
