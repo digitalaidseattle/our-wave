@@ -33,13 +33,13 @@ export const GrantOutputEditor = ({ fields, onChange }: { fields: GrantOutput[],
     const newFields = [...outputFields];
     newFields[index] = {
       ...newFields[index],
-      unit: newFields[index].unit === 'word' ? 'char' : 'word'
+      unit: newFields[index].unit === 'words' ? 'characters' : 'words'
     };
     onChange(newFields);
   };
 
   const handleAddOutputField = () => {
-    onChange([...outputFields, { name: "", maxWords: 500, unit: 'word' }]);
+    onChange([...outputFields, { name: "", maxWords: 500, unit: 'words' }]);
   };
 
   const handleRemoveOutputField = (index: number) => {
@@ -60,7 +60,7 @@ export const GrantOutputEditor = ({ fields, onChange }: { fields: GrantOutput[],
                 sx={{ width: '200px' }}
               />
               <TextField
-                label={`Max ${field.unit === 'word' ? 'Words' : 'Characters'}`}
+                label={`Max ${field.unit === 'words' ? 'Words' : 'Characters'}`}
                 type="number"
                 value={field.maxWords}
                 onChange={(e) => handleOutputFieldChange(index, 'maxWords', parseInt(e.target.value) || 0)}
@@ -69,11 +69,11 @@ export const GrantOutputEditor = ({ fields, onChange }: { fields: GrantOutput[],
               <FormControlLabel
                 control={
                   <Switch
-                    checked={field.unit === 'char'}
+                    checked={field.unit === 'characters'}
                     onChange={() => handleOutputUnitToggle(index)}
                   />
                 }
-                label={field.unit === 'word' ? 'Words' : 'Chars'}
+                label={field.unit === 'words' ? 'Words' : 'Chars'}
               />
               <Button
                 color="error"

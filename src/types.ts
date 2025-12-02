@@ -19,7 +19,7 @@ export type GrantInput = {
 export type GrantOutput = {
     name: string;
     maxWords: number;
-    unit: 'word' | 'char';
+    unit: 'words' | 'characters';
 }
 
 export type GrantRecipe = Entity & {
