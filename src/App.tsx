@@ -5,20 +5,22 @@
  *
  */
 // project import
+import React from 'react';
+import { RouterProvider, createBrowserRouter } from 'react-router-dom';
+import { LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+
 import {
   AuthServiceProvider,
-  StorageServiceProvider,
   UserContextProvider
 } from "@digitalaidseattle/core";
 import { LayoutConfigurationProvider } from "@digitalaidseattle/mui";
-import React from 'react';
-import { RouterProvider, createBrowserRouter } from 'react-router-dom';
+import { FirebaseAuthService, firebaseClient } from "@digitalaidseattle/firebase";
 
 import { routes } from './pages/routes';
 import { TemplateConfig } from './TemplateConfig';
 
 import "./App.css";
-import { FirebaseAuthService, firebaseClient, FirebaseStorageService } from "@digitalaidseattle/firebase";
 
 // ==============================|| APP - THEME, ROUTER, LOCAL  ||============================== //
 
@@ -28,13 +30,13 @@ const App: React.FC = () => {
   console.log('firebaseClient', firebaseClient);
   return (
     <AuthServiceProvider authService={new FirebaseAuthService()} >
-      <StorageServiceProvider storageService={new FirebaseStorageService()} >
-        <UserContextProvider>
-          <LayoutConfigurationProvider configuration={TemplateConfig()}>
+      <UserContextProvider>
+        <LayoutConfigurationProvider configuration={TemplateConfig()}>
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
             <RouterProvider router={router} />
-          </LayoutConfigurationProvider>
-        </UserContextProvider>
-      </StorageServiceProvider>
+          </LocalizationProvider>
+        </LayoutConfigurationProvider>
+      </UserContextProvider>
     </AuthServiceProvider>
   );
 }
