@@ -129,6 +129,10 @@ const GrantRecipesDetailPage: React.FC = () => {
     return grantRecipeService.updatePrompt(changed);
   }
 
+  function updatePrompt(changed: GrantRecipe): Promise<GrantRecipe> {
+    return grantRecipeService.updatePrompt(changed);
+  }
+
   function handleGrantOutputChange(updated: GrantOutput[]): void {
     updatePrompt({ ...recipe, outputsWithWordCount: updated })
       .then(revised => {
@@ -169,7 +173,7 @@ const GrantRecipesDetailPage: React.FC = () => {
           <Stack sx={{ gap: 2, marginRight: `${showHelp ? HELP_DRAWER_WIDTH : 0}px` }}>
             <Card>
               <CardHeader title="Grant Recipe Detail"
-                action={`Token count = ${recipe.tokenCount}`} />
+                  action={`Token count = ${recipe.tokenCount}`} />
               <CardContent>
                 <Stack gap={1}>
                   <TextEditor title="Description" value={recipe.description} onChange={handleDescriptionChange} />
