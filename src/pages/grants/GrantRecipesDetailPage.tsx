@@ -98,12 +98,16 @@ const GrantRecipesDetailPage: React.FC = () => {
     }
   }
 
+  function updatePrompt(changed: GrantRecipe): Promise<GrantRecipe> {
+    return grantRecipeService.updatePrompt(changed);
+  }
+
   function handleGrantOutputChange(updated: GrantOutput[]): void {
-    setRecipe({
-      ...recipe,
-      outputsWithWordCount: updated
-    });
-    setDirty(true);
+    updatePrompt({ ...recipe, outputsWithWordCount: updated })
+      .then(revised => {
+        setRecipe(revised);
+        setDirty(true);
+      })
   }
 
   function handleDescriptionChange(updated: string): void {
@@ -115,25 +119,25 @@ const GrantRecipesDetailPage: React.FC = () => {
   }
 
   function handlePromptChange(updated: string): void {
-    setRecipe({
-      ...recipe,
-      prompt: updated
-    });
-    setDirty(true);
+    updatePrompt({ ...recipe, prompt: updated })
+      .then(revised => {
+        setRecipe(revised);
+        setDirty(true);
+      })
   }
 
   function handleGrantInputChange(inputs: GrantInput[]): void {
-    console.log(inputs)
-    setRecipe({
-      ...recipe,
-      inputParameters: inputs
-    });
-    setDirty(true);
+    updatePrompt({ ...recipe, inputParameters: inputs })
+      .then(revised => {
+        setRecipe(revised);
+        setDirty(true);
+      })
   }
 
   return (
     <Card>
-      <CardHeader title="Grant Recipe Detail" />
+      <CardHeader title="Grant Recipe Detail"
+        action={`Token count = ${recipe.tokenCount}`} />
       <CardContent>
         <Stack gap={1}>
           <TextEditor title="Description" value={recipe.description} onChange={handleDescriptionChange} />

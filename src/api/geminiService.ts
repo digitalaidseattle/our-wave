@@ -68,7 +68,6 @@ class GeminiService {
         });
 
         // To generate text output, call generateContent with the text input
-        console.log("Querying AI with prompt: ", prompt, this.model);
         return jModel.generateContent(prompt)
             .then(result => JSON.parse(result.response.text()).characters[0])
             .catch(error => {
@@ -76,6 +75,13 @@ class GeminiService {
                 throw new Error("Failed to query AI: " + error.message);
             });
     }
+
+    calcTokenCount(model: string, prompt: string): Promise<number> {
+        return getGenerativeModel(this.ai, { model: model })
+            .countTokens(prompt)
+            .then(response => response.totalTokens)
+    }
+
 
 }
 
