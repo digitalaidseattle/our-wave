@@ -130,7 +130,7 @@ const GrantRecipesListPage: React.FC = () => {
 
   return (
     <>
-      {loading && <LoadingOverlay />}
+      <LoadingOverlay />
       <Card>
         <CardHeader title="Grant Recipes" />
         <CardContent>

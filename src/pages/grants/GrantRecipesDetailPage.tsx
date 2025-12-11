@@ -163,7 +163,7 @@ const GrantRecipesDetailPage: React.FC = () => {
 
   return (
     <>
-      {loading && <LoadingOverlay />}
+      <LoadingOverlay />
       <HelpTopicContext.Provider value={{ helpTopic, setHelpTopic }} >
         <Box gap={4}>
           <Stack sx={{ gap: 2, marginRight: `${showHelp ? HELP_DRAWER_WIDTH : 0}px` }}>
