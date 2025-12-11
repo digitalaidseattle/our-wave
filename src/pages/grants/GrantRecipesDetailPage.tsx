@@ -137,7 +137,7 @@ const GrantRecipesDetailPage: React.FC = () => {
 
   return (
     <>
-      {loading && <LoadingOverlay />}
+      <LoadingOverlay />
       <Card>
         <CardHeader title="Grant Recipe Detail"
         action={`Token count = ${recipe.tokenCount}`} />
