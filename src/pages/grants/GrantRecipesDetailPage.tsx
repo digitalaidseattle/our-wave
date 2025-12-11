@@ -134,7 +134,7 @@ const GrantRecipesDetailPage: React.FC = () => {
 
   return (
     <>
-      {loading && <LoadingOverlay />}
+      <LoadingOverlay />
       <Card>
         <CardHeader title="Grant Recipe Detail" />
         <CardContent>
