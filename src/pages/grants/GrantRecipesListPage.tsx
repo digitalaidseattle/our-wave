@@ -9,7 +9,6 @@ import dayjs from 'dayjs';
 import { LoadingOverlay } from "../../components/LoadingOverlay";
 import { grantRecipeService } from "../../services/grantRecipeService";
 import type { GrantRecipe } from "../../types";
-import { LoadingOverlay } from "../../components/LoadingOverlay";
 
 const GrantRecipesListPage: React.FC = () => {
   const notifications = useNotifications();
