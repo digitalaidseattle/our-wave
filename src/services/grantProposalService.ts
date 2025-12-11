@@ -1,15 +1,31 @@
-import { FirestoreService } from "@digitalaidseattle/firebase";
-import type { GrantProposal, GrantRecipe } from "../types";
 import type { Identifier, User } from "@digitalaidseattle/core";
+import { FirestoreService } from "@digitalaidseattle/firebase";
+import type { GrantProposal, GrantRecipe, GrantOutput } from "../types";
+import { grantAiService } from "../pages/grants/grantAiService";
+import { grantRecipeService } from "./grantRecipeService";
 
-// Firestore service for "grant-proposal" collection
-class GrantProposalService extends FirestoreService<GrantProposal> {
+/**
+ * Apply the word/character limits defined in a GrantOutput field.
+ */
+function applyOutputLimit(raw: string, field: GrantOutput): string {
+  if (!raw) return "";
 
-  constructor() {
-    super("grant-proposal"); // Firestore collection name
+  if (field.unit === "characters") {
+    return raw.length <= field.maxWords ? raw : raw.slice(0, field.maxWords);
   }
 
-  // Returns a blank proposal with default values with optional fields (textResponse, structuredResponse)
+  const words = raw.split(/\s+/).filter(Boolean);
+  return words.length <= field.maxWords
+    ? raw
+    : words.slice(0, field.maxWords).join(" ");
+}
+
+class GrantProposalService extends FirestoreService<GrantProposal> {
+  constructor() {
+    super("grant-proposal");
+  }
+
+  // Default shape for a new proposal
   empty(): GrantProposal {
     const now = new Date();
     return {
@@ -18,23 +34,24 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
       createdBy: "",
       grantRecipeId: "",
       rating: null,
+      textResponse: undefined,
+      structuredResponse: undefined,
     };
   }
 
-  // Create: adds createdAt and createdBy before saving
+  // Insert a new proposal with metadata added
   async insert(
     entity: GrantProposal,
     select?: string,
     mapper?: (json: any) => GrantProposal,
-    user?: User): Promise<GrantProposal> {
-
-    if (!user?.email) throw new Error("grantProposalService.insert: user.email is required");
-    const now = new Date();
+    user?: User
+  ): Promise<GrantProposal> {
+    if (!user?.email) throw new Error("User email is required");
 
     return super.insert(
       {
         ...entity,
-        createdAt: now,
+        createdAt: new Date(),
         createdBy: user.email,
       },
       select,
@@ -43,7 +60,7 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
     );
   }
 
-  // Update: refreshes createdBy if needed (optional behavior)
+  // Update a proposal
   async update(
     entityId: Identifier,
     updatedFields: GrantProposal,
@@ -51,13 +68,13 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
     mapper?: (json: any) => GrantProposal,
     user?: User
   ): Promise<GrantProposal> {
-    if (!user?.email) throw new Error("grantProposalService.update: user.email is required");
+    if (!user?.email) throw new Error("User email is required");
 
     return super.update(
       entityId,
       {
         ...updatedFields,
-        createdBy: user.email, // reuse same metadata pattern
+        createdBy: user.email,
       },
       select,
       mapper,
@@ -65,10 +82,45 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
     );
   }
 
-  // Consider moving to a service independent of this one.  
-  // That service map depend on multiple services (e.g. validation, entity-management)
-  async generate(_recipe: GrantRecipe): Promise<GrantProposal> {
-    throw new Error("Method not implemented.");
+/**
+ * Creates a proposal draft from a recipe using AI.
+ */
+
+  async generate(recipe: GrantRecipe): Promise<GrantProposal> {
+    if (!recipe.id) throw new Error("Recipe ID is required");
+
+    const outputs = recipe.outputsWithWordCount ?? [];
+    if (outputs.length === 0) {
+      throw new Error("Recipe is missing output fields");
+    }
+
+    // Build the prompt using recipe data
+    const prompt = grantRecipeService.generatePromptWithInputs(recipe);
+
+    // Ask AI for JSON with keys matching output names
+    const schemaParams = outputs.map((o) => o.name);
+    const aiResult = await grantAiService.parameterizedQuery(schemaParams, prompt);
+
+    // Build structured output with limits applied
+    const structuredResponse: Record<string, string> = {};
+    
+    for (const field of outputs) {
+      const raw = aiResult[field.name] ?? "";
+      structuredResponse[field.name] = applyOutputLimit(raw, field);
+    }
+
+    // Keep raw AI output for debugging or review
+    const textResponse = JSON.stringify(aiResult, null, 2);
+
+    // Return a proposal object (not persisted)
+    const base = this.empty();
+    return {
+      ...base,
+      grantRecipeId: String(recipe.id),
+      structuredResponse,
+      textResponse,
+      rating: null,
+    };
   }
 }
 
