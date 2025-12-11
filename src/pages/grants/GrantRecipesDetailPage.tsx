@@ -14,6 +14,7 @@ import { grantRecipeService } from "../../services/grantRecipeService";
 import { GrantRecipe } from "../../types";
 import { GrantInputEditor } from "./GrantInputEditor";
 import { GrantOutputEditor } from "./GrantOutputEditor";
+import { LoadingOverlay } from "../../components/LoadingOverlay";
 import { HelpTopicContext } from "../../components/HelpTopicContext";
 import type { GrantInput, GrantOutput } from "../../types";
 
@@ -161,29 +162,32 @@ const GrantRecipesDetailPage: React.FC = () => {
   }
 
   return (
-    <HelpTopicContext.Provider value={{ helpTopic, setHelpTopic }} >
-      <Box gap={4}>
-        <Stack sx={{ gap: 2, marginRight: `${showHelp ? HELP_DRAWER_WIDTH : 0}px` }}>
-          <Card>
-            <CardHeader title="Grant Recipe Detail"
-              action={`Token count = ${recipe.tokenCount}`} />
-            <CardContent>
-              <Stack gap={1}>
-                <TextEditor title="Description" value={recipe.description} onChange={handleDescriptionChange} />
-                <TextEditor title="Prompt" value={recipe.prompt} onChange={handlePromptChange} />
-                <GrantInputEditor recipeInputs={recipe.inputParameters} onChange={handleGrantInputChange} />
-                <GrantOutputEditor fields={recipe.outputsWithWordCount} onChange={handleGrantOutputChange} />
-              </Stack>
-            </CardContent>
-            <CardActions>
-              <Button variant="contained" disabled={loading} onClick={() => handleClone()}>Clone</Button>
-              <Button variant="contained" disabled={loading} onClick={() => handleGenerate()}>Generate</Button>
-            </CardActions>
-          </Card>
-        </Stack>
-        <HelpDrawer title={HELP_TITLE} width={HELP_DRAWER_WIDTH} dictionary={HELP_DICTIONARY} />
-      </Box>
-    </HelpTopicContext.Provider>
+    <>
+      {loading && <LoadingOverlay />}
+      <HelpTopicContext.Provider value={{ helpTopic, setHelpTopic }} >
+        <Box gap={4}>
+          <Stack sx={{ gap: 2, marginRight: `${showHelp ? HELP_DRAWER_WIDTH : 0}px` }}>
+            <Card>
+              <CardHeader title="Grant Recipe Detail"
+                action={`Token count = ${recipe.tokenCount}`} />
+              <CardContent>
+                <Stack gap={1}>
+                  <TextEditor title="Description" value={recipe.description} onChange={handleDescriptionChange} />
+                  <TextEditor title="Prompt" value={recipe.prompt} onChange={handlePromptChange} />
+                  <GrantInputEditor recipeInputs={recipe.inputParameters} onChange={handleGrantInputChange} />
+                  <GrantOutputEditor fields={recipe.outputsWithWordCount} onChange={handleGrantOutputChange} />
+                </Stack>
+              </CardContent>
+              <CardActions>
+                <Button variant="contained" disabled={loading} onClick={() => handleClone()}>Clone</Button>
+                <Button variant="contained" disabled={loading} onClick={() => handleGenerate()}>Generate</Button>
+              </CardActions>
+            </Card>
+          </Stack>
+          <HelpDrawer title={HELP_TITLE} width={HELP_DRAWER_WIDTH} dictionary={HELP_DICTIONARY} />
+        </Box>
+      </HelpTopicContext.Provider>
+    </>
   );
 
 }
