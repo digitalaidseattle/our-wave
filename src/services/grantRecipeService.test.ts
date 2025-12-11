@@ -1,9 +1,16 @@
-import { describe, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { GrantRecipe } from "../types";
 import { grantRecipeService } from "./grantRecipeService";
+import { geminiService } from "../api/geminiService";
 
 describe("grantRecipeService", () => {
- 
+
+  vi.mock('../api/geminiService', () => ({
+    geminiService: ({
+      calcTokenCount: () => { }
+    }),
+  }));
+
   it("generatePromptWithInputs", () => {
 
     const recipe = {

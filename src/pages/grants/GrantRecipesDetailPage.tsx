@@ -104,11 +104,11 @@ const GrantRecipesDetailPage: React.FC = () => {
   }
 
   function handleGrantOutputChange(updated: GrantOutput[]): void {
-    setRecipe({
-      ...recipe,
-      outputsWithWordCount: updated
-    });
-    setDirty(true);
+    updatePrompt({ ...recipe, outputsWithWordCount: updated })
+      .then(revised => {
+        setRecipe(revised);
+        setDirty(true);
+      })
   }
 
   function handleDescriptionChange(updated: string): void {
@@ -128,18 +128,19 @@ const GrantRecipesDetailPage: React.FC = () => {
   }
 
   function handleGrantInputChange(inputs: GrantInput[]): void {
-    setRecipe({
-      ...recipe,
-      inputParameters: inputs
-    });
-    setDirty(true);
+    updatePrompt({ ...recipe, inputParameters: inputs })
+      .then(revised => {
+        setRecipe(revised);
+        setDirty(true);
+      })
   }
 
   return (
     <>
       <LoadingOverlay />
       <Card>
-        <CardHeader title="Grant Recipe Detail" />
+        <CardHeader title="Grant Recipe Detail"
+                action={`Token count = ${recipe.tokenCount}`} />
         <CardContent>
           <Stack gap={1}>
             <TextEditor title="Description" value={recipe.description} onChange={handleDescriptionChange} />
