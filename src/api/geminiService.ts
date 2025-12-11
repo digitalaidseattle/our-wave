@@ -74,12 +74,11 @@ class GeminiService {
             });
     }
 
-    calcTokenCount(model: string, prompt: string): Promise<number> {
+    async calcTokenCount(model: string, prompt: string): Promise<number> {
         return getGenerativeModel(this.ai, { model: model })
             .countTokens(prompt)
             .then(response => response.totalTokens)
     }
-
 
 }
 

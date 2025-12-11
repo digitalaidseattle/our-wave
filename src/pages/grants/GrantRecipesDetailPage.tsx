@@ -129,7 +129,16 @@ const GrantRecipesDetailPage: React.FC = () => {
     return grantRecipeService.updatePrompt(changed);
   }
 
+  function updatePrompt(changed: GrantRecipe): Promise<GrantRecipe> {
+    return grantRecipeService.updatePrompt(changed);
+  }
+
   function handleGrantOutputChange(updated: GrantOutput[]): void {
+    updatePrompt({ ...recipe, outputsWithWordCount: updated })
+      .then(revised => {
+        setRecipe(revised);
+        setDirty(true);
+      })
     updatePrompt({ ...recipe, outputsWithWordCount: updated })
       .then(revised => {
         setRecipe(revised);
@@ -148,12 +157,18 @@ const GrantRecipesDetailPage: React.FC = () => {
   function handlePromptChange(updated: string): void {
     updatePrompt({ ...recipe, prompt: updated })
       .then(revised => {
+        console.log(revised)
         setRecipe(revised);
         setDirty(true);
       })
   }
 
   function handleGrantInputChange(inputs: GrantInput[]): void {
+    updatePrompt({ ...recipe, inputParameters: inputs })
+      .then(revised => {
+        setRecipe(revised);
+        setDirty(true);
+      })
     updatePrompt({ ...recipe, inputParameters: inputs })
       .then(revised => {
         setRecipe(revised);
