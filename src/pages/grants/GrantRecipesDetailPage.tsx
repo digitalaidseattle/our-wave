@@ -8,6 +8,7 @@ import type { GrantInput, GrantOutput } from "../../types";
 import { GrantRecipe } from "../../types";
 import { GrantInputEditor } from "./GrantInputEditor";
 import { GrantOutputEditor } from "./GrantOutputEditor";
+import { LoadingOverlay } from "../../components/LoadingOverlay";
 
 export const TextEditor = ({ title, value, onChange }: { title: string, value: string, onChange: (updated: string) => void }) => {
   return (
@@ -135,22 +136,25 @@ const GrantRecipesDetailPage: React.FC = () => {
   }
 
   return (
-    <Card>
-      <CardHeader title="Grant Recipe Detail"
+    <>
+      {loading && <LoadingOverlay />}
+      <Card>
+        <CardHeader title="Grant Recipe Detail"
         action={`Token count = ${recipe.tokenCount}`} />
-      <CardContent>
-        <Stack gap={1}>
-          <TextEditor title="Description" value={recipe.description} onChange={handleDescriptionChange} />
-          <TextEditor title="Prompt" value={recipe.prompt} onChange={handlePromptChange} />
-          <GrantInputEditor recipeInputs={recipe.inputParameters} onChange={handleGrantInputChange} />
-          <GrantOutputEditor fields={recipe.outputsWithWordCount} onChange={handleGrantOutputChange} />
-        </Stack>
-      </CardContent>
-      <CardActions>
-        <Button variant="contained" disabled={loading} onClick={() => handleClone()}>Clone</Button>
-        <Button variant="contained" disabled={loading} onClick={() => handleGenerate()}>Generate</Button>
-      </CardActions>
-    </Card>
+        <CardContent>
+          <Stack gap={1}>
+            <TextEditor title="Description" value={recipe.description} onChange={handleDescriptionChange} />
+            <TextEditor title="Prompt" value={recipe.prompt} onChange={handlePromptChange} />
+            <GrantInputEditor recipeInputs={recipe.inputParameters} onChange={handleGrantInputChange} />
+            <GrantOutputEditor fields={recipe.outputsWithWordCount} onChange={handleGrantOutputChange} />
+          </Stack>
+        </CardContent>
+        <CardActions>
+          <Button variant="contained" disabled={loading} onClick={() => handleClone()}>Clone</Button>
+          <Button variant="contained" disabled={loading} onClick={() => handleGenerate()}>Generate</Button>
+        </CardActions>
+      </Card>
+    </>
   );
 
 }
