@@ -90,13 +90,12 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
   }
 
   async updatePrompt(recipe: GrantRecipe): Promise<GrantRecipe> {
-    // TODO include generating the tokenString using Handlebars
+    // TODO include generating the tokenString
     const newPrompt = recipe.prompt + JSON.stringify(recipe.inputParameters);
     //
     return geminiService.calcTokenCount(recipe.modelType ?? "gemini-2.5-flash", newPrompt)
       .then(count => ({ ...recipe, tokenCount: count, tokenString: newPrompt }));
   }
-
 
 }
 
