@@ -67,7 +67,7 @@ const GrantRecipesListPage: React.FC = () => {
   const handleAdd = async () => {
     if (user) {
       const newRecipe = grantRecipeService.empty();
-      newRecipe.description = `Recipe created ${dayjs().format('MM/DD/YYYY hh:mm')}`;
+      newRecipe.description = `Recipe created ${dayjs().format('MM/DD/YYYY hh:mm a')}`;
       const inserted = await grantRecipeService.insert(newRecipe, undefined, undefined, user);
       navigate(`/grant-recipes/${inserted.id}`);
     }
@@ -107,7 +107,7 @@ const GrantRecipesListPage: React.FC = () => {
       field: "updatedAt",
       headerName: "Updated At",
       width: 150,
-      valueGetter: (_value, row) => dayjs(new Date((row.updatedAt as any).seconds * 1000)).format("MM/DD/YYYY hh:mm"),
+      valueGetter: (_value, row) => dayjs(new Date((row.updatedAt as any).seconds * 1000)).format("MM/DD/YYYY hh:mm a"),
     }
   ];
 
