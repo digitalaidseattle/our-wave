@@ -9,14 +9,14 @@ import type { GrantInput, GrantOutput } from "../../types";
 import { GrantRecipe } from "../../types";
 import { GrantInputEditor } from "./GrantInputEditor";
 import { GrantOutputEditor } from "./GrantOutputEditor";
-import { HelpDrawer } from "./HelpDrawer";
+import { HelpDrawer } from "../../components/HelpDrawer";
 
 const HELP_DRAWER_WIDTH = 300;
 const HELP_DICTIONARY = {
   "Description": "Change this field for easier tracking in the application.",
   "Prompt": "This prompt template is filled with text using the input and output parameters.",
   "Inputs": "Facts to be used in the prompt.",
-  "Outputs": "Guidance for outpu constraints.",
+  "Outputs": "Guidance for output constraints.",
 }
 
 
