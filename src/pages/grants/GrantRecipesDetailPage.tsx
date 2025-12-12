@@ -1,6 +1,7 @@
-import { LoadingContext, useNotifications, UserContext } from "@digitalaidseattle/core";
-import { Button, Card, CardActions, CardContent, CardHeader, Stack, TextField } from "@mui/material";
-import { useContext, useEffect, useState } from "react";
+import { InfoCircleOutlined } from "@ant-design/icons";
+import { LoadingContext, useHelp, useNotifications, UserContext } from "@digitalaidseattle/core";
+import { Box, Button, Card, CardActions, CardContent, CardHeader, IconButton, Stack, TextField } from "@mui/material";
+import { createContext, useContext, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { grantProposalService } from "../../services/grantProposalService";
 import { grantRecipeService } from "../../services/grantRecipeService";
@@ -8,13 +9,39 @@ import type { GrantInput, GrantOutput } from "../../types";
 import { GrantRecipe } from "../../types";
 import { GrantInputEditor } from "./GrantInputEditor";
 import { GrantOutputEditor } from "./GrantOutputEditor";
+import { HelpDrawer } from "./HelpDrawer";
+
+const HELP_DRAWER_WIDTH = 300;
+const HELP_DICTIONARY = {
+  "Description": "Change this field for easier tracking in the application.",
+  "Prompt": "This prompt template is filled with text using the input and output parameters.",
+  "Inputs": "Facts to be used in the prompt.",
+  "Outputs": "Guidance for outpu constraints.",
+}
+
+
+interface HelpTopicContextType {
+  helpTopic: string,
+  setHelpTopic: (t: string) => void
+}
+export const HelpTopicContext = createContext<HelpTopicContextType>({
+  helpTopic: '',
+  setHelpTopic: () => { }
+});
 
 export const TextEditor = ({ title, value, onChange }: { title: string, value: string, onChange: (updated: string) => void }) => {
+  const { setHelpTopic } = useContext(HelpTopicContext);
+  const { setShowHelp } = useHelp();
   return (
     <Card>
-      <CardHeader title={title} />
+      <CardHeader title={title}
+        slotProps={{ title: { fontWeight: 600, fontSize: 16 } }}
+        avatar={<IconButton
+          onClick={() => { setHelpTopic(title); setShowHelp(true) }}
+          color="primary"><InfoCircleOutlined /></IconButton>} />
       <CardContent>
-        <TextField fullWidth={true} value={value} onChange={(evt) => onChange(evt.target.value)} />
+        <TextField fullWidth={true} value={value}
+          onChange={(evt) => onChange(evt.target.value)} />
       </CardContent>
     </Card>
   )
@@ -32,6 +59,8 @@ const GrantRecipesDetailPage: React.FC = () => {
   const { loading, setLoading } = useContext(LoadingContext);
   const [recipe, setRecipe] = useState<GrantRecipe>({ id: 'test', description: 'test' } as GrantRecipe);
   const [dirty, setDirty] = useState<boolean>(false);
+  const { showHelp } = useHelp();
+  const [helpTopic, setHelpTopic] = useState<string>("");
 
   useEffect(() => {
     if (id) {
@@ -132,21 +161,28 @@ const GrantRecipesDetailPage: React.FC = () => {
   }
 
   return (
-    <Card>
-      <CardHeader title="Grant Recipe Detail" />
-      <CardContent>
-        <Stack gap={1}>
-          <TextEditor title="Description" value={recipe.description} onChange={handleDescriptionChange} />
-          <TextEditor title="Prompt" value={recipe.prompt} onChange={handlePromptChange} />
-          <GrantInputEditor recipeInputs={recipe.inputParameters} onChange={handleGrantInputChange} />
-          <GrantOutputEditor fields={recipe.outputsWithWordCount} onChange={handleGrantOutputChange} />
+    <HelpTopicContext.Provider value={{ helpTopic, setHelpTopic }} >
+      <Box gap={4}>
+        <Stack sx={{ gap: 2, marginRight: `${showHelp ? HELP_DRAWER_WIDTH : 0}px` }}>
+          <Card>
+            <CardHeader title="Grant Recipe Detail" />
+            <CardContent>
+              <Stack gap={1}>
+                <TextEditor title="Description" value={recipe.description} onChange={handleDescriptionChange} />
+                <TextEditor title="Prompt" value={recipe.prompt} onChange={handlePromptChange} />
+                <GrantInputEditor recipeInputs={recipe.inputParameters} onChange={handleGrantInputChange} />
+                <GrantOutputEditor fields={recipe.outputsWithWordCount} onChange={handleGrantOutputChange} />
+              </Stack>
+            </CardContent>
+            <CardActions>
+              <Button variant="contained" disabled={loading} onClick={() => handleClone()}>Clone</Button>
+              <Button variant="contained" disabled={loading} onClick={() => handleGenerate()}>Generate</Button>
+            </CardActions>
+          </Card>
         </Stack>
-      </CardContent>
-      <CardActions>
-        <Button variant="contained" disabled={loading} onClick={() => handleClone()}>Clone</Button>
-        <Button variant="contained" disabled={loading} onClick={() => handleGenerate()}>Generate</Button>
-      </CardActions>
-    </Card>
+        <HelpDrawer width={HELP_DRAWER_WIDTH} dictionary={HELP_DICTIONARY} />
+      </Box>
+    </HelpTopicContext.Provider>
   );
 
 }

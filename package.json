@@ -13,9 +13,9 @@
     "test:unit": "vitest --root src/"
   },
   "dependencies": {
-    "@digitalaidseattle/core": "^1.0.12",
+    "@digitalaidseattle/core": "^1.0.16",
     "@digitalaidseattle/firebase": "^1.0.8",
-    "@digitalaidseattle/mui": "^1.0.29",
+    "@digitalaidseattle/mui": "^1.0.32",
     "@mui/x-data-grid": "^8.16.0",
     "handlebars": "^4.7.8",
     "mammoth": "^1.11.0",
