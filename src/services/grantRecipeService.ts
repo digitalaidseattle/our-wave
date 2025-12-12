@@ -4,7 +4,6 @@ import type { GrantRecipe } from "../types";
 import Handlebars from "handlebars";
 
 class GrantRecipeService extends FirestoreService<GrantRecipe> {
-
   constructor() {
     super("grant-recipes");
   }
@@ -12,6 +11,7 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
   // Creates a blank recipe with default values
   empty(): GrantRecipe {
     const now = new Date();
+
     return {
       id: undefined,
       createdAt: now,
@@ -19,10 +19,10 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
       updatedAt: now,
       updatedBy: "",
       description: "",
-      prompt: "Create a grant proposal",
+      template: "Create a grant proposal",
+      prompt: "",
       inputParameters: [],
       outputsWithWordCount: [],
-      tokenString: "",
       tokenCount: 0,
       proposalIds: [],
       modelType: "gemini-2.5-flash",
@@ -34,14 +34,23 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
     entity: GrantRecipe,
     select?: string,
     mapper?: (json: any) => GrantRecipe,
-    user?: User): Promise<GrantRecipe> {
-    if (!user?.email) throw new Error("grantRecipeService.insert: user.email is required");
+    user?: User
+  ): Promise<GrantRecipe> {
+    if (!user?.email) {
+      throw new Error("grantRecipeService.insert: user.email is required");
+    }
+
     const now = new Date();
-    // Remove id field as Firestore will auto-generate it
+
+    // Compile prompt before saving
+    const prompt = this.generatePromptWithInputs(entity);
+
     const { id, ...entityWithoutId } = entity;
+
     return super.insert(
       {
         ...entityWithoutId,
+        prompt,
         createdAt: now,
         updatedAt: now,
         createdBy: user.email,
@@ -53,7 +62,7 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
     );
   }
 
-  // Update: updates fields and refreshes metadata
+  // Update: refreshes metadata and regenerates prompt
   async update(
     entityId: Identifier,
     updatedFields: GrantRecipe,
@@ -61,11 +70,17 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
     mapper?: (json: any) => GrantRecipe,
     user?: User
   ): Promise<GrantRecipe> {
-    if (!user?.email) throw new Error("grantRecipeService.update: user.email is required");
+    if (!user?.email) {
+      throw new Error("grantRecipeService.update: user.email is required");
+    }
+
+    const prompt = this.generatePromptWithInputs(updatedFields);
+
     return super.update(
       entityId,
       {
         ...updatedFields,
+        prompt,
         updatedAt: new Date(),
         updatedBy: user.email,
       },
@@ -75,16 +90,20 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
     );
   }
 
-  async clone(recipe: GrantRecipe): Promise<GrantRecipe> {
-    console.log('recipe', recipe);
+  async clone(_recipe: GrantRecipe): Promise<GrantRecipe> {
     throw new Error("Method not implemented.");
   }
 
+  /**
+   * Compiles the Handlebars template into the final prompt
+   * using the recipe's inputs and outputs.
+   */
   generatePromptWithInputs(recipe: GrantRecipe): string {
-    var template = Handlebars.compile(recipe.prompt);
-    return template({
+    const compiled = Handlebars.compile(recipe.template);
+
+    return compiled({
       inputs: recipe.inputParameters,
-      outputs: recipe.outputsWithWordCount
+      outputs: recipe.outputsWithWordCount,
     });
   }
 }
