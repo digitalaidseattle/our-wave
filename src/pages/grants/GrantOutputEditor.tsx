@@ -13,8 +13,8 @@ import {
 } from "@mui/material";
 import { useContext, useEffect, useState } from "react";
 import type { GrantOutput } from "../../types";
-import { HelpTopicContext } from './GrantRecipesDetailPage';
 import { useHelp } from '@digitalaidseattle/core';
+import { HelpTopicContext } from '../../components/HelpTopicContext';
 
 export const GrantOutputEditor = ({ fields, onChange }: { fields: GrantOutput[], onChange: (updated: GrantOutput[]) => void }) => {
 

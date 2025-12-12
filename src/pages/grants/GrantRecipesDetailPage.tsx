@@ -1,17 +1,24 @@
+/**
+ * GrantRecipesDetailPage.tsx
+ * 
+ * @copyright 2025 Digital Aid Seattle
+*/
+import { useContext, useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { InfoCircleOutlined } from "@ant-design/icons";
 import { LoadingContext, useHelp, useNotifications, UserContext } from "@digitalaidseattle/core";
 import { Box, Button, Card, CardActions, CardContent, CardHeader, IconButton, Stack, TextField } from "@mui/material";
-import { createContext, useContext, useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { HelpDrawer } from "../../components/HelpDrawer";
 import { grantProposalService } from "../../services/grantProposalService";
 import { grantRecipeService } from "../../services/grantRecipeService";
-import type { GrantInput, GrantOutput } from "../../types";
 import { GrantRecipe } from "../../types";
 import { GrantInputEditor } from "./GrantInputEditor";
 import { GrantOutputEditor } from "./GrantOutputEditor";
-import { HelpDrawer } from "../../components/HelpDrawer";
+import { HelpTopicContext } from "../../components/HelpTopicContext";
+import type { GrantInput, GrantOutput } from "../../types";
 
 const HELP_DRAWER_WIDTH = 300;
+const HELP_TITLE = "Our Wave";
 const HELP_DICTIONARY = {
   "Description": "Change this field for easier tracking in the application.",
   "Prompt": "This prompt template is filled with text using the input and output parameters.",
@@ -19,15 +26,7 @@ const HELP_DICTIONARY = {
   "Outputs": "Guidance for output constraints.",
 }
 
-
-interface HelpTopicContextType {
-  helpTopic: string,
-  setHelpTopic: (t: string) => void
-}
-export const HelpTopicContext = createContext<HelpTopicContextType>({
-  helpTopic: '',
-  setHelpTopic: () => { }
-});
+const AUTO_SAVE_DELAY = 1000 * 2;
 
 export const TextEditor = ({ title, value, onChange }: { title: string, value: string, onChange: (updated: string) => void }) => {
   const { setHelpTopic } = useContext(HelpTopicContext);
@@ -47,8 +46,6 @@ export const TextEditor = ({ title, value, onChange }: { title: string, value: s
   )
 }
 
-const AUTO_SAVE_DELAY = 1000 * 2;
-
 const GrantRecipesDetailPage: React.FC = () => {
   const { id } = useParams<string>();
 
@@ -60,7 +57,7 @@ const GrantRecipesDetailPage: React.FC = () => {
   const [recipe, setRecipe] = useState<GrantRecipe>({ id: 'test', description: 'test' } as GrantRecipe);
   const [dirty, setDirty] = useState<boolean>(false);
   const { showHelp } = useHelp();
-  const [helpTopic, setHelpTopic] = useState<string>("");
+  const [helpTopic, setHelpTopic] = useState<string | undefined>();
 
   useEffect(() => {
     if (id) {
@@ -152,7 +149,6 @@ const GrantRecipesDetailPage: React.FC = () => {
   }
 
   function handleGrantInputChange(inputs: GrantInput[]): void {
-    console.log(inputs)
     setRecipe({
       ...recipe,
       inputParameters: inputs
@@ -180,7 +176,7 @@ const GrantRecipesDetailPage: React.FC = () => {
             </CardActions>
           </Card>
         </Stack>
-        <HelpDrawer width={HELP_DRAWER_WIDTH} dictionary={HELP_DICTIONARY} />
+        <HelpDrawer title={HELP_TITLE} width={HELP_DRAWER_WIDTH} dictionary={HELP_DICTIONARY} />
       </Box>
     </HelpTopicContext.Provider>
   );

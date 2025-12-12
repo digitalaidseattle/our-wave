@@ -16,8 +16,8 @@ import {
 } from "@mui/material";
 import { useContext, useEffect, useState } from "react";
 import type { GrantInput } from "../../types";
-import { HelpTopicContext } from './GrantRecipesDetailPage';
 import { useHelp } from '@digitalaidseattle/core';
+import { HelpTopicContext } from '../../components/HelpTopicContext';
 
 export const GrantInputEditor = ({ recipeInputs, onChange }: { recipeInputs: GrantInput[], onChange: (updated: GrantInput[]) => void }) => {
 
