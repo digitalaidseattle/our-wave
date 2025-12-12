@@ -42,7 +42,8 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
     select?: string,
     mapper?: (json: any) => GrantRecipe,
     user?: User): Promise<GrantRecipe> {
-    const sessionUser = this.getUser()!;
+
+    const sessionUser = user ?? this.getUser()!;
     const now = new Date();
     // Remove id field as Firestore will auto-generate it
     const { id, ...entityWithoutId } = entity;
@@ -68,13 +69,13 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
     mapper?: (json: any) => GrantRecipe,
     user?: User
   ): Promise<GrantRecipe> {
-    if (!user?.email) throw new Error("grantRecipeService.update: user.email is required");
+    const sessionUser = user ?? this.getUser()!;
     return super.update(
       entityId,
       {
         ...updatedFields,
         updatedAt: new Date(),
-        updatedBy: user.email,
+        updatedBy: sessionUser.email,
       },
       select,
       mapper,
