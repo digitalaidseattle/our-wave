@@ -4,6 +4,7 @@
  * @copyright 2025 Digital Aid Seattle
 */
 import { DeleteOutlined, InfoCircleOutlined, PlusOutlined } from '@ant-design/icons';
+import { DeleteOutlined, InfoCircleOutlined, PlusOutlined } from '@ant-design/icons';
 import {
   Button,
   Card,
@@ -11,17 +12,21 @@ import {
   CardContent,
   CardHeader,
   IconButton,
+  IconButton,
   Stack,
   TextField
 } from "@mui/material";
 import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import type { GrantInput } from "../../types";
+import { HelpTopicContext } from './GrantRecipesDetailPage';
 import { useHelp } from '@digitalaidseattle/core';
-import { HelpTopicContext } from '../../components/HelpTopicContext';
 
 export const GrantInputEditor = ({ recipeInputs, onChange }: { recipeInputs: GrantInput[], onChange: (updated: GrantInput[]) => void }) => {
 
   const [inputs, setInputs] = useState<GrantInput[]>([]);
+  const { setHelpTopic } = useContext(HelpTopicContext);
+  const { setShowHelp } = useHelp();
   const { setHelpTopic } = useContext(HelpTopicContext);
   const { setShowHelp } = useHelp();
 
@@ -47,6 +52,11 @@ export const GrantInputEditor = ({ recipeInputs, onChange }: { recipeInputs: Gra
 
   return (
     <Card>
+      <CardHeader title='Input Parameters (key/value):'
+        slotProps={{ title: { fontWeight: 600, fontSize: 16 } }}
+        avatar={<IconButton
+          onClick={() => { setHelpTopic('Inputs'); setShowHelp(true) }}
+          color="primary"><InfoCircleOutlined /></IconButton>} />
       <CardHeader title='Input Parameters (key/value):'
         slotProps={{ title: { fontWeight: 600, fontSize: 16 } }}
         avatar={<IconButton
