@@ -5,7 +5,7 @@
 */
 import { CloseCircleOutlined } from "@ant-design/icons";
 import { useHelp } from "@digitalaidseattle/core";
-import { Box, Card, CardContent, CardHeader, Drawer, IconButton, Typography } from "@mui/material";
+import { Box, Card, CardContent, CardHeader, Drawer, IconButton } from "@mui/material";
 import { useContext, useEffect, useState } from "react";
 import Markdown from "react-markdown";
 import { HelpTopicContext } from "./HelpTopicContext";
