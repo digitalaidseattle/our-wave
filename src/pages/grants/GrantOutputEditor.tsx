@@ -4,7 +4,6 @@
  * @copyright 2025 Digital Aid Seattle
 */
 import { DeleteOutlined, InfoCircleOutlined, PlusOutlined } from '@ant-design/icons';
-import { DeleteOutlined, InfoCircleOutlined, PlusOutlined } from '@ant-design/icons';
 import {
   Button, Card, CardActions, CardContent, CardHeader, FormControlLabel,
   IconButton,
@@ -13,7 +12,6 @@ import {
   TextField
 } from "@mui/material";
 import { useContext, useEffect, useState } from "react";
-import { useContext, useEffect, useState } from "react";
 import type { GrantOutput } from "../../types";
 import { useHelp } from '@digitalaidseattle/core';
 import { HelpTopicContext } from '../../components/HelpTopicContext';
@@ -21,8 +19,6 @@ import { HelpTopicContext } from '../../components/HelpTopicContext';
 export const GrantOutputEditor = ({ fields, onChange }: { fields: GrantOutput[], onChange: (updated: GrantOutput[]) => void }) => {
 
   const [outputFields, setOutputFields] = useState<GrantOutput[]>([]);
-  const { setHelpTopic } = useContext(HelpTopicContext);
-  const { setShowHelp } = useHelp();
   const { setHelpTopic } = useContext(HelpTopicContext);
   const { setShowHelp } = useHelp();
 
