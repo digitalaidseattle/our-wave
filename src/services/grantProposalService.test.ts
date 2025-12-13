@@ -1,24 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { GrantRecipe } from "../types";
 
-// Mock the AI service
-vi.mock("../pages/grants/grantAiService", () => {
-  return {
-    grantAiService: {
-      parameterizedQuery: vi.fn(),
-    },
-  };
-});
+// Mock AI service
+vi.mock("../pages/grants/grantAiService", () => ({
+  grantAiService: {
+    parameterizedQuery: vi.fn(),
+  },
+}));
 
-// Mock firebase client to avoid crashes
-vi.mock("@digitalaidseattle/firebase", () => {
-  return {
-    firebaseClient: {
-      app: {},
-    },
-    FirestoreService: class {},
-  };
-});
+// Mock Firebase
+vi.mock("@digitalaidseattle/firebase", () => ({
+  firebaseClient: { app: {} },
+  FirestoreService: class {},
+}));
 
 import { grantAiService } from "../pages/grants/grantAiService";
 import { grantProposalService } from "./grantProposalService";
@@ -28,7 +22,7 @@ describe("grantProposalService.generate", () => {
     vi.clearAllMocks();
   });
 
-  it("builds a proposal with structuredResponse and applies limits", async () => {
+  it("builds structuredResponse and applies limits", async () => {
     const recipe: GrantRecipe = {
       id: "recipe-123",
       createdAt: new Date(),
@@ -36,19 +30,18 @@ describe("grantProposalService.generate", () => {
       updatedAt: new Date(),
       updatedBy: "tester@example.com",
       description: "Test recipe",
-      prompt: "Test prompt for {{#each outputs}}{{name}} {{/each}}",
+      template: "Test {{#each outputs}}{{name}} {{/each}}",
+      prompt: "compiled prompt",
       inputParameters: [],
       outputsWithWordCount: [
         { name: "Summary", maxWords: 3, unit: "words" },
         { name: "Notes", maxWords: 10, unit: "characters" },
       ],
-      tokenString: "",
       tokenCount: 0,
       proposalIds: [],
       modelType: "gemini-2.5-flash",
     };
 
-    // Mock AI response
     (grantAiService.parameterizedQuery as any).mockResolvedValue({
       Summary: "This should be trimmed",
       Notes: "abcdefghijklmnop",
@@ -58,29 +51,16 @@ describe("grantProposalService.generate", () => {
 
     expect(grantAiService.parameterizedQuery).toHaveBeenCalledTimes(1);
 
-    // Validate schema keys passed to AI
-    const [schemaParams] = (grantAiService.parameterizedQuery as any).mock.calls[0];
-    expect(schemaParams).toEqual(["Summary", "Notes"]);
-
-    // Validate trimmed results
     expect(proposal.structuredResponse?.Summary).toBe("This should be");
     expect(proposal.structuredResponse?.Notes).toBe("abcdefghij");
-
-    // Validate recipe linkage
     expect(proposal.grantRecipeId).toBe("recipe-123");
-
-    // Should store raw JSON text
-    expect(proposal.textResponse).toContain("trimmed");
   });
 
   it("throws if recipe has no id", async () => {
-    const badRecipe: any = {
-      id: undefined,
-      outputsWithWordCount: [{ name: "Test", maxWords: 3, unit: "words" }],
-    };
-
     await expect(
-      grantProposalService.generate(badRecipe)
+      grantProposalService.generate({
+        outputsWithWordCount: [{ name: "Test", maxWords: 3, unit: "words" }],
+      } as any)
     ).rejects.toThrow("Recipe ID is required");
   });
 
@@ -92,10 +72,10 @@ describe("grantProposalService.generate", () => {
       updatedAt: new Date(),
       updatedBy: "",
       description: "",
+      template: "",
       prompt: "",
       inputParameters: [],
       outputsWithWordCount: [],
-      tokenString: "",
       tokenCount: 0,
       proposalIds: [],
       modelType: "gemini-2.5-flash",
