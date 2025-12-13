@@ -1,5 +1,5 @@
 import { CopyOutlined, DeleteOutlined, PlusCircleOutlined } from "@ant-design/icons";
-import { Box, IconButton, Stack, Toolbar, Tooltip, Typography } from "@mui/material";
+import { Box, Button, Card, CardContent, CardHeader, IconButton, Toolbar, Tooltip } from "@mui/material";
 import { DataGrid, GridColDef, GridRowParams, GridRowSelectionModel } from "@mui/x-data-grid";
 import { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -121,22 +121,27 @@ const GrantRecipesListPage: React.FC = () => {
     return (
       <Toolbar sx={{ gap: 2, backgroundColor: 'background.default' }}>
         <Tooltip title="Add Recipe">
-          <Button color="primary"
-            onClick={handleAdd}
-            startIcon={<PlusCircleOutlined />} >
-            New Recipe
-          </Button>
+          <Box>
+            <IconButton color="primary"
+              onClick={handleAdd} >
+              <PlusCircleOutlined />
+            </IconButton>
+          </Box>
         </Tooltip>
         <Tooltip title="Clone Recipe">
           <Box>
-            <IconButton color="primary" onClick={handleClone} disabled={selectedIds.length !== 1} >
+            <IconButton color="primary"
+              onClick={handleClone}
+              disabled={selectedIds.length !== 1} >
               <CopyOutlined />
             </IconButton>
           </Box>
         </Tooltip>
         <Tooltip title="Delete Recipes">
           <Box>
-            <IconButton color="error" onClick={handleDelete} disabled={selectedIds.length === 0} >
+            <IconButton color="error"
+              onClick={handleDelete}
+              disabled={selectedIds.length === 0} >
               <DeleteOutlined />
             </IconButton>
           </Box>
@@ -169,6 +174,8 @@ const GrantRecipesListPage: React.FC = () => {
               toolbar: CustomToolbar
             }}
 
+            checkboxSelection={true}
+            onRowSelectionModelChange={handleRowSelection}
 
             pageSizeOptions={[10, 25, 50]}
             disableRowSelectionOnClick
