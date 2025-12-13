@@ -26,10 +26,11 @@ import "./App.css";
 // ==============================|| APP - THEME, ROUTER, LOCAL  ||============================== //
 
 const router = createBrowserRouter(routes);
+export const authService = new FirebaseAuthService();
 
 const App: React.FC = () => {
   return (
-    <AuthServiceProvider authService={new FirebaseAuthService()} >
+    <AuthServiceProvider authService={authService} >
       <UserContextProvider>
         <HelpContextProvider>
           <LayoutConfigurationProvider configuration={TemplateConfig()}>

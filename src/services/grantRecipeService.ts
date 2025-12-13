@@ -2,12 +2,19 @@ import type { Identifier, User } from "@digitalaidseattle/core";
 import { FirestoreService } from "@digitalaidseattle/firebase";
 import type { GrantRecipe } from "../types";
 import Handlebars from "handlebars";
+import { authService } from "../App";
 import { geminiService } from "../api/geminiService";
 
 class GrantRecipeService extends FirestoreService<GrantRecipe> {
 
   constructor() {
     super("grant-recipes");
+  }
+
+  getUser(): User | null | undefined {
+    if (authService) {
+      return authService.currentUser;
+    }
   }
 
   // Creates a blank recipe with default values
@@ -36,7 +43,8 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
     select?: string,
     mapper?: (json: any) => GrantRecipe,
     user?: User): Promise<GrantRecipe> {
-    if (!user?.email) throw new Error("grantRecipeService.insert: user.email is required");
+
+    const sessionUser = user ?? this.getUser()!;
     const now = new Date();
     // Remove id field as Firestore will auto-generate it
     const { id, ...entityWithoutId } = entity;
@@ -45,8 +53,8 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
         ...entityWithoutId,
         createdAt: now,
         updatedAt: now,
-        createdBy: user.email,
-        updatedBy: user.email,
+        createdBy: sessionUser.email,
+        updatedBy: sessionUser.email,
       } as GrantRecipe,
       select,
       mapper,
@@ -62,13 +70,13 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
     mapper?: (json: any) => GrantRecipe,
     user?: User
   ): Promise<GrantRecipe> {
-    if (!user?.email) throw new Error("grantRecipeService.update: user.email is required");
+    const sessionUser = user ?? this.getUser()!;
     return super.update(
       entityId,
       {
         ...updatedFields,
         updatedAt: new Date(),
-        updatedBy: user.email,
+        updatedBy: sessionUser.email,
       },
       select,
       mapper,
@@ -77,8 +85,19 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
   }
 
   async clone(recipe: GrantRecipe): Promise<GrantRecipe> {
-    console.log('recipe', recipe);
-    throw new Error("Method not implemented.");
+    const now = new Date();
+    const user = this.getUser();
+    const name = user?.email;
+    const clone = {
+      ...recipe,
+      id: null,
+      createdAt: now,
+      createdBy: name,
+      updatedAt: now,
+      updatedBy: name,
+      description: `Clone of ${recipe.description}`,
+    } as GrantRecipe;
+    return this.insert(clone);
   }
 
   generatePromptWithInputs(recipe: GrantRecipe): string {

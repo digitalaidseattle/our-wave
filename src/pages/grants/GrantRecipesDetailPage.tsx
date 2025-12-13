@@ -98,7 +98,7 @@ const GrantRecipesDetailPage: React.FC = () => {
       setLoading(true);
       grantRecipeService.clone(recipe)
         .then(cloned => {
-          navigate(`grant-recipes/${cloned.id}`);
+          navigate(`/grant-recipes/${cloned.id}`);
           notifications.success(`${recipe.description} has been successfully cloned.`)
         })
         .catch(err => {
