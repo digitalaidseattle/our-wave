@@ -3,6 +3,7 @@ import { FirestoreService } from "@digitalaidseattle/firebase";
 import type { GrantRecipe } from "../types";
 import Handlebars from "handlebars";
 import { authService } from "../App";
+import { geminiService } from "../api/geminiService";
 
 class GrantRecipeService extends FirestoreService<GrantRecipe> {
 
@@ -105,6 +106,14 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
       inputs: recipe.inputParameters,
       outputs: recipe.outputsWithWordCount
     });
+  }
+
+  async updatePrompt(recipe: GrantRecipe): Promise<GrantRecipe> {
+    // TODO include generating the tokenString using Handlebars
+    const newPrompt = recipe.prompt + JSON.stringify(recipe.inputParameters);
+    //
+    return geminiService.calcTokenCount(recipe.modelType ?? "gemini-2.5-flash", newPrompt)
+      .then(count => ({ ...recipe, tokenCount: count, tokenString: newPrompt }));
   }
 }
 

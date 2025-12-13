@@ -12,6 +12,7 @@ import { RouterProvider, createBrowserRouter } from 'react-router-dom';
 
 import {
   AuthServiceProvider,
+  HelpContextProvider,
   UserContextProvider
 } from "@digitalaidseattle/core";
 import { FirebaseAuthService } from "@digitalaidseattle/firebase";
@@ -31,11 +32,13 @@ const App: React.FC = () => {
   return (
     <AuthServiceProvider authService={authService} >
       <UserContextProvider>
-        <LayoutConfigurationProvider configuration={TemplateConfig()}>
-          <LocalizationProvider dateAdapter={AdapterDayjs}>
-            <RouterProvider router={router} />
-          </LocalizationProvider>
-        </LayoutConfigurationProvider>
+        <HelpContextProvider>
+          <LayoutConfigurationProvider configuration={TemplateConfig()}>
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+              <RouterProvider router={router} />
+            </LocalizationProvider>
+          </LayoutConfigurationProvider>
+        </HelpContextProvider>
       </UserContextProvider>
     </AuthServiceProvider>
   );

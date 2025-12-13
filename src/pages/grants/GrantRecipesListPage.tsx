@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 
 import { LoadingContext, useNotifications, UserContext } from "@digitalaidseattle/core";
 import dayjs from 'dayjs';
+import { LoadingOverlay } from "../../components/LoadingOverlay";
 import { grantRecipeService } from "../../services/grantRecipeService";
 import type { GrantRecipe } from "../../types";
 
@@ -90,7 +91,6 @@ const GrantRecipesListPage: React.FC = () => {
       field: "description",
       headerName: "Description",
       flex: 1,
-      minWidth: 200,
     },
     {
       field: "tokenCount",
@@ -121,9 +121,11 @@ const GrantRecipesListPage: React.FC = () => {
     return (
       <Toolbar sx={{ gap: 2, backgroundColor: 'background.default' }}>
         <Tooltip title="Add Recipe">
-          <IconButton color="primary" onClick={handleAdd} >
-            <PlusCircleOutlined />
-          </IconButton>
+          <Button color="primary"
+            onClick={handleAdd}
+            startIcon={<PlusCircleOutlined />} >
+            New Recipe
+          </Button>
         </Tooltip>
         <Tooltip title="Clone Recipe">
           <Box>
@@ -144,47 +146,46 @@ const GrantRecipesListPage: React.FC = () => {
   }
 
   return (
-    <Box sx={{ height: "100%", maxWidth: "1400px", mx: "auto", p: 3 }}>
-      <Stack spacing={3}>
-        <Stack direction="row" justifyContent="space-between" alignItems="center">
-          <Typography variant="h4">Grant Recipes</Typography>
-        </Stack>
-        <DataGrid
-          rows={recipes}
-          columns={columns}
-          loading={loading}
-          getRowId={(row) => row.id || ""}
-          onRowDoubleClick={handleRowDoubleClick}
+    <>
+      <LoadingOverlay />
+      <Card>
+        <CardHeader title="Grant Recipes" />
+        <CardContent>
+          <DataGrid
+            rows={recipes}
+            columns={columns}
+            loading={loading}
+            getRowId={(row) => row.id || ""}
+            onRowDoubleClick={handleRowDoubleClick}
+            editMode="cell"
+            initialState={{
+              pagination: {
+                paginationModel: { pageSize: 10 },
+              },
+            }}
 
-          initialState={{
-            pagination: {
-              paginationModel: { pageSize: 10 },
-            },
-          }}
+            showToolbar={true}
+            slots={{
+              toolbar: CustomToolbar
+            }}
 
-          disableRowSelectionOnClick
-          checkboxSelection={true}
-          onRowSelectionModelChange={handleRowSelection}
 
-          showToolbar={true}
-          slots={{
-            toolbar: CustomToolbar
-          }}
-
-          pageSizeOptions={[10, 25, 50]}
-
-          sx={{
-            "& .MuiDataGrid-row": {
-              cursor: "pointer",
-            },
-            "& .MuiDataGrid-cell": {
-              display: "flex",
-              alignItems: "center",
-            },
-          }}
-        />
-      </Stack>
-    </Box>
+            pageSizeOptions={[10, 25, 50]}
+            disableRowSelectionOnClick
+            sx={{
+              width: '100%',
+              "& .MuiDataGrid-row": {
+                cursor: "pointer",
+              },
+              "& .MuiDataGrid-cell": {
+                display: "flex",
+                alignItems: "center",
+              },
+            }}
+          />
+        </CardContent>
+      </Card>
+    </>
   );
 };
 

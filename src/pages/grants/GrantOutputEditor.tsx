@@ -3,19 +3,24 @@
  * 
  * @copyright 2025 Digital Aid Seattle
 */
-import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
+import { DeleteOutlined, InfoCircleOutlined, PlusOutlined } from '@ant-design/icons';
 import {
   Button, Card, CardActions, CardContent, CardHeader, FormControlLabel,
+  IconButton,
   Stack,
   Switch,
   TextField
 } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import type { GrantOutput } from "../../types";
+import { useHelp } from '@digitalaidseattle/core';
+import { HelpTopicContext } from '../../components/HelpTopicContext';
 
 export const GrantOutputEditor = ({ fields, onChange }: { fields: GrantOutput[], onChange: (updated: GrantOutput[]) => void }) => {
 
   const [outputFields, setOutputFields] = useState<GrantOutput[]>([]);
+  const { setHelpTopic } = useContext(HelpTopicContext);
+  const { setShowHelp } = useHelp();
 
   useEffect(() => {
     if (fields) {
@@ -48,7 +53,12 @@ export const GrantOutputEditor = ({ fields, onChange }: { fields: GrantOutput[],
 
   return (
     <Card>
-      <CardHeader title="Output Fields: (field / max symbol count)" />
+      <CardHeader title="Output Fields: (field / max symbol count)"
+        slotProps={{ title: { fontWeight: 600, fontSize: 16 } }}
+        avatar={<IconButton
+          onClick={() => { setHelpTopic('Outputs'); setShowHelp(true) }}
+          color="primary"><InfoCircleOutlined /></IconButton>} />
+
       <CardContent>
         <Stack spacing={2} sx={{ mt: 2 }}>
           {outputFields.map((field, index) => (
