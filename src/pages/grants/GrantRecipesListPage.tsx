@@ -46,7 +46,7 @@ const GrantRecipesListPage: React.FC = () => {
     const confirmed = window.confirm(
       "Are you sure you want to delete the recipes? This action cannot be undone."
     );
-int
+
     if (!confirmed) {
       return;
     }
