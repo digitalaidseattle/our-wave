@@ -96,8 +96,6 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
     return geminiService.calcTokenCount(recipe.modelType ?? "gemini-2.5-flash", newPrompt)
       .then(count => ({ ...recipe, tokenCount: count, tokenString: newPrompt }));
   }
-
-
 }
 
 export const grantRecipeService = new GrantRecipeService();

@@ -15,7 +15,7 @@ import GrantProposalsDetailPage from './grants/GrantProposalsDetailPage';
 const routes = [
   {
     path: "/",
-    element: <MainLayout />,
+    element: <MainLayout sx={{ p: 1 }} />,
     children: [
       {
         path: "",
@@ -39,7 +39,7 @@ const routes = [
       },
       {
         path: "privacy",
-        element: <MarkdownPage filepath='privacy.md'/>,
+        element: <MarkdownPage filepath='privacy.md' />,
       }
     ]
   },

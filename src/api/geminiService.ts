@@ -79,8 +79,6 @@ class GeminiService {
             .countTokens(prompt)
             .then(response => response.totalTokens)
     }
-
-
 }
 
 const geminiService = new GeminiService();
