@@ -135,11 +135,6 @@ const GrantRecipesDetailPage: React.FC = () => {
         setRecipe(revised);
         setDirty(true);
       })
-    updatePrompt({ ...recipe, outputsWithWordCount: updated })
-      .then(revised => {
-        setRecipe(revised);
-        setDirty(true);
-      })
   }
 
   function handleDescriptionChange(updated: string): void {
@@ -151,8 +146,11 @@ const GrantRecipesDetailPage: React.FC = () => {
   }
 
   function handlePromptChange(updated: string): void {
-    setRecipe({ ...recipe, prompt: updated })
-    setDirty(true);
+    updatePrompt({ ...recipe, prompt: updated })
+      .then(revised => {
+        setRecipe(revised);
+        setDirty(true);
+      })
   }
 
   function handleGrantInputChange(inputs: GrantInput[]): void {
