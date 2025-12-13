@@ -98,14 +98,30 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
    * Compiles the Handlebars template into the final prompt
    * using the recipe's inputs and outputs.
    */
-  generatePromptWithInputs(recipe: GrantRecipe): string {
-    const compiled = Handlebars.compile(recipe.template);
+generatePromptWithInputs(recipe: GrantRecipe): string {
+  const compiled = Handlebars.compile(recipe.template);
 
-    return compiled({
-      inputs: recipe.inputParameters,
-      outputs: recipe.outputsWithWordCount,
-    });
-  }
+  const basePrompt = compiled({
+    inputs: recipe.inputParameters,
+    outputs: recipe.outputsWithWordCount,
+  });
+
+  const outputConstraints = recipe.outputsWithWordCount
+    .map(
+      (o) => `- ${o.name}: maximum ${o.maxWords} ${o.unit}`
+    )
+    .join("\n");
+
+  return `
+${basePrompt}
+
+Please follow these output constraints strictly:
+${outputConstraints}
+
+Adjust wording as needed to stay within these limits.
+`;
+}
+
 }
 
 export const grantRecipeService = new GrantRecipeService();
