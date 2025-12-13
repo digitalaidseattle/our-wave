@@ -15,8 +15,6 @@
  * </ol>
  */
 
-
-
 import { firebaseClient } from "@digitalaidseattle/firebase";
 import { getAI, getGenerativeModel, GoogleAIBackend, Schema } from "firebase/ai";
 
@@ -68,7 +66,6 @@ class GeminiService {
         });
 
         // To generate text output, call generateContent with the text input
-        console.log("Querying AI with prompt: ", prompt, this.model);
         return jModel.generateContent(prompt)
             .then(result => JSON.parse(result.response.text()).characters[0])
             .catch(error => {

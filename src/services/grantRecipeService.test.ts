@@ -3,7 +3,7 @@ import { GrantRecipe } from "../types";
 import { grantRecipeService } from "./grantRecipeService";
 
 describe("grantRecipeService", () => {
-
+ 
   it("generatePromptWithInputs", () => {
 
     const recipe = {
