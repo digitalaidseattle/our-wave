@@ -114,7 +114,7 @@ const GrantRecipesDetailPage: React.FC = () => {
   function handleDescriptionChange(updated: string): void {
     setRecipe({
       ...recipe,
-      prompt: updated
+      description: updated
     });
     setDirty(true);
   }
@@ -128,7 +128,6 @@ const GrantRecipesDetailPage: React.FC = () => {
   }
 
   function handleGrantInputChange(inputs: GrantInput[]): void {
-    console.log(inputs)
     setRecipe({
       ...recipe,
       inputParameters: inputs
