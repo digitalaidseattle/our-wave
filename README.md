@@ -1,111 +1,53 @@
-# Digital Aid Seattle Admin Template
+# Our Wave Grant Writing AI Tool
 
-This template forms the basis for line-of-business web applications.  Frequently, partners need a simple CRUD interface for applications like:
-* inventory management
-* project/task tracking
-* document submittal
+## Short Description
+An AI powered grant writing assistant built by Digital Aid Seattle with Our Wave to help nonprofit teams reuse trusted language, respect funder requirements, and generate structured drafts fast.
 
-The template supports these application types by providing an application shell with common features such as:
-* authentication
-* dialogs for data entry
-* data tables
-* form validation
-* file uploads
-* drag-and-drop
-* Excel spreadsheet support
+## Problem Statement
+Nonprofit staff spend hours repeating core narratives and trimming sections to fit strict word counts for each funder, leaving less time for relationship building and program delivery.
 
-A venture squad will be able to copy this template and modify it to suit their venture's need.
+## Solution Overview
+* Grant recipes capture required sections and output fields so drafts follow funder templates.
+* Reusable organization content keeps mission language, program summaries, and metrics in one place for fast reuse.
+* AI assisted draft generation uses Gemini through Firebase AI to produce Markdown or structured JSON for grant sections.
+* Word and character limits are stored per output so prompts guide the model to stay within required lengths.
+* Team collaboration runs through Firebase Auth and Firestore so recipes and drafts live in a shared workspace; exports today rely on copying generated text into your grant system.
 
-## Dependencies
-The template is built with:
-* React
-* TypeScript
-* Material UI
-* Vite
-* Supabase
+## Who This Is For
+* Nonprofit grant writers
+* Executive directors
+* Development teams
+* Operations associates
 
-Additional dependencies are added to support individual features
+## Tech Stack
+* React with TypeScript and Vite
+* Material UI via the Digital Aid Seattle component kit
+* React Router for client side navigation
+* Firebase Auth and Firestore for identity and data storage
+* Firebase AI with Google Gemini for generation
+* Vitest and Testing Library for automated tests
 
-## Features
-### Application Shell
-The responsive shell that provides a toolbar, navbar, and aside. 
+## Running the Project Locally
+1. Install Node 18 or later and npm.
+2. Install dependencies: `npm install`.
+3. Create `.env.local` with your Firebase project settings and AI access keys using the Vite prefix:
+   * `VITE_FIREBASE_API_KEY`
+   * `VITE_FIREBASE_AUTH_DOMAIN`
+   * `VITE_FIREBASE_PROJECT_ID`
+   * `VITE_FIREBASE_STORAGE_BUCKET`
+   * `VITE_FIREBASE_MESSAGING_SENDER_ID`
+   * `VITE_FIREBASE_APP_ID`
+   * `VITE_FIREBASE_MEASUREMENT_ID`
+   * `VITE_AUTH_DOMAIN` for auth callbacks when required  
+   Ensure the Firebase project has Generative Language API and Firebase AI enabled.
+4. Start the dev server: `npm run dev`.
+5. Open `http://localhost:3000` and sign in with the configured provider to load grant recipes and drafts.
 
-### Authentication
-The DAS template uses Supabase for user authentication and authorization.  Implementation for Google and Microsoft authentication is provided.
+## Repository Status
+This is an MVP under active development and the structure or features may change as Our Wave and Digital Aid Seattle iterate.
 
-### CRUD
-The DAS template uses Supabase for data storage.  It is anticipated that applications requiring RDBMS support would use this.  Examples of lists, dialogs, and forms with validation are available. The file `src/setions/tickets/TicketTable.tsx` and `src/setions/tickets/TicketGrid.tsx` are entry points for the example.
+## Open Source and Contribution
+This project is open source. Please open an issue or pull request for bugs, improvements, or new nonprofit use cases.
 
-### Markdown
-The DAS template includes support for displaying Markdown. The typical use-case is to display privacy policies and/or terms and conditions.  The content on the page can be stored as a application resource to allow changes withou redployment.  One consequence of supporting Markdown is not using Tailwind CSS.  Tailwind removes default formatting from HTML components (e.g. h1 renders plainly with default font size and weight). Markdown is implemented with react-markdown.
-
-### File Storage
-The DAS template includes an example of uploading, reading, as listing of files in Supabase's storage system.  The use-case for this could include storing documents, like release forms, for an application. The file `src/setions/file-storage/UploadPage.tsx` is the entry point for the example.
-
-### Maps
-The DAS template includes an example mapping page `src/sections/maps/MapPage.tsx`.  Maps were implemented with react-map-gl & maplibre-gl.
-
-### Drag & Drop
-The DAS template includes an example of drag-and-drop use `src/pages/dragdrop/DragDropPage.tsx`. Drag and drop is implemented with @dnd-kit/core and @dnd-kit/sortable.
-
-### Excel Parsing
-The DAS template includes an example of parsing a spreadsheet. it is implemented with `xlsx`.
-
-## Components
-The template includes components that provide common functionality and enforce standards.  The components should be used in venture applications to meet required behaviors.  This consistency will allow maintainers to have fewer points of support.
-
-### Polling
-The application shell includes a 10 second timer. The RefreshContext can be used to refresh components with current data.
-
-```
-    const { refresh } = useContext(RefreshContext)
-
-    useEffect(() => {
-        // Refresh action
-        ticketService.getTickets(NUM_TIX)
-            .then((tix) => setTickets(tix))
-    }, [refresh])
-```
-### Loading / Loading Indicator
-The application shell includes a linear progress indicator.  The indicator is in the shell header and displays when the LoadingContext is set.  Components can use the LoadingContext to control the indicator.
-
-
-```
-    const { setLoading } = useContext(LoadingContext)
-
-     useEffect(() => {
-        setLoading(true)
-        ticketService.getTickets(NUM_TIX)
-            .then((tix) => setTickets(tix))
-            .finally(() => setLoading(false));
-    }, [setLoading])
-```
-
-### theming
-A base theming added based on primary and secondary color of project logo and branding including a background primary color in main and minimal layout and secondary color for profile / login / 404  buttons.
-
-This base theming could be easily changed for different ventures by changing two following primary and secondary color in src/themes/palette file.
-
-const primaryColor = "#00728f"
-const secondaryColor = "#ef3825"
-
-These two colors was used for DAS Admin Template and should be changed for other projects in addition to change logo and Application name in env file
-
-## Deployment
-The application is deployed at Google's Firebase as a static website.  GitHub's workflow action adds site secrets to the build before deploying.
-
-## FAQ
-### How do I connect to Supabase?
-Environment variables for the connecting to Supabase must be added to the hosting platform as well as the `.env.local` file.  Squad members must obtain the supabase url and auth_anon_key for accessing the Supabase project.
-
-### How do I change the menu items?
-Contents of the navbar, the drawer of links on the left of the application window, can be modified by changing the contents of `/src/menu-items/index.tsx`.
-
-### How do I change the toolbar items?
-Contents of the toolbar, the links at the top the application window and left of the profile button, can be modified by changing the contents of `/src/toolbar-items/index.tsx`. The file `/src/sections/tickets/TicketToolbarItem` contains an example of what can be done with a toolbar item.
-
-### How do I add a page to the application?
-Since the template uses `react-router-dom` for application routing, there is no requirement to placement new pages in the `pages` folder.  It is by convention that new pages are placed there.  For the page to be included in the application `src/pages/routes.tsx` must be updated to include the new page.
-
-### Where does the partner logo get changed?
-The logo, displayed in the upper left hand of the application window and elsewhere, can be modified in `/src/components/Logo/Logo.tsx`.  The image files should be placed in the `/src/assets/images/` directory.
+## Acknowledgements
+Built by Digital Aid Seattle with Our Wave.
