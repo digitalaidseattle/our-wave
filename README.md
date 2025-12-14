@@ -1,6 +1,6 @@
 # Our Wave Grant Writing AI Tool
 
-##Description
+## Description
 An AI powered grant writing assistant built by Digital Aid Seattle with Our Wave to help nonprofit teams reuse trusted language, respect funder requirements, and generate structured drafts fast.
 
 ## Problem Statement
