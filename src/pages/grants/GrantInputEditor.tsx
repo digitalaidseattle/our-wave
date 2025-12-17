@@ -51,12 +51,16 @@ export const GrantInputEditor = ({ recipeInputs, onChange }: { recipeInputs: Gra
         slotProps={{ title: { fontWeight: 600, fontSize: 16 } }}
         avatar={<IconButton
           onClick={() => { setHelpTopic('Inputs'); setShowHelp(true) }}
-          color="primary"><InfoCircleOutlined /></IconButton>} />
-      <CardHeader title='Input Parameters (key/value):'
-        slotProps={{ title: { fontWeight: 600, fontSize: 16 } }}
-        avatar={<IconButton
-          onClick={() => { setHelpTopic('Inputs'); setShowHelp(true) }}
-          color="primary"><InfoCircleOutlined /></IconButton>} />
+          color="primary"><InfoCircleOutlined /></IconButton>}
+        action={<Button
+          variant="outlined"
+          color="success"
+          onClick={handleAddField}
+          startIcon={<PlusOutlined />}
+          sx={{ alignSelf: 'flex-start' }}
+        >
+          Add Input Parameters
+        </Button>} />
       <CardContent>
         <Stack spacing={2} sx={{ mt: 2 }}>
           {inputs.map((field, index) => (
@@ -75,8 +79,8 @@ export const GrantInputEditor = ({ recipeInputs, onChange }: { recipeInputs: Gra
                 onChange={(e) => handleFieldChange(index, 'value', e.target.value)}
                 sx={{
                   '& .MuiInputBase-inputMultiline': {
-                    resize: 'both', // Allows resizing both horizontally and vertically
-                    overflow: 'auto', // Ensures scrollbars appear if content exceeds bounds
+                    resize: 'vertical', // Allows resizing both horizontally and vertically
+                    overflowY: 'auto', // Ensures scrollbars appear if content exceeds bounds
                   },
                 }}
               />
@@ -91,19 +95,7 @@ export const GrantInputEditor = ({ recipeInputs, onChange }: { recipeInputs: Gra
           ))}
         </Stack>
       </CardContent>
-      <CardActions>
-        <Button
-          variant="outlined"
-          color="success"
-          onClick={handleAddField}
-          startIcon={<PlusOutlined />}
-          sx={{ alignSelf: 'flex-start' }}
-        >
-          Add Input Parameters
-        </Button>
-      </CardActions>
     </Card >
-
   );
 
 }
