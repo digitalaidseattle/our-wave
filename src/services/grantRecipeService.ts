@@ -156,6 +156,16 @@ ${outputConstraints}
 Adjust wording as needed to stay within these limits.
 `;
   }
+  async updatePrompt(recipe: GrantRecipe): Promise<GrantRecipe> {
+    const prompt = this.generatePromptWithInputs(recipe);
+  
+    // If token counting is needed later, it can live here
+    // For now we keep existing tokenCount
+    return {
+      ...recipe,
+      prompt,
+    };
+  }
 }
 
 export const grantRecipeService = new GrantRecipeService();
