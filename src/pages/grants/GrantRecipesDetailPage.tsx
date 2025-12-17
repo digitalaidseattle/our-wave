@@ -17,6 +17,7 @@ import { GrantOutputEditor } from "./GrantOutputEditor";
 import { LoadingOverlay } from "../../components/LoadingOverlay";
 import { HelpTopicContext } from "../../components/HelpTopicContext";
 import type { GrantInput, GrantOutput } from "../../types";
+import { cloneRecipe } from "../../transactions/CloneRecipe";
 
 const HELP_DRAWER_WIDTH = 300;
 const HELP_TITLE = "Our Wave";
@@ -40,7 +41,7 @@ export const TextEditor = ({ title, value, onChange }: { title: string, value: s
           onClick={() => { setHelpTopic(title); setShowHelp(true) }}
           color="primary"><InfoCircleOutlined /></IconButton>} />
       <CardContent>
-        <TextField fullWidth={true} value={value}
+        <TextField fullWidth={true} value={value ?? ""}
           onChange={(evt) => onChange(evt.target.value)} />
       </CardContent>
     </Card>
@@ -96,7 +97,7 @@ const GrantRecipesDetailPage: React.FC = () => {
   function handleClone() {
     if (recipe) {
       setLoading(true);
-      grantRecipeService.clone(recipe)
+      cloneRecipe(recipe)
         .then(cloned => {
           navigate(`/grant-recipes/${cloned.id}`);
           notifications.success(`${recipe.description} has been successfully cloned.`)

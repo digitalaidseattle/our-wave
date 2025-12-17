@@ -84,22 +84,6 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
     );
   }
 
-  async clone(recipe: GrantRecipe): Promise<GrantRecipe> {
-    const now = new Date();
-    const user = this.getUser();
-    const name = user?.email;
-    const clone = {
-      ...recipe,
-      id: null,
-      createdAt: now,
-      createdBy: name,
-      updatedAt: now,
-      updatedBy: name,
-      description: `Clone of ${recipe.description}`,
-    } as GrantRecipe;
-    return this.insert(clone);
-  }
-
   generatePromptWithInputs(recipe: GrantRecipe): string {
     var template = Handlebars.compile(recipe.prompt);
     return template({

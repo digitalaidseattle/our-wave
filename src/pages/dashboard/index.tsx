@@ -1,11 +1,18 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 // material-ui
+import {
+  MainCard
+} from '@digitalaidseattle/mui';
 import {
   Avatar,
   AvatarGroup,
   Box,
   Button,
+  Card,
+  CardActions,
+  CardContent,
+  CardHeader,
   Grid,
   List,
   ListItemAvatar,
@@ -13,16 +20,14 @@ import {
   ListItemSecondaryAction,
   ListItemText,
   MenuItem,
+  Select,
   Stack,
   TextField,
   Typography
 } from '@mui/material';
-import {
-  MainCard
-} from '@digitalaidseattle/mui';
+import { useNavigate } from "react-router-dom";
 
 // project import
-import AnalyticEcommerce from '../../components/cards/statistics/AnalyticEcommerce';
 import IncomeAreaChart from './IncomeAreaChart';
 import MonthlyBarChart from './MonthlyBarChart';
 import ReportAreaChart from './ReportAreaChart';
@@ -30,11 +35,14 @@ import SalesColumnChart from './SalesColumnChart';
 
 // assets
 import { GiftOutlined, MessageOutlined, SettingOutlined } from '@ant-design/icons';
+import { useTheme } from '@mui/material/styles';
+import { grantRecipeService } from '../../services/grantRecipeService';
+import { createRecipe } from '../../transactions/CreateRecipe';
+import { GrantRecipe } from '../../types';
 import avatar1 from '/src/assets/images/users/avatar-1.png';
 import avatar2 from '/src/assets/images/users/avatar-2.png';
 import avatar3 from '/src/assets/images/users/avatar-3.png';
 import avatar4 from '/src/assets/images/users/avatar-4.png';
-import { useTheme } from '@mui/material/styles';
 
 // avatar style
 const avatarSX = {
@@ -68,7 +76,95 @@ const status = [
     label: 'This Year'
   }
 ];
+const RecentRecipesCard = () => {
+  const navigate = useNavigate();
+  const [recipes, setRecipes] = useState<GrantRecipe[]>([]);
 
+  useEffect(() => {
+    grantRecipeService.getAll()
+      .then(resp => setRecipes(resp
+        .sort((a, b) => (b.updatedAt as any).seconds - (a.updatedAt as any).seconds)
+        .slice(0, 6))
+      );
+  }, []);
+
+  function handleClick(recipe: GrantRecipe) {
+    navigate(`/grant-recipes/${recipe.id}`);
+  }
+
+  return (
+    <Card>
+      <CardHeader title="Recent Proposals" />
+      <CardContent>
+        <List>
+          {recipes.map(recipe =>
+          (
+            <ListItemButton key={recipe.id} onClick={() => handleClick(recipe)}>
+              <ListItemText>{recipe.description}</ListItemText>
+            </ListItemButton>
+          ))
+          }
+        </List>
+      </CardContent>
+    </Card >
+  )
+}
+
+const CloneRecipeCard = () => {
+  const navigate = useNavigate();
+  const [recipes, setRecipes] = useState<GrantRecipe[]>([]);
+  const [selectedRecipe, setSelectedReceipe] = useState<GrantRecipe>();
+
+  useEffect(() => {
+    grantRecipeService.getAll()
+      .then(resp => setRecipes(resp.sort((a, b) => (b.updatedAt as any).seconds - (a.updatedAt as any).seconds)));
+  }, []);
+
+  function handleSelect(recipeId: string) {
+    setSelectedReceipe(recipes.find(rec => rec.id === recipeId));
+  }
+
+  function handleClick() {
+    createRecipe()
+      .then(recipe => navigate(`/grant-recipes/${recipe.id}`))
+  }
+
+  return (
+    <Card>
+      <CardHeader title="Clone Proposal" />
+      <CardContent>
+        <Typography>Select a recent Proposal</Typography>
+        <Select
+          fullWidth={true}
+          value={selectedRecipe ? selectedRecipe.id : ''}
+          onChange={(evt) => handleSelect(evt.target.value as string)}>
+          {recipes.map(recipe => <MenuItem key={recipe.id} value={recipe.id as string}>{recipe.description}</MenuItem>)}
+        </Select>
+      </CardContent>
+      <CardActions>
+        <Button variant="contained" disabled={!selectedRecipe} onClick={handleClick}>Clone</Button>
+      </CardActions>
+    </Card >
+  )
+}
+
+const CreateRecipeCard = () => {
+  const navigate = useNavigate();
+
+  function handleClick() {
+    createRecipe()
+      .then(recipe => navigate(`/grant-recipes/${recipe.id}`))
+  }
+
+  return (
+    <Card>
+      <CardHeader title="New Proposal" />
+      <CardActions>
+        <Button variant="contained" onClick={handleClick}>Create</Button>
+      </CardActions>
+    </Card>
+  )
+}
 // ==============================|| DASHBOARD - DEFAULT ||============================== //
 
 const DashboardDefault = () => {
@@ -82,17 +178,14 @@ const DashboardDefault = () => {
       <Grid size={12} sx={{ mb: -2.25 }}>
         <Typography variant="h5" color={theme.palette.text.primary}>Dashboard</Typography>
       </Grid>
-      <Grid size={3}>
-        <AnalyticEcommerce title="Total Page Views" count="4,42,236" percentage={59.3} extra="35,000" />
+      <Grid size={2}>
+        <CreateRecipeCard />
       </Grid>
-      <Grid size={3}>
-        <AnalyticEcommerce title="Total Users" count="78,250" percentage={70.5} extra="8,900" />
+      <Grid size={5}>
+        <CloneRecipeCard />
       </Grid>
-      <Grid size={3}>
-        <AnalyticEcommerce title="Total Order" count="18,800" percentage={27.4} isLoss color="warning" extra="1,943" />
-      </Grid>
-      <Grid size={3}>
-        <AnalyticEcommerce title="Total Sales" count="$35,078" percentage={27.4} isLoss color="warning" extra="$20,395" />
+      <Grid size={5}>
+        <RecentRecipesCard />
       </Grid>
 
       <Grid size={8} sx={{ display: { sm: 'none', md: 'block', lg: 'none' } }} />
