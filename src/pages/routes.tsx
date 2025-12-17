@@ -38,6 +38,10 @@ const routes = [
         element: <GrantProposalsDetailPage />,
       },
       {
+        path: "gdrive",
+        element: <GoogleDrivePage />,
+      },
+      {
         path: "privacy",
         element: <MarkdownPage filepath='privacy.md' />,
       }
