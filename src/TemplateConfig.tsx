@@ -32,6 +32,13 @@ export const TemplateConfig = () => {
                 type: 'item',
                 url: '/grant-recipes',
                 icon: <FormOutlined />,
+            } as MenuItem,
+            {
+                id: 'G-Drive',
+                title: 'Google Drive',
+                type: 'item',
+                url: '/gdrive',
+                icon: <FormOutlined />,
             } as MenuItem
 
         ],

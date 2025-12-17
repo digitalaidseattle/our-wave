@@ -11,6 +11,7 @@ import GrantRecipesListPage from './grants/GrantRecipesListPage';
 import GrantRecipesDetailPage from './grants/GrantRecipesDetailPage';
 import GrantProposalsListPage from './grants/GrantProposalsListPage';
 import GrantProposalsDetailPage from './grants/GrantProposalsDetailPage';
+import { GoogleDrivePage } from './GoogleDrivePage';
 
 const routes = [
   {
@@ -38,31 +39,35 @@ const routes = [
         element: <GrantProposalsDetailPage />,
       },
       {
+        path: "gdrive",
+        element: <GoogleDrivePage />,
+      },
+      {
         path: "privacy",
         element: <MarkdownPage filepath='privacy.md' />,
       }
     ]
   },
-  {
-    path: "/",
+{
+  path: "/",
     element: <MinimalLayout />,
-    children: [
-      {
-        path: 'login',
-        element: <Login />
-      }
-    ]
-  },
-  {
-    path: "*",
+      children: [
+        {
+          path: 'login',
+          element: <Login />
+        }
+      ]
+},
+{
+  path: "*",
     element: <MinimalLayout />,
-    children: [
-      {
-        path: '*',
-        element: <Error />
-      }
-    ]
-  }
+      children: [
+        {
+          path: '*',
+          element: <Error />
+        }
+      ]
+}
 ];
 
 export { routes };
