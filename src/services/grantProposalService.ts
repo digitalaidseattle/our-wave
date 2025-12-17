@@ -1,23 +1,7 @@
 import type { Identifier, User } from "@digitalaidseattle/core";
 import { FirestoreService } from "@digitalaidseattle/firebase";
-import type { GrantProposal, GrantRecipe, GrantOutput } from "../types";
+import type { GrantProposal, GrantRecipe } from "../types";
 import { grantAiService } from "../pages/grants/grantAiService";
-
-/**
- * Apply the word/character limits defined in a GrantOutput field.
- */
-function applyOutputLimit(raw: string, field: GrantOutput): string {
-  if (!raw) return "";
-
-  if (field.unit === "characters") {
-    return raw.length <= field.maxWords ? raw : raw.slice(0, field.maxWords);
-  }
-
-  const words = raw.split(/\s+/).filter(Boolean);
-  return words.length <= field.maxWords
-    ? raw
-    : words.slice(0, field.maxWords).join(" ");
-}
 
 class GrantProposalService extends FirestoreService<GrantProposal> {
   constructor() {
@@ -82,6 +66,11 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
 
   /**
    * Creates a proposal draft from a recipe using AI.
+   *
+   * Notes:
+   * - The prompt is already compiled and stored on the recipe.
+   * - Output limits are expected to be enforced by the AI via the template.
+   * - This service does NOT modify or truncate AI output.
    */
   async generate(recipe: GrantRecipe): Promise<GrantProposal> {
     if (!recipe.id) throw new Error("Recipe ID is required");
@@ -91,28 +80,20 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
       throw new Error("Recipe is missing output fields");
     }
 
-    // Use the already-compiled prompt stored on the recipe
+    // The prompt should already be generated and saved with the recipe
     if (!recipe.prompt) {
       throw new Error("Recipe prompt has not been generated");
     }
 
-    // Ask AI for JSON with keys matching output names
+    // Ask AI for structured JSON using output field names as keys
     const schemaParams = outputs.map((o) => o.name);
-    const aiResult = await grantAiService.parameterizedQuery(
+    const structuredResponse = await grantAiService.parameterizedQuery(
       schemaParams,
       recipe.prompt,
       recipe.modelType
     );
 
-    // Build structured output with limits applied
-    const structuredResponse: Record<string, string> = {};
-
-    for (const field of outputs) {
-      const raw = aiResult[field.name] ?? "";
-      structuredResponse[field.name] = applyOutputLimit(raw, field);
-    }
-
-    // Return a proposal object (not persisted)
+    // Return proposal draft (not persisted yet)
     const base = this.empty();
     return {
       ...base,

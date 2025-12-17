@@ -22,7 +22,7 @@ describe("grantProposalService.generate", () => {
     vi.clearAllMocks();
   });
 
-  it("builds structuredResponse and applies limits", async () => {
+  it("builds structuredResponse from AI output", async () => {
     const recipe: GrantRecipe = {
       id: "recipe-123",
       createdAt: new Date(),
@@ -50,10 +50,11 @@ describe("grantProposalService.generate", () => {
     const proposal = await grantProposalService.generate(recipe);
 
     expect(grantAiService.parameterizedQuery).toHaveBeenCalledTimes(1);
-
-    expect(proposal.structuredResponse?.Summary).toBe("This should be");
-    expect(proposal.structuredResponse?.Notes).toBe("abcdefghij");
     expect(proposal.grantRecipeId).toBe("recipe-123");
+
+    // AI output is preserved as-is
+    expect(proposal.structuredResponse?.Summary).toBe("This should be trimmed");
+    expect(proposal.structuredResponse?.Notes).toBe("abcdefghijklmnop");
   });
 
   it("throws if recipe has no id", async () => {
