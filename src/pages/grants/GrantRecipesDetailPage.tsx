@@ -1,26 +1,51 @@
-import { LoadingContext, useNotifications, UserContext } from "@digitalaidseattle/core";
-import { Button, Card, CardActions, CardContent, CardHeader, Stack, TextField } from "@mui/material";
+/**
+ * GrantRecipesDetailPage.tsx
+ * 
+ * @copyright 2025 Digital Aid Seattle
+*/
 import { useContext, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { InfoCircleOutlined } from "@ant-design/icons";
+import { LoadingContext, useHelp, useNotifications, UserContext } from "@digitalaidseattle/core";
+import { Box, Button, Card, CardActions, CardContent, CardHeader, IconButton, Stack, TextField } from "@mui/material";
+import { HelpDrawer } from "../../components/HelpDrawer";
 import { grantProposalService } from "../../services/grantProposalService";
 import { grantRecipeService } from "../../services/grantRecipeService";
-import type { GrantInput, GrantOutput } from "../../types";
 import { GrantRecipe } from "../../types";
 import { GrantInputEditor } from "./GrantInputEditor";
 import { GrantOutputEditor } from "./GrantOutputEditor";
+import { LoadingOverlay } from "../../components/LoadingOverlay";
+import { HelpTopicContext } from "../../components/HelpTopicContext";
+import type { GrantInput, GrantOutput } from "../../types";
+
+const HELP_DRAWER_WIDTH = 300;
+const HELP_TITLE = "Our Wave";
+const HELP_DICTIONARY = {
+  "Description": "Change this field for easier tracking in the application.",
+  "Prompt": "This prompt template is filled with text using the input and output parameters.",
+  "Inputs": "Facts to be used in the prompt.",
+  "Outputs": "Guidance for output constraints.",
+}
+
+const AUTO_SAVE_DELAY = 1000 * 2;
 
 export const TextEditor = ({ title, value, onChange }: { title: string, value: string, onChange: (updated: string) => void }) => {
+  const { setHelpTopic } = useContext(HelpTopicContext);
+  const { setShowHelp } = useHelp();
   return (
     <Card>
-      <CardHeader title={title} />
+      <CardHeader title={title}
+        slotProps={{ title: { fontWeight: 600, fontSize: 16 } }}
+        avatar={<IconButton
+          onClick={() => { setHelpTopic(title); setShowHelp(true) }}
+          color="primary"><InfoCircleOutlined /></IconButton>} />
       <CardContent>
-        <TextField fullWidth={true} value={value} onChange={(evt) => onChange(evt.target.value)} />
+        <TextField fullWidth={true} value={value}
+          onChange={(evt) => onChange(evt.target.value)} />
       </CardContent>
     </Card>
   )
 }
-
-const AUTO_SAVE_DELAY = 1000 * 2;
 
 const GrantRecipesDetailPage: React.FC = () => {
   const { id } = useParams<string>();
@@ -32,6 +57,8 @@ const GrantRecipesDetailPage: React.FC = () => {
   const { loading, setLoading } = useContext(LoadingContext);
   const [recipe, setRecipe] = useState<GrantRecipe>({ id: 'test', description: 'test' } as GrantRecipe);
   const [dirty, setDirty] = useState<boolean>(false);
+  const { showHelp } = useHelp();
+  const [helpTopic, setHelpTopic] = useState<string | undefined>();
 
   useEffect(() => {
     if (id) {
@@ -71,7 +98,7 @@ const GrantRecipesDetailPage: React.FC = () => {
       setLoading(true);
       grantRecipeService.clone(recipe)
         .then(cloned => {
-          navigate(`grant-recipes/${cloned.id}`);
+          navigate(`/grant-recipes/${cloned.id}`);
           notifications.success(`${recipe.description} has been successfully cloned.`)
         })
         .catch(err => {
@@ -98,12 +125,16 @@ const GrantRecipesDetailPage: React.FC = () => {
     }
   }
 
+  function updatePrompt(changed: GrantRecipe): Promise<GrantRecipe> {
+    return grantRecipeService.updatePrompt(changed);
+  }
+
   function handleGrantOutputChange(updated: GrantOutput[]): void {
-    setRecipe({
-      ...recipe,
-      outputsWithWordCount: updated
-    });
-    setDirty(true);
+    updatePrompt({ ...recipe, outputsWithWordCount: updated })
+      .then(revised => {
+        setRecipe(revised);
+        setDirty(true);
+      })
   }
 
   function handleDescriptionChange(updated: string): void {
@@ -115,38 +146,48 @@ const GrantRecipesDetailPage: React.FC = () => {
   }
 
   function handlePromptChange(updated: string): void {
-    setRecipe({
-      ...recipe,
-      prompt: updated
-    });
-    setDirty(true);
+    updatePrompt({ ...recipe, prompt: updated })
+      .then(revised => {
+        setRecipe(revised);
+        setDirty(true);
+      })
   }
 
   function handleGrantInputChange(inputs: GrantInput[]): void {
-    console.log(inputs)
-    setRecipe({
-      ...recipe,
-      inputParameters: inputs
-    });
-    setDirty(true);
+    updatePrompt({ ...recipe, inputParameters: inputs })
+      .then(revised => {
+        setRecipe(revised);
+        setDirty(true);
+      })
   }
 
   return (
-    <Card>
-      <CardHeader title="Grant Recipe Detail" />
-      <CardContent>
-        <Stack gap={1}>
-          <TextEditor title="Description" value={recipe.description} onChange={handleDescriptionChange} />
-          <TextEditor title="Prompt" value={recipe.prompt} onChange={handlePromptChange} />
-          <GrantInputEditor recipeInputs={recipe.inputParameters} onChange={handleGrantInputChange} />
-          <GrantOutputEditor fields={recipe.outputsWithWordCount} onChange={handleGrantOutputChange} />
-        </Stack>
-      </CardContent>
-      <CardActions>
-        <Button variant="contained" disabled={loading} onClick={() => handleClone()}>Clone</Button>
-        <Button variant="contained" disabled={loading} onClick={() => handleGenerate()}>Generate</Button>
-      </CardActions>
-    </Card>
+    <>
+      <LoadingOverlay />
+      <HelpTopicContext.Provider value={{ helpTopic, setHelpTopic }} >
+        <Box gap={4}>
+          <Stack sx={{ gap: 2, marginRight: `${showHelp ? HELP_DRAWER_WIDTH : 0}px` }}>
+            <Card>
+              <CardHeader title="Grant Recipe Detail"
+                action={`Token count = ${recipe.tokenCount}`} />
+              <CardContent>
+                <Stack gap={1}>
+                  <TextEditor title="Description" value={recipe.description} onChange={handleDescriptionChange} />
+                  <TextEditor title="Prompt" value={recipe.prompt} onChange={handlePromptChange} />
+                  <GrantInputEditor recipeInputs={recipe.inputParameters} onChange={handleGrantInputChange} />
+                  <GrantOutputEditor fields={recipe.outputsWithWordCount} onChange={handleGrantOutputChange} />
+                </Stack>
+              </CardContent>
+              <CardActions>
+                <Button variant="contained" disabled={loading} onClick={() => handleClone()}>Clone</Button>
+                <Button variant="contained" disabled={loading} onClick={() => handleGenerate()}>Generate</Button>
+              </CardActions>
+            </Card>
+          </Stack>
+          <HelpDrawer title={HELP_TITLE} width={HELP_DRAWER_WIDTH} dictionary={HELP_DICTIONARY} />
+        </Box>
+      </HelpTopicContext.Provider>
+    </>
   );
 
 }

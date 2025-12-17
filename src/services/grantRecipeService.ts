@@ -2,13 +2,25 @@ import type { Identifier, User } from "@digitalaidseattle/core";
 import { FirestoreService } from "@digitalaidseattle/firebase";
 import type { GrantRecipe } from "../types";
 import Handlebars from "handlebars";
+import { authService } from "../App";
 
 class GrantRecipeService extends FirestoreService<GrantRecipe> {
   constructor() {
     super("grant-recipes");
   }
 
-  // Creates a blank recipe with default values
+  /**
+   * Returns the currently authenticated user (if available).
+   */
+  getUser(): User | null | undefined {
+    if (authService) {
+      return authService.currentUser;
+    }
+  }
+
+  /**
+   * Creates a blank recipe with default values.
+   */
   empty(): GrantRecipe {
     const now = new Date();
 
@@ -29,22 +41,25 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
     };
   }
 
-  // Create: adds timestamps and user info before saving
+  /**
+   * Create: generates and stores the compiled prompt,
+   * then adds timestamps and user metadata.
+   */
   async insert(
     entity: GrantRecipe,
     select?: string,
     mapper?: (json: any) => GrantRecipe,
     user?: User
   ): Promise<GrantRecipe> {
-    if (!user?.email) {
+    const sessionUser = user ?? this.getUser();
+    if (!sessionUser?.email) {
       throw new Error("grantRecipeService.insert: user.email is required");
     }
 
     const now = new Date();
 
-    // Compile prompt before saving
+    // Compile prompt from template before saving
     const prompt = this.generatePromptWithInputs(entity);
-
     const { id, ...entityWithoutId } = entity;
 
     return super.insert(
@@ -53,8 +68,8 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
         prompt,
         createdAt: now,
         updatedAt: now,
-        createdBy: user.email,
-        updatedBy: user.email,
+        createdBy: sessionUser.email,
+        updatedBy: sessionUser.email,
       } as GrantRecipe,
       select,
       mapper,
@@ -62,7 +77,10 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
     );
   }
 
-  // Update: refreshes metadata and regenerates prompt
+  /**
+   * Update: regenerates the prompt from the template
+   * and refreshes metadata.
+   */
   async update(
     entityId: Identifier,
     updatedFields: GrantRecipe,
@@ -70,7 +88,8 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
     mapper?: (json: any) => GrantRecipe,
     user?: User
   ): Promise<GrantRecipe> {
-    if (!user?.email) {
+    const sessionUser = user ?? this.getUser();
+    if (!sessionUser?.email) {
       throw new Error("grantRecipeService.update: user.email is required");
     }
 
@@ -82,7 +101,7 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
         ...updatedFields,
         prompt,
         updatedAt: new Date(),
-        updatedBy: user.email,
+        updatedBy: sessionUser.email,
       },
       select,
       mapper,
@@ -90,29 +109,45 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
     );
   }
 
-  async clone(_recipe: GrantRecipe): Promise<GrantRecipe> {
-    throw new Error("Method not implemented.");
+  /**
+   * Creates a copy of an existing recipe.
+   */
+  async clone(recipe: GrantRecipe): Promise<GrantRecipe> {
+    const now = new Date();
+    const user = this.getUser();
+
+    const clone: GrantRecipe = {
+      ...recipe,
+      id: undefined,
+      createdAt: now,
+      createdBy: user?.email ?? "",
+      updatedAt: now,
+      updatedBy: user?.email ?? "",
+      description: `Clone of ${recipe.description}`,
+    };
+
+    return this.insert(clone);
   }
 
   /**
-   * Compiles the Handlebars template into the final prompt
-   * using the recipe's inputs and outputs.
+   * Compiles the Handlebars template into the final prompt.
+   *
+   * Output constraints are included in the prompt so the AI
+   * self-limits its response rather than being truncated later.
    */
-generatePromptWithInputs(recipe: GrantRecipe): string {
-  const compiled = Handlebars.compile(recipe.template);
+  generatePromptWithInputs(recipe: GrantRecipe): string {
+    const compiled = Handlebars.compile(recipe.template);
 
-  const basePrompt = compiled({
-    inputs: recipe.inputParameters,
-    outputs: recipe.outputsWithWordCount,
-  });
+    const basePrompt = compiled({
+      inputs: recipe.inputParameters,
+      outputs: recipe.outputsWithWordCount,
+    });
 
-  const outputConstraints = recipe.outputsWithWordCount
-    .map(
-      (o) => `- ${o.name}: maximum ${o.maxWords} ${o.unit}`
-    )
-    .join("\n");
+    const outputConstraints = recipe.outputsWithWordCount
+      .map(o => `- ${o.name}: maximum ${o.maxWords} ${o.unit}`)
+      .join("\n");
 
-  return `
+    return `
 ${basePrompt}
 
 Please follow these output constraints strictly:
@@ -120,8 +155,7 @@ ${outputConstraints}
 
 Adjust wording as needed to stay within these limits.
 `;
-}
-
+  }
 }
 
 export const grantRecipeService = new GrantRecipeService();
