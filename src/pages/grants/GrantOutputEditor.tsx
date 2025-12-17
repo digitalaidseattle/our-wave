@@ -4,17 +4,18 @@
  * @copyright 2025 Digital Aid Seattle
 */
 import { DeleteOutlined, InfoCircleOutlined, PlusOutlined } from '@ant-design/icons';
+import { useHelp } from '@digitalaidseattle/core';
 import {
-  Button, Card, CardActions, CardContent, CardHeader, FormControlLabel,
+  Button, Card,
+  CardContent, CardHeader, FormControlLabel,
   IconButton,
   Stack,
   Switch,
   TextField
 } from "@mui/material";
 import { useContext, useEffect, useState } from "react";
-import type { GrantOutput } from "../../types";
-import { useHelp } from '@digitalaidseattle/core';
 import { HelpTopicContext } from '../../components/HelpTopicContext';
+import type { GrantOutput } from "../../types";
 
 export const GrantOutputEditor = ({ fields, onChange }: { fields: GrantOutput[], onChange: (updated: GrantOutput[]) => void }) => {
 

@@ -4,10 +4,10 @@
  * @copyright 2025 Digital Aid Seattle
 */
 import { DeleteOutlined, InfoCircleOutlined, PlusOutlined } from '@ant-design/icons';
+import { useHelp } from '@digitalaidseattle/core';
 import {
   Button,
   Card,
-  CardActions,
   CardContent,
   CardHeader,
   IconButton,
@@ -15,9 +15,8 @@ import {
   TextField
 } from "@mui/material";
 import { useContext, useEffect, useState } from "react";
-import type { GrantInput } from "../../types";
-import { useHelp } from '@digitalaidseattle/core';
 import { HelpTopicContext } from '../../components/HelpTopicContext';
+import type { GrantInput } from "../../types";
 
 export const GrantInputEditor = ({ recipeInputs, onChange }: { recipeInputs: GrantInput[], onChange: (updated: GrantInput[]) => void }) => {
 
