@@ -6,8 +6,9 @@
 import { useContext, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { InfoCircleOutlined } from "@ant-design/icons";
-import { LoadingContext, useHelp, useNotifications, UserContext } from "@digitalaidseattle/core";
 import { Box, Button, Card, CardActions, CardContent, CardHeader, IconButton, Stack, TextField } from "@mui/material";
+import dayjs from "dayjs";
+import { LoadingContext, useHelp, useNotifications, UserContext } from "@digitalaidseattle/core";
 import { HelpDrawer } from "../../components/HelpDrawer";
 import { grantProposalService } from "../../services/grantProposalService";
 import { grantRecipeService } from "../../services/grantRecipeService";
@@ -56,6 +57,7 @@ const GrantRecipesDetailPage: React.FC = () => {
 
   const { loading, setLoading } = useContext(LoadingContext);
   const [recipe, setRecipe] = useState<GrantRecipe>({ id: 'test', description: 'test' } as GrantRecipe);
+  const [lastUpdated, setLastUpdated] = useState<string>("");
   const [dirty, setDirty] = useState<boolean>(false);
   const { showHelp } = useHelp();
   const [helpTopic, setHelpTopic] = useState<string | undefined>();
@@ -71,11 +73,18 @@ const GrantRecipesDetailPage: React.FC = () => {
   }, [id])
 
   useEffect(() => {
-    if (recipe && dirty) {
+    if (dirty) {
       const id = setInterval(() => saveRecipe(), AUTO_SAVE_DELAY);
       return () => clearInterval(id);
     }
-  }, [recipe, dirty]);
+  }, [dirty]);
+
+  useEffect(() => {
+    if (recipe && recipe.updatedAt) {
+      const date = ('seconds' in recipe.updatedAt) ? new Date((recipe.updatedAt as any).seconds * 1000) : recipe.updatedAt;
+      setLastUpdated(dayjs(date).format("MM/DD/YYYY hh:mm a"));
+    }
+  }, [recipe]);
 
   function saveRecipe() {
     if (recipe && user) {
@@ -169,7 +178,8 @@ const GrantRecipesDetailPage: React.FC = () => {
           <Stack sx={{ gap: 2, marginRight: `${showHelp ? HELP_DRAWER_WIDTH : 0}px` }}>
             <Card>
               <CardHeader title="Grant Recipe Detail"
-                action={`Token count = ${recipe.tokenCount}`} />
+                action={`Token count = ${recipe.tokenCount}`}
+                subheader={`Last updated: ${lastUpdated}`} />
               <CardContent>
                 <Stack gap={1}>
                   <TextEditor title="Description" value={recipe.description} onChange={handleDescriptionChange} />
