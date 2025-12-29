@@ -1,7 +1,12 @@
 import { DeleteOutlined } from "@ant-design/icons";
 import { UserContext } from "@digitalaidseattle/core";
 import { Box, Stack, Typography } from "@mui/material";
-import { DataGrid, GridActionsCellItem, GridColDef, GridRowParams } from "@mui/x-data-grid";
+import {
+  DataGrid,
+  GridActionsCellItem,
+  GridColDef,
+  GridRowParams,
+} from "@mui/x-data-grid";
 import dayjs from "dayjs";
 import { useContext, useEffect, useState } from "react";
 import { grantProposalService } from "../../services/grantProposalService";
@@ -31,75 +36,67 @@ const GrantProposalsListPage: React.FC = () => {
 
   const columns: GridColDef<GrantProposal>[] = [
     {
-      field: "description",
-      headerName: "Description",
+      field: "preview",
+      headerName: "Preview",
       flex: 1,
       minWidth: 200,
       valueGetter: (_value, row) => {
-        // Return full text for editing, or truncated for display
-        return row.textResponse || (row.structuredResponse ? Object.values(row.structuredResponse)[0] : "") || "";
+        if (!row.structuredResponse) return "";
+        return Object.values(row.structuredResponse)[0] ?? "";
       },
-    },
-    {
-      field: "tokenCount",
-      headerName: "Token Count",
-      width: 130,
-      type: "number",
     },
     {
       field: "createdAt",
       headerName: "Date",
-      width: 150,
-      valueGetter: (_value, row) => dayjs(new Date((row.createdAt as any).seconds * 1000)).format("MM/DD/YYYY hh:mm")
+      width: 180,
+      valueGetter: (_value, row) =>
+        dayjs(new Date((row.createdAt as any).seconds * 1000)).format(
+          "MM/DD/YYYY hh:mm"
+        ),
     },
     {
       field: "actions",
       type: "actions",
       headerName: "Actions",
-      width: 180,
+      width: 120,
       getActions: (params) => {
-        const row_id = params.row.id!.toString();
+        const rowId = params.row.id?.toString();
         return [
           <GridActionsCellItem
             icon={<DeleteOutlined />}
             label="Delete"
-            onClick={() => handleDelete(row_id)}
+            onClick={() => handleDelete(rowId)}
             disabled={!user}
-            showInMenu={false}
           />,
         ];
       },
     },
   ];
 
-  const handleDelete = async (id: string | undefined) => {
-    if (!id || !user) {
-      return;
-    }
+  const handleDelete = async (id?: string) => {
+    if (!id || !user) return;
 
     // Confirm deletion
     const confirmed = window.confirm(
       "Are you sure you want to delete this proposal? This action cannot be undone."
     );
-
-    if (!confirmed) {
-      return;
-    }
+    if (!confirmed) return;
 
     try {
       await grantProposalService.delete(id);
+      
       // Refresh the list after deletion
       await fetchProposals();
       alert("Proposal deleted successfully!");
     } catch (error) {
       console.error("Error deleting proposal:", error);
-      alert(`Failed to delete proposal: ${error instanceof Error ? error.message : "Unknown error"}`);
+      alert("Failed to delete proposal");
     }
   };
 
   const handleRowDoubleClick = (params: GridRowParams<GrantProposal>) => {
     if (params.row.id) {
-      alert('not implemented')
+      alert("Not implemented");
     }
   };
 
@@ -113,23 +110,8 @@ const GrantProposalsListPage: React.FC = () => {
           loading={loading}
           getRowId={(row) => row.id || ""}
           onRowDoubleClick={handleRowDoubleClick}
-          editMode="cell"
-          initialState={{
-            pagination: {
-              paginationModel: { pageSize: 10 },
-            },
-          }}
           pageSizeOptions={[10, 25, 50]}
           disableRowSelectionOnClick
-          sx={{
-            "& .MuiDataGrid-row": {
-              cursor: "pointer",
-            },
-            "& .MuiDataGrid-cell": {
-              display: "flex",
-              alignItems: "center",
-            },
-          }}
         />
       </Stack>
     </Box>
@@ -137,4 +119,3 @@ const GrantProposalsListPage: React.FC = () => {
 };
 
 export default GrantProposalsListPage;
-

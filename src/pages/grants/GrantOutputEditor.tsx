@@ -4,17 +4,18 @@
  * @copyright 2025 Digital Aid Seattle
 */
 import { DeleteOutlined, InfoCircleOutlined, PlusOutlined } from '@ant-design/icons';
+import { useHelp } from '@digitalaidseattle/core';
 import {
-  Button, Card, CardActions, CardContent, CardHeader, FormControlLabel,
+  Button, Card,
+  CardContent, CardHeader, FormControlLabel,
   IconButton,
   Stack,
   Switch,
   TextField
 } from "@mui/material";
 import { useContext, useEffect, useState } from "react";
-import type { GrantOutput } from "../../types";
-import { useHelp } from '@digitalaidseattle/core';
 import { HelpTopicContext } from '../../components/HelpTopicContext';
+import type { GrantOutput } from "../../types";
 
 export const GrantOutputEditor = ({ fields, onChange }: { fields: GrantOutput[], onChange: (updated: GrantOutput[]) => void }) => {
 
@@ -57,7 +58,18 @@ export const GrantOutputEditor = ({ fields, onChange }: { fields: GrantOutput[],
         slotProps={{ title: { fontWeight: 600, fontSize: 16 } }}
         avatar={<IconButton
           onClick={() => { setHelpTopic('Outputs'); setShowHelp(true) }}
-          color="primary"><InfoCircleOutlined /></IconButton>} />
+          color="primary"><InfoCircleOutlined /></IconButton>}
+        action={
+          <Button
+            variant="outlined"
+            color="success"
+            onClick={handleAddOutputField}
+            startIcon={<PlusOutlined />}
+            sx={{ alignSelf: 'flex-start' }}
+          >
+            Add Output Field
+          </Button>
+        } />
 
       <CardContent>
         <Stack spacing={2} sx={{ mt: 2 }}>
@@ -65,16 +77,15 @@ export const GrantOutputEditor = ({ fields, onChange }: { fields: GrantOutput[],
             <Stack direction="row" spacing={2} key={index} alignItems="center">
               <TextField
                 label="Field"
+                fullWidth={true}
                 value={field.name}
                 onChange={(e) => handleOutputFieldChange(index, 'name', e.target.value)}
-                sx={{ width: '200px' }}
               />
               <TextField
                 label={`Max ${field.unit === 'words' ? 'Words' : 'Characters'}`}
                 type="number"
                 value={field.maxWords}
                 onChange={(e) => handleOutputFieldChange(index, 'maxWords', parseInt(e.target.value) || 0)}
-                sx={{ width: '150px' }}
               />
               <FormControlLabel
                 control={
@@ -96,17 +107,6 @@ export const GrantOutputEditor = ({ fields, onChange }: { fields: GrantOutput[],
           ))}
         </Stack>
       </CardContent>
-      <CardActions>
-        <Button
-          variant="outlined"
-          color="success"
-          onClick={handleAddOutputField}
-          startIcon={<PlusOutlined />}
-          sx={{ alignSelf: 'flex-start' }}
-        >
-          Add Output Field
-        </Button>
-      </CardActions>
     </Card>
   );
 
