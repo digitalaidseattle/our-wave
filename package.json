@@ -25,6 +25,8 @@
   "devDependencies": {
     "@testing-library/react": "^14.2.1",
     "@types/file-saver": "^2.0.7",
+    "@types/gapi": "^0.0.47",
+    "@types/gapi.client": "^1.0.8",
     "@types/geojson": "^7946.0.14",
     "@types/lodash": "^4.14.202",
     "@types/node": "^20.11.16",

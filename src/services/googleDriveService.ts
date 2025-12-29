@@ -26,26 +26,30 @@ class GoogleDriveService {
     }
 
     isReady = false;
+    drive: any;
 
     constructor() {
         this.init();
     }
 
     init() {
-        if (window.google?.accounts?.oauth2) {
+        const google = (window as any).google;
+        if (google.accounts?.oauth2) {
             gapi.load('client', async () => {
                 await gapi.client.init({
                     discoveryDocs: [DISCOVERY_DOC],
                 });
+                this.drive =(gapi.client as any).drive;
+                this.isReady = true;
             });
-            this.isReady = true;
         } else {
             setTimeout(this.init, 100);
         }
     }
 
     signIn(callback: (res: any) => void) {
-        const client = window.google.accounts.oauth2.initTokenClient({
+        const google = (window as any).google;
+        const client = google.accounts.oauth2.initTokenClient({
             client_id: CLIENT_ID,
             scope: SCOPES,
             callback: (res: any) => callback(res.access_token)
@@ -63,7 +67,7 @@ class GoogleDriveService {
     }
 
     async downloadMarkdown(fileId: string): Promise<string> {
-        const res = await gapi.client.drive.files.export(
+        const res = await this.drive.files.export(
             {
                 fileId,
                 alt: 'media',
@@ -75,14 +79,14 @@ class GoogleDriveService {
     }
 
     async downloadFile(fileId: string) {
-        const meta = await gapi.client.drive.files.get({
+        const meta = await this.drive.files.get({
             fileId,
             fields: 'name, mimeType, size',
             supportsAllDrives: true,
         });
         console.log(meta)
 
-        const res = await gapi.client.drive.files.export(
+        const res = await this.drive.files.export(
             {
                 fileId,
                 alt: 'media',
@@ -108,7 +112,7 @@ class GoogleDriveService {
             supportsAllDrives: true,
             includeItemsFromAllDrives: true,
         };
-        return gapi.client.drive.files.list(params)
+        return this.drive.files.list(params)
             .then((resp: any) => resp.result.files.map((f: any) => ({ id: f.id, name: f.name, type: f.mimeType })));
     }
 }
