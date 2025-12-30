@@ -6,7 +6,7 @@
 import { useContext, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { InfoCircleOutlined } from "@ant-design/icons";
-import { Box, Button, Card, CardActions, CardContent, CardHeader, IconButton, Stack, TextField } from "@mui/material";
+import { Box, Button, Card, CardActions, CardContent, CardHeader, Divider, IconButton, Stack, TextField, Toolbar } from "@mui/material";
 import dayjs from "dayjs";
 import { LoadingContext, useHelp, useNotifications, UserContext } from "@digitalaidseattle/core";
 import { HelpDrawer } from "../../components/HelpDrawer";
@@ -72,12 +72,12 @@ const GrantRecipesDetailPage: React.FC = () => {
     }
   }, [id])
 
-  useEffect(() => {
-    if (dirty) {
-      const id = setInterval(() => saveRecipe(), AUTO_SAVE_DELAY);
-      return () => clearInterval(id);
-    }
-  }, [dirty]);
+  // useEffect(() => {
+  //   if (dirty) {
+  //     const id = setInterval(() => saveRecipe(), AUTO_SAVE_DELAY);
+  //     return () => clearInterval(id);
+  //   }
+  // }, [dirty]);
 
   useEffect(() => {
     if (recipe && recipe.updatedAt) {
@@ -189,6 +189,8 @@ const GrantRecipesDetailPage: React.FC = () => {
                 </Stack>
               </CardContent>
               <CardActions>
+                <Button variant="contained" disabled={loading || !dirty} onClick={() => saveRecipe()}>Save</Button>
+                <Divider orientation="vertical" />
                 <Button variant="contained" disabled={loading} onClick={() => handleClone()}>Clone</Button>
                 <Button variant="contained" disabled={loading} onClick={() => handleGenerate()}>Generate</Button>
               </CardActions>
