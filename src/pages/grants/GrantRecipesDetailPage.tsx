@@ -3,21 +3,21 @@
  * 
  * @copyright 2025 Digital Aid Seattle
 */
+import { InfoCircleOutlined } from "@ant-design/icons";
+import { LoadingContext, useHelp, useNotifications, UserContext } from "@digitalaidseattle/core";
+import { Box, Button, Card, CardActions, CardContent, CardHeader, Divider, IconButton, Stack, TextField } from "@mui/material";
+import dayjs from "dayjs";
 import { useContext, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { InfoCircleOutlined } from "@ant-design/icons";
-import { Box, Button, Card, CardActions, CardContent, CardHeader, Divider, IconButton, Stack, TextField, Toolbar } from "@mui/material";
-import dayjs from "dayjs";
-import { LoadingContext, useHelp, useNotifications, UserContext } from "@digitalaidseattle/core";
 import { HelpDrawer } from "../../components/HelpDrawer";
+import { HelpTopicContext } from "../../components/HelpTopicContext";
+import { LoadingOverlay } from "../../components/LoadingOverlay";
 import { grantProposalService } from "../../services/grantProposalService";
 import { grantRecipeService } from "../../services/grantRecipeService";
+import type { GrantInput, GrantOutput } from "../../types";
 import { GrantRecipe } from "../../types";
 import { GrantInputEditor } from "./GrantInputEditor";
 import { GrantOutputEditor } from "./GrantOutputEditor";
-import { LoadingOverlay } from "../../components/LoadingOverlay";
-import { HelpTopicContext } from "../../components/HelpTopicContext";
-import type { GrantInput, GrantOutput } from "../../types";
 
 const HELP_DRAWER_WIDTH = 300;
 const HELP_TITLE = "Our Wave";
@@ -27,8 +27,6 @@ const HELP_DICTIONARY = {
   "Inputs": "Facts to be used in the prompt.",
   "Outputs": "Guidance for output constraints.",
 }
-
-const AUTO_SAVE_DELAY = 1000 * 2;
 
 export const TextEditor = ({ title, value, onChange }: { title: string, value: string, onChange: (updated: string) => void }) => {
   const { setHelpTopic } = useContext(HelpTopicContext);
