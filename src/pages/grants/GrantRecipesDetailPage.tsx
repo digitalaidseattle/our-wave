@@ -192,7 +192,7 @@ const GrantRecipesDetailPage: React.FC = () => {
               action={`Token count = ${recipe.tokenCount}`}
               subheader={`Last updated: ${lastUpdated}`}
               slotProps={{ title: { fontSize: 16, fontWeight: 600 } }}
-              avatar={recipe.lastSubmission && <Tooltip title="This recipe has been used to generate a proposal."><LockOutlined /></Tooltip>}
+              avatar={recipe.lastSubmittedAt && <Tooltip title="This recipe has been used to generate a proposal."><LockOutlined /></Tooltip>}
             />
             <CardContent>
               <Stack gap={1}>
