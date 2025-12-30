@@ -55,12 +55,14 @@ const GrantRecipesDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useContext(UserContext);
 
+  const { showHelp } = useHelp();
+  const [helpTopic, setHelpTopic] = useState<string | undefined>();
   const { loading, setLoading } = useContext(LoadingContext);
+
   const [recipe, setRecipe] = useState<GrantRecipe>({ id: 'test', description: 'test' } as GrantRecipe);
   const [lastUpdated, setLastUpdated] = useState<string>("");
   const [dirty, setDirty] = useState<boolean>(false);
-  const { showHelp } = useHelp();
-  const [helpTopic, setHelpTopic] = useState<string | undefined>();
+  const [locked, setLocked] = useState<boolean>(false);
 
   useEffect(() => {
     if (id) {
@@ -83,6 +85,7 @@ const GrantRecipesDetailPage: React.FC = () => {
     if (recipe && recipe.updatedAt) {
       const date = ('seconds' in recipe.updatedAt) ? new Date((recipe.updatedAt as any).seconds * 1000) : recipe.updatedAt;
       setLastUpdated(dayjs(date).format("MM/DD/YYYY hh:mm a"));
+      setLocked(!!recipe.lastSubmittedAt);
     }
   }, [recipe]);
 
@@ -188,11 +191,11 @@ const GrantRecipesDetailPage: React.FC = () => {
             <Typography sx={{ color: 'text.primary' }}>Grant Recipe Detail</Typography>
           </Breadcrumbs>
           <Card>
-            <CardHeader title="Grant Recipe Detail"
+            <CardHeader title={recipe.description}
               action={`Token count = ${recipe.tokenCount}`}
               subheader={`Last updated: ${lastUpdated}`}
               slotProps={{ title: { fontSize: 16, fontWeight: 600 } }}
-              avatar={recipe.lastSubmittedAt &&
+              avatar={locked &&
                 <Tooltip title="This recipe has been used to generate a proposal.">
                   <LockOutlined style={{ fontSize: '20px', fontWeight: 600 }} />
                 </Tooltip>}
