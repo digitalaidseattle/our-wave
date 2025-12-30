@@ -1,5 +1,5 @@
 import { CopyOutlined, DeleteOutlined, HomeOutlined, PlusCircleOutlined } from "@ant-design/icons";
-import { Box, Breadcrumbs, Card, CardContent, CardHeader, IconButton, Toolbar, Tooltip, Typography } from "@mui/material";
+import { Box, Breadcrumbs, Card, CardContent, CardHeader, IconButton, Stack, Toolbar, Tooltip, Typography } from "@mui/material";
 import { DataGrid, GridColDef, GridRowParams, GridRowSelectionModel } from "@mui/x-data-grid";
 import { useContext, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -153,51 +153,53 @@ const GrantRecipesListPage: React.FC = () => {
   return (
     <>
       <LoadingOverlay />
-      <Breadcrumbs aria-label="breadcrumb">
-        <Link color="inherit" to="/">
-          <HomeOutlined />
-        </Link>
-        <Typography sx={{ color: 'text.primary' }}>Recipes</Typography>
-      </Breadcrumbs>
-      <Card>
-        <CardHeader title="Grant Recipes" />
-        <CardContent>
-          <DataGrid
-            rows={recipes}
-            columns={columns}
-            loading={loading}
-            getRowId={(row) => row.id || ""}
-            onRowDoubleClick={handleRowDoubleClick}
-            editMode="cell"
-            initialState={{
-              pagination: {
-                paginationModel: { pageSize: 10 },
-              },
-            }}
+      <Stack sx={{ gap: 2 }}>
+        <Breadcrumbs aria-label="breadcrumb">
+          <Link color="inherit" to="/">
+            <HomeOutlined />
+          </Link>
+          <Typography sx={{ color: 'text.primary' }}>Recipes</Typography>
+        </Breadcrumbs>
+        <Card>
+          <CardHeader title="Grant Recipes" />
+          <CardContent>
+            <DataGrid
+              rows={recipes}
+              columns={columns}
+              loading={loading}
+              getRowId={(row) => row.id || ""}
+              onRowDoubleClick={handleRowDoubleClick}
+              editMode="cell"
+              initialState={{
+                pagination: {
+                  paginationModel: { pageSize: 10 },
+                },
+              }}
 
-            showToolbar={true}
-            slots={{
-              toolbar: CustomToolbar
-            }}
+              showToolbar={true}
+              slots={{
+                toolbar: CustomToolbar
+              }}
 
-            checkboxSelection={true}
-            onRowSelectionModelChange={handleRowSelection}
+              checkboxSelection={true}
+              onRowSelectionModelChange={handleRowSelection}
 
-            pageSizeOptions={[10, 25, 50]}
-            disableRowSelectionOnClick
-            sx={{
-              width: '100%',
-              "& .MuiDataGrid-row": {
-                cursor: "pointer",
-              },
-              "& .MuiDataGrid-cell": {
-                display: "flex",
-                alignItems: "center",
-              },
-            }}
-          />
-        </CardContent>
-      </Card>
+              pageSizeOptions={[10, 25, 50]}
+              disableRowSelectionOnClick
+              sx={{
+                width: '100%',
+                "& .MuiDataGrid-row": {
+                  cursor: "pointer",
+                },
+                "& .MuiDataGrid-cell": {
+                  display: "flex",
+                  alignItems: "center",
+                },
+              }}
+            />
+          </CardContent>
+        </Card>
+      </Stack>
     </>
   );
 };
