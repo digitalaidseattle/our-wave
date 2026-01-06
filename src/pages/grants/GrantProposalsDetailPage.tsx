@@ -1,5 +1,5 @@
 import { Box, Card, CardContent, CardHeader, Stack, Typography } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import dayjs from "dayjs";
 
@@ -16,6 +16,18 @@ function countCharacters(text: string): number {
   return text.length;
 }
 
+function formatCreatedAt(createdAt: any): string {
+  if (!createdAt) return "";
+
+  // Firestore Timestamp
+  if (typeof createdAt?.seconds === "number") {
+    return dayjs(new Date(createdAt.seconds * 1000)).format("MM/DD/YYYY hh:mm a");
+  }
+
+  // JS Date / ISO string / etc
+  return dayjs(createdAt).format("MM/DD/YYYY hh:mm a");
+}
+
 const GrantProposalsDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
 
@@ -25,26 +37,39 @@ const GrantProposalsDetailPage: React.FC = () => {
 
   useEffect(() => {
     if (!id) return;
-  
-    const proposalId = id; 
-  
+
+    const proposalId = id;
+
     async function fetchData() {
+      setLoading(true);
+
       try {
-        setLoading(true);
-  
-        const proposalData =
-          await grantProposalService.getById(proposalId);
-  
+        const proposalData = await grantProposalService.getById(proposalId);
         setProposal(proposalData);
-  
-        if (proposalData.grantRecipeId) {
-          const recipe = await grantRecipeService.getById(
-            proposalData.grantRecipeId
-          );
-          setOutputs(recipe.outputsWithWordCount ?? []);
+
+        const recipeId = proposalData?.grantRecipeId;
+
+      
+        // If the recipe fetch fails (ex: scaffold proposal points to a non-existent recipe),
+        // keep rendering the proposal anyway and fall back to structuredResponse keys.
+        if (recipeId != null && String(recipeId).trim() !== "") {
+          try {
+            const recipe = await grantRecipeService.getById(String(recipeId));
+            setOutputs(recipe.outputsWithWordCount ?? []);
+          } catch (err) {
+            console.warn(
+              "Could not load recipe for proposal. Rendering proposal without recipe outputs.",
+              err
+            );
+            setOutputs([]);
+          }
+        } else {
+          setOutputs([]);
         }
       } catch (err) {
         console.error("Error loading proposal detail:", err);
+        setProposal(null);
+        setOutputs([]);
       } finally {
         setLoading(false);
       }
@@ -52,47 +77,65 @@ const GrantProposalsDetailPage: React.FC = () => {
   
     fetchData();
   }, [id]);
-  
-  if (loading) {
-    return <Typography>Loading...</Typography>;
-  }
+
+  const createdAtLabel = useMemo(() => {
+    return proposal?.createdAt ? formatCreatedAt(proposal.createdAt) : "";
+  }, [proposal?.createdAt]);
+
+  if (loading) return <Typography>Loading...</Typography>;
 
   if (!proposal || !proposal.structuredResponse) {
     return <Typography>No proposal data found.</Typography>;
   }
+
+  // If we have recipe outputs, render in that order.
+  // Otherwise, render whatever keys exist in structuredResponse.
+  const fieldsToRender: {
+    name: string;
+    unit?: "words" | "characters";
+    maxWords?: number;
+  }[] =
+    outputs.length > 0
+      ? outputs.map((o) => ({
+          name: o.name,
+          unit: o.unit,
+          maxWords: o.maxWords,
+        }))
+      : Object.keys(proposal.structuredResponse).map((k) => ({ name: k }));
 
   return (
     <Box sx={{ maxWidth: 1000, mx: "auto", p: 3 }}>
       <Stack spacing={3}>
         <Typography variant="h4">Grant Proposal Detail</Typography>
 
-        <Typography variant="body2" color="text.secondary">
-          Generated on{" "}
-          {dayjs(
-            new Date((proposal.createdAt as any)?.seconds * 1000)
-          ).format("MM/DD/YYYY hh:mm")}
-        </Typography>
+        {createdAtLabel && (
+          <Typography variant="body2" color="text.secondary">
+            Generated on {createdAtLabel}
+          </Typography>
+        )}
 
-        {outputs.map((field) => {
+        {fieldsToRender.map((field) => {
           const value: string = proposal.structuredResponse?.[field.name] || "";
-
+        
           const wordCount = countWords(value);
           const charCount = countCharacters(value);
+
+          const hasLimits = typeof field.maxWords === "number" && !!field.unit;
 
           return (
             <Card key={field.name} variant="outlined">
               <CardHeader
                 title={field.name}
                 subheader={
-                  field.unit === "words"
-                    ? `${wordCount} / ${field.maxWords} words`
-                    : `${charCount} / ${field.maxWords} characters`
+                  hasLimits
+                    ? field.unit === "words"
+                      ? `${wordCount} / ${field.maxWords} words`
+                      : `${charCount} / ${field.maxWords} characters`
+                    : `${wordCount} words • ${charCount} characters`
                 }
               />
               <CardContent>
-                <Typography whiteSpace="pre-wrap">
-                  {value || "—"}
-                </Typography>
+                <Typography whiteSpace="pre-wrap">{value || "—"}</Typography>
               </CardContent>
             </Card>
           );

@@ -1,4 +1,4 @@
-import { DeleteOutlined } from "@ant-design/icons";
+import { DeleteOutlined, EyeOutlined } from "@ant-design/icons";
 import { UserContext } from "@digitalaidseattle/core";
 import { Box, Stack, Typography } from "@mui/material";
 import {
@@ -9,11 +9,26 @@ import {
 } from "@mui/x-data-grid";
 import dayjs from "dayjs";
 import { useContext, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { grantProposalService } from "../../services/grantProposalService";
 import type { GrantProposal } from "../../types";
 
+function formatCreatedAt(createdAt: any): string {
+  if (!createdAt) return "";
+
+  // Firestore Timestamp
+  if (typeof createdAt?.seconds === "number") {
+    return dayjs(new Date(createdAt.seconds * 1000)).format("MM/DD/YYYY hh:mm a");
+  }
+
+  // JS Date / ISO string / etc
+  return dayjs(createdAt).format("MM/DD/YYYY hh:mm a");
+}
+
 const GrantProposalsListPage: React.FC = () => {
+  const navigate = useNavigate();
   const { user } = useContext(UserContext);
+
   const [proposals, setProposals] = useState<GrantProposal[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -34,6 +49,29 @@ const GrantProposalsListPage: React.FC = () => {
     }
   };
 
+  const handleDelete = async (id?: string) => {
+    if (!id || !user) return;
+
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this proposal? This action cannot be undone."
+    );
+    if (!confirmed) return;
+
+    try {
+      await grantProposalService.delete(id);
+      await fetchProposals();
+      alert("Proposal deleted successfully!");
+    } catch (error) {
+      console.error("Error deleting proposal:", error);
+      alert("Failed to delete proposal");
+    }
+  };
+
+  const handleRowDoubleClick = (params: GridRowParams<GrantProposal>) => {
+    const id = params.row.id?.toString();
+    if (id) navigate(`/grant-proposals/${id}`);
+  };
+
   const columns: GridColDef<GrantProposal>[] = [
     {
       field: "preview",
@@ -49,20 +87,25 @@ const GrantProposalsListPage: React.FC = () => {
       field: "createdAt",
       headerName: "Date",
       width: 180,
-      valueGetter: (_value, row) =>
-        dayjs(new Date((row.createdAt as any).seconds * 1000)).format(
-          "MM/DD/YYYY hh:mm"
-        ),
+      valueGetter: (_value, row) => formatCreatedAt((row as any).createdAt),
     },
     {
       field: "actions",
       type: "actions",
       headerName: "Actions",
-      width: 120,
+      width: 140,
       getActions: (params) => {
         const rowId = params.row.id?.toString();
+
         return [
           <GridActionsCellItem
+            key={`view-${rowId ?? "no-id"}`}
+            icon={<EyeOutlined />}
+            label="View"
+            onClick={() => rowId && navigate(`/grant-proposals/${rowId}`)}
+          />,
+          <GridActionsCellItem
+            key={`delete-${rowId ?? "no-id"}`}
             icon={<DeleteOutlined />}
             label="Delete"
             onClick={() => handleDelete(rowId)}
@@ -72,33 +115,6 @@ const GrantProposalsListPage: React.FC = () => {
       },
     },
   ];
-
-  const handleDelete = async (id?: string) => {
-    if (!id || !user) return;
-
-    // Confirm deletion
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this proposal? This action cannot be undone."
-    );
-    if (!confirmed) return;
-
-    try {
-      await grantProposalService.delete(id);
-      
-      // Refresh the list after deletion
-      await fetchProposals();
-      alert("Proposal deleted successfully!");
-    } catch (error) {
-      console.error("Error deleting proposal:", error);
-      alert("Failed to delete proposal");
-    }
-  };
-
-  const handleRowDoubleClick = (params: GridRowParams<GrantProposal>) => {
-    if (params.row.id) {
-      alert("Not implemented");
-    }
-  };
 
   return (
     <Box sx={{ height: "100%", width: "100%", p: 3 }}>

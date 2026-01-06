@@ -64,14 +64,60 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
     );
   }
 
-  /**
-   * Creates a proposal draft from a recipe using AI.
-   *
-   * Notes:
-   * - The prompt is already compiled and stored on the recipe.
-   * - Output limits are expected to be enforced by the AI via the template.
-   * - This service does NOT modify or truncate AI output.
-   */
+  // --- DEV scaffolding so Wave-70 UI can be tested without persisted proposals ---
+
+  private mockProposal(id: string): GrantProposal {
+    return {
+      id,
+      createdAt: new Date(),
+      createdBy: "scaffold@digitalaidseattle.org",
+      grantRecipeId: "mock-recipe-id",
+      rating: null,
+      structuredResponse: {
+        "Executive Summary":
+          "Scaffold data for Wave-70. This should render as-is (no truncation) and show word/character counts.",
+        "Project Description":
+          "Longer scaffold text to validate layout/wrapping.\n\nSecond paragraph to validate spacing and line breaks.",
+        "Budget Justification":
+          "Another section to validate multiple cards and counters.",
+      },
+    };
+  }
+
+  private mockAll(): GrantProposal[] {
+    return [
+      this.mockProposal("test-1"),
+      {
+        ...this.mockProposal("test-2"),
+        structuredResponse: {
+          "Need Statement":
+            "Second mocked proposal so the list page renders more than one row.",
+          "Timeline":
+            "Jan: planning\nFeb: implementation\nMar: evaluation",
+        },
+      },
+    ];
+  }
+
+  async getAll(
+    count?: number,
+    select?: string,
+    mapper?: (json: any) => GrantProposal
+  ): Promise<GrantProposal[]> {
+    if (import.meta.env.DEV) return this.mockAll();
+    return super.getAll(count, select, mapper);
+  }
+
+  async getById(
+    entityId: string,
+    select?: string,
+    mapper?: (json: any) => GrantProposal
+  ): Promise<GrantProposal> {
+    if (import.meta.env.DEV) return this.mockProposal(entityId);
+    return super.getById(entityId, select, mapper);
+  }
+
+  // --- real generation (still returns a draft; not persisted) ---
   async generate(recipe: GrantRecipe): Promise<GrantProposal> {
     if (!recipe.id) throw new Error("Recipe ID is required");
 
@@ -93,10 +139,8 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
       recipe.modelType
     );
 
-    // Return proposal draft (not persisted yet)
-    const base = this.empty();
     return {
-      ...base,
+      ...this.empty(),
       grantRecipeId: String(recipe.id),
       structuredResponse,
       rating: null,
