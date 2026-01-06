@@ -70,13 +70,6 @@ const GrantRecipesDetailPage: React.FC = () => {
     }
   }, [id])
 
-  // useEffect(() => {
-  //   if (dirty) {
-  //     const id = setInterval(() => saveRecipe(), AUTO_SAVE_DELAY);
-  //     return () => clearInterval(id);
-  //   }
-  // }, [dirty]);
-
   useEffect(() => {
     if (recipe && recipe.updatedAt) {
       const date = ('seconds' in recipe.updatedAt) ? new Date((recipe.updatedAt as any).seconds * 1000) : recipe.updatedAt;
