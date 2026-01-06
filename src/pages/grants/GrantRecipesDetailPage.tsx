@@ -4,17 +4,25 @@
  * @copyright 2025 Digital Aid Seattle
 */
 import { useContext, useEffect, useState } from "react";
+<<<<<<< HEAD
 import { NavLink, useNavigate, useParams } from "react-router-dom";
 import { HomeOutlined, InfoCircleOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { LoadingContext, useHelp, useNotifications, UserContext } from "@digitalaidseattle/core";
 import { Box, Breadcrumbs, Button, Card, CardActions, CardContent, CardHeader, Divider, IconButton, Stack, TextField, Typography } from "@mui/material";
 import { GrantRecipeContext } from "../../components/GrantRecipeContext";
+=======
+import { useNavigate, useParams } from "react-router-dom";
+import { InfoCircleOutlined } from "@ant-design/icons";
+import { LoadingContext, useHelp, useNotifications, UserContext } from "@digitalaidseattle/core";
+import { Box, Button, Card, CardActions, CardContent, CardHeader, IconButton, Stack, TextField } from "@mui/material";
+>>>>>>> c0d332a (project context)
 import { HelpDrawer } from "../../components/HelpDrawer";
 import { HelpTopicContext } from "../../components/HelpTopicContext";
 import { LoadingOverlay } from "../../components/LoadingOverlay";
 import { grantProposalService } from "../../services/grantProposalService";
 import { grantRecipeService } from "../../services/grantRecipeService";
+<<<<<<< HEAD
 import type { GrantOutput } from "../../types";
 import { GrantRecipe } from "../../types";
 import { GrantContextEditor } from "./GrantContextEditor";
@@ -24,6 +32,14 @@ import { cloneRecipe } from "../../transactions/CloneRecipe";
 =======
 import { GrantInfoEditor } from "./GrantInfoEditor";
 >>>>>>> f2961b4 (tags & ratings)
+=======
+import { GrantRecipe } from "../../types";
+import { GrantContextEditor } from "./GrantContextEditor";
+import { GrantOutputEditor } from "./GrantOutputEditor";
+import { LoadingOverlay } from "../../components/LoadingOverlay";
+import { HelpTopicContext } from "../../components/HelpTopicContext";
+import type { GrantInput, GrantOutput } from "../../types";
+>>>>>>> c0d332a (project context)
 
 const HELP_DRAWER_WIDTH = 300;
 const HELP_TITLE = "Our Wave";
@@ -35,7 +51,11 @@ const HELP_DICTIONARY = {
 =======
   "Info": "Change the description for easier tracking in the application.  A rating change can aid in selecting better recipes.  Tags can help categorize recipes.",
   "Prompt": "This prompt template is filled with text using the input and output parameters.",
+<<<<<<< HEAD
 >>>>>>> f2961b4 (tags & ratings)
+=======
+  "Contexts": "Information about your organization and project that will be included in the project conext.",
+>>>>>>> c0d332a (project context)
   "Inputs": "Facts to be used in the prompt.",
   "Outputs": "Guidance for output constraints.",
   "Prompt": "This prompt is what is sent to the AI model to generate the proposal.",
@@ -170,6 +190,14 @@ const GrantRecipesDetailPage: React.FC = () => {
     setDirty(true);
   }
 
+  function handleGrantContextsChange(contexts: GrantContext[]): void {
+    updatePrompt({ ...recipe, contexts: contexts })
+      .then(revised => {
+        setRecipe(revised);
+        setDirty(true);
+      })
+  }
+
   function handlePromptChange(updated: string): void {
     updatePrompt({ ...recipe, prompt: updated })
       .then(revised => {
@@ -240,7 +268,8 @@ const GrantRecipesDetailPage: React.FC = () => {
                 <Stack gap={1}>
                   <GrantInfoEditor recipe={recipe} onChange={handleInfoChange} />
                   <TextEditor title="Prompt" value={recipe.prompt} onChange={handlePromptChange} />
-                  <GrantInputEditor recipeInputs={recipe.inputParameters} onChange={handleGrantInputChange} />
+                  <GrantContextEditor disabled={false} contexts={recipe.contexts} onChange={handleGrantContextsChange} />
+                  {/* <GrantInputEditor recipeInputs={recipe.inputParameters} onChange={handleGrantInputChange} /> */}
                   <GrantOutputEditor fields={recipe.outputsWithWordCount} onChange={handleGrantOutputChange} />
                 </Stack>
               </CardContent>

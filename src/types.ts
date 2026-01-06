@@ -15,10 +15,16 @@ export type GrantInput = {
 };
 
 export type GrantOutput = {
-  name: string;
-  maxWords: number;
-  unit: "words" | "characters";
-};
+    name: string;
+    maxWords: number;
+    unit: 'words' | 'characters';
+}
+
+export type GrantContext = {
+    type: "text" | "file";
+    filePath?: string;
+    value: string | null;
+}
 
 export type GrantContext = {
     type: "text" | "file";
