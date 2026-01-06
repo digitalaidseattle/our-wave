@@ -3,26 +3,27 @@
  * 
  * @copyright 2025 Digital Aid Seattle
 */
-import { useContext, useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
 import { InfoCircleOutlined } from "@ant-design/icons";
 import { LoadingContext, useHelp, useNotifications, UserContext } from "@digitalaidseattle/core";
 import { Box, Button, Card, CardActions, CardContent, CardHeader, IconButton, Stack, TextField } from "@mui/material";
+import { useContext, useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { HelpDrawer } from "../../components/HelpDrawer";
+import { HelpTopicContext } from "../../components/HelpTopicContext";
+import { LoadingOverlay } from "../../components/LoadingOverlay";
 import { grantProposalService } from "../../services/grantProposalService";
 import { grantRecipeService } from "../../services/grantRecipeService";
+import type { GrantContext, GrantInput, GrantOutput } from "../../types";
 import { GrantRecipe } from "../../types";
-import { GrantInputEditor } from "./GrantInputEditor";
+import { GrantContextEditor } from "./GrantContextEditor";
 import { GrantOutputEditor } from "./GrantOutputEditor";
-import { LoadingOverlay } from "../../components/LoadingOverlay";
-import { HelpTopicContext } from "../../components/HelpTopicContext";
-import type { GrantInput, GrantOutput } from "../../types";
 
 const HELP_DRAWER_WIDTH = 300;
 const HELP_TITLE = "Our Wave";
 const HELP_DICTIONARY = {
   "Description": "Change this field for easier tracking in the application.",
   "Prompt": "This prompt template is filled with text using the input and output parameters.",
+  "Contexts": "Information about your organization and project that will be included in the project conext.",
   "Inputs": "Facts to be used in the prompt.",
   "Outputs": "Guidance for output constraints.",
 }
@@ -145,6 +146,14 @@ const GrantRecipesDetailPage: React.FC = () => {
     setDirty(true);
   }
 
+  function handleGrantContextsChange(contexts: GrantContext[]): void {
+    updatePrompt({ ...recipe, contexts: contexts })
+      .then(revised => {
+        setRecipe(revised);
+        setDirty(true);
+      })
+  }
+
   function handlePromptChange(updated: string): void {
     updatePrompt({ ...recipe, prompt: updated })
       .then(revised => {
@@ -174,7 +183,8 @@ const GrantRecipesDetailPage: React.FC = () => {
                 <Stack gap={1}>
                   <TextEditor title="Description" value={recipe.description} onChange={handleDescriptionChange} />
                   <TextEditor title="Prompt" value={recipe.prompt} onChange={handlePromptChange} />
-                  <GrantInputEditor recipeInputs={recipe.inputParameters} onChange={handleGrantInputChange} />
+                  <GrantContextEditor disabled={false} contexts={recipe.contexts} onChange={handleGrantContextsChange} />
+                  {/* <GrantInputEditor recipeInputs={recipe.inputParameters} onChange={handleGrantInputChange} /> */}
                   <GrantOutputEditor fields={recipe.outputsWithWordCount} onChange={handleGrantOutputChange} />
                 </Stack>
               </CardContent>

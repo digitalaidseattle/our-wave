@@ -22,6 +22,12 @@ export type GrantOutput = {
     unit: 'words' | 'characters';
 }
 
+export type GrantContext = {
+    type: "text" | "file";
+    filePath?: string;
+    value: string | null;
+}
+
 export type GrantRecipe = Entity & {
     createdAt: Timestamp | Date;
     createdBy: string;
@@ -29,6 +35,7 @@ export type GrantRecipe = Entity & {
     updatedBy: string;
     description: string;
     prompt: string;  // Instructions for AI
+    contexts: GrantContext[]; // AI will be asked to include this information
     inputParameters: GrantInput[]; // AI will be asked to include this information
     outputsWithWordCount: GrantOutput[]; // AI will be based to output the data with these constraints
     tokenString: string;  // Store what will be sent to AI
