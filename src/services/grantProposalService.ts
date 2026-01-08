@@ -22,25 +22,31 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
   }
 
   // Insert a new proposal with metadata added
-  async insert(
-    entity: GrantProposal,
-    select?: string,
-    mapper?: (json: any) => GrantProposal,
-    user?: User
-  ): Promise<GrantProposal> {
-    if (!user?.email) throw new Error("User email is required");
+// Insert a new proposal with metadata added
+async insert(
+  entity: GrantProposal,
+  select?: string,
+  mapper?: (json: any) => GrantProposal,
+  user?: User
+): Promise<GrantProposal> {
+  if (!user?.email) throw new Error("User email is required");
 
-    return super.insert(
-      {
-        ...entity,
-        createdAt: new Date(),
-        createdBy: user.email,
-      },
-      select,
-      mapper,
-      user
-    );
-  }
+  // Firestore can't store `undefined` (and we don't want to persist id anyway)
+  // so remove it before insert.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { id, ...entityWithoutId } = entity;
+
+  return super.insert(
+    {
+      ...entityWithoutId,
+      createdAt: new Date(),
+      createdBy: user.email,
+    } as GrantProposal,
+    select,
+    mapper,
+    user
+  );
+}
 
   // Update a proposal
   async update(
@@ -104,16 +110,31 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
     select?: string,
     mapper?: (json: any) => GrantProposal
   ): Promise<GrantProposal[]> {
-    if (import.meta.env.DEV) return this.mockAll();
+    if (import.meta.env.DEV) {
+      // show mocks + whatever is actually in Firestore
+      try {
+        const real = await super.getAll(count, select, mapper);
+        return [...this.mockAll(), ...(real ?? [])];
+      } catch {
+        return this.mockAll();
+      }
+    }
+  
     return super.getAll(count, select, mapper);
   }
-
+  
   async getById(
     entityId: string,
     select?: string,
     mapper?: (json: any) => GrantProposal
   ): Promise<GrantProposal> {
-    if (import.meta.env.DEV) return this.mockProposal(entityId);
+    if (import.meta.env.DEV) {
+      // only intercept the known mock ids
+      if (String(entityId).startsWith("test-")) {
+        return this.mockProposal(entityId);
+      }
+    }
+  
     return super.getById(entityId, select, mapper);
   }
 
