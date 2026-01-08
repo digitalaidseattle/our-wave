@@ -22,7 +22,6 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
   }
 
   // Insert a new proposal with metadata added
-// Insert a new proposal with metadata added
 async insert(
   entity: GrantProposal,
   select?: string,

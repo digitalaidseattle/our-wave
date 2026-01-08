@@ -124,10 +124,10 @@ const GrantRecipesDetailPage: React.FC = () => {
       try {
         setLoading(true);
     
-        // 1) AI -> returns a draft proposal object (not saved)
+        //AI -> returns a draft proposal object (not saved)
         const draft = await grantProposalService.generate(recipe);
     
-        // 2) Persist proposal
+        // Persist proposal
         const saved = await grantProposalService.insert(
           {
             ...draft,
@@ -141,7 +141,7 @@ const GrantRecipesDetailPage: React.FC = () => {
     
         notifications.success(`Proposal generated for ${recipe.description}.`);
     
-        // 3) Navigate to proposal detail
+        //Navigate to proposal detail
         navigate(`/grant-proposals/${saved.id}`);
       } catch (err: any) {
         console.error(err);
