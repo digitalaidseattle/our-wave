@@ -3,21 +3,21 @@
  * 
  * @copyright 2025 Digital Aid Seattle
 */
-import { useContext, useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { InfoCircleOutlined } from "@ant-design/icons";
-import { Box, Button, Card, CardActions, CardContent, CardHeader, IconButton, Stack, TextField } from "@mui/material";
-import dayjs from "dayjs";
+import { HomeOutlined, InfoCircleOutlined } from "@ant-design/icons";
 import { LoadingContext, useHelp, useNotifications, UserContext } from "@digitalaidseattle/core";
+import { Breadcrumbs, Button, Card, CardActions, CardContent, CardHeader, IconButton, Stack, TextField, Typography } from "@mui/material";
+import dayjs from "dayjs";
+import { useContext, useEffect, useState } from "react";
+import { NavLink, useNavigate, useParams } from "react-router-dom";
 import { HelpDrawer } from "../../components/HelpDrawer";
+import { HelpTopicContext } from "../../components/HelpTopicContext";
+import { LoadingOverlay } from "../../components/LoadingOverlay";
 import { grantProposalService } from "../../services/grantProposalService";
 import { grantRecipeService } from "../../services/grantRecipeService";
+import type { GrantInput, GrantOutput } from "../../types";
 import { GrantRecipe } from "../../types";
 import { GrantInputEditor } from "./GrantInputEditor";
 import { GrantOutputEditor } from "./GrantOutputEditor";
-import { LoadingOverlay } from "../../components/LoadingOverlay";
-import { HelpTopicContext } from "../../components/HelpTopicContext";
-import type { GrantInput, GrantOutput } from "../../types";
 
 const HELP_DRAWER_WIDTH = 300;
 const HELP_TITLE = "Our Wave";
@@ -174,29 +174,32 @@ const GrantRecipesDetailPage: React.FC = () => {
     <>
       <LoadingOverlay />
       <HelpTopicContext.Provider value={{ helpTopic, setHelpTopic }} >
-        <Box gap={4}>
-          <Stack sx={{ gap: 2, marginRight: `${showHelp ? HELP_DRAWER_WIDTH : 0}px` }}>
-            <Card>
-              <CardHeader title="Grant Recipe Detail"
-                action={`Token count = ${recipe.tokenCount}`}
-                subheader={`Last updated: ${lastUpdated}`} />
-              <CardContent>
-                <Stack gap={1}>
-                  <TextEditor title="Description" value={recipe.description} onChange={handleDescriptionChange} />
-                  <TextEditor title="Prompt" value={recipe.prompt} onChange={handlePromptChange} />
-                  <GrantInputEditor recipeInputs={recipe.inputParameters} onChange={handleGrantInputChange} />
-                  <GrantOutputEditor fields={recipe.outputsWithWordCount} onChange={handleGrantOutputChange} />
-                </Stack>
-              </CardContent>
-              <CardActions>
-                <Button variant="contained" disabled={loading} onClick={() => handleClone()}>Clone</Button>
-                <Button variant="contained" disabled={loading} onClick={() => handleGenerate()}>Generate</Button>
-              </CardActions>
-            </Card>
-          </Stack>
-          <HelpDrawer title={HELP_TITLE} width={HELP_DRAWER_WIDTH} dictionary={HELP_DICTIONARY} />
-        </Box>
-      </HelpTopicContext.Provider>
+        <Stack sx={{ marginRight: `${showHelp ? HELP_DRAWER_WIDTH : 0}px` }}>
+          <Breadcrumbs aria-label="breadcrumb">
+            <NavLink to="/" ><IconButton size="medium"><HomeOutlined /></IconButton></NavLink>
+            <NavLink to={`/grant-recipes`} >Recipes</NavLink>
+            <Typography color="text.primary">Recipe Detail</Typography>
+          </Breadcrumbs>
+          <Card>
+            <CardHeader title="Grant Recipe Detail"
+              action={`Token count = ${recipe.tokenCount}`}
+              subheader={`Last updated: ${lastUpdated}`} />
+            <CardContent>
+              <Stack gap={1}>
+                <TextEditor title="Description" value={recipe.description} onChange={handleDescriptionChange} />
+                <TextEditor title="Prompt" value={recipe.prompt} onChange={handlePromptChange} />
+                <GrantInputEditor recipeInputs={recipe.inputParameters} onChange={handleGrantInputChange} />
+                <GrantOutputEditor fields={recipe.outputsWithWordCount} onChange={handleGrantOutputChange} />
+              </Stack>
+            </CardContent>
+            <CardActions>
+              <Button variant="contained" disabled={loading} onClick={() => handleClone()}>Clone</Button>
+              <Button variant="contained" disabled={loading} onClick={() => handleGenerate()}>Generate</Button>
+            </CardActions>
+          </Card>
+        </Stack>
+        <HelpDrawer title={HELP_TITLE} width={HELP_DRAWER_WIDTH} dictionary={HELP_DICTIONARY} />
+      </HelpTopicContext.Provider >
     </>
   );
 

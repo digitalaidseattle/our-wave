@@ -1,6 +1,6 @@
-import { DeleteOutlined } from "@ant-design/icons";
+import { DeleteOutlined, HomeOutlined } from "@ant-design/icons";
 import { UserContext } from "@digitalaidseattle/core";
-import { Box, Stack, Typography } from "@mui/material";
+import { Breadcrumbs, Card, CardContent, CardHeader, IconButton, Link, Typography } from "@mui/material";
 import {
   DataGrid,
   GridActionsCellItem,
@@ -84,7 +84,7 @@ const GrantProposalsListPage: React.FC = () => {
 
     try {
       await grantProposalService.delete(id);
-      
+
       // Refresh the list after deletion
       await fetchProposals();
       alert("Proposal deleted successfully!");
@@ -101,20 +101,26 @@ const GrantProposalsListPage: React.FC = () => {
   };
 
   return (
-    <Box sx={{ height: "100%", width: "100%", p: 3 }}>
-      <Stack spacing={3}>
-        <Typography variant="h4">Grant Proposals</Typography>
-        <DataGrid
-          rows={proposals}
-          columns={columns}
-          loading={loading}
-          getRowId={(row) => row.id || ""}
-          onRowDoubleClick={handleRowDoubleClick}
-          pageSizeOptions={[10, 25, 50]}
-          disableRowSelectionOnClick
-        />
-      </Stack>
-    </Box>
+    <>
+      <Breadcrumbs aria-label="breadcrumb">
+        <Link color="text.primary"><IconButton size="medium"><HomeOutlined /></IconButton></Link>
+        <Typography color="text.primary">Proposals</Typography>
+      </Breadcrumbs>
+      <Card>
+        <CardHeader title="Grant Proposals" />
+        <CardContent>
+          <DataGrid
+            rows={proposals}
+            columns={columns}
+            loading={loading}
+            getRowId={(row) => row.id || ""}
+            onRowDoubleClick={handleRowDoubleClick}
+            pageSizeOptions={[10, 25, 50]}
+            disableRowSelectionOnClick
+          />
+        </CardContent>
+      </Card >
+    </>
   );
 };
 
