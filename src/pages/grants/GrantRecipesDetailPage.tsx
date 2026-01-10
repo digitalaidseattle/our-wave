@@ -118,21 +118,42 @@ const GrantRecipesDetailPage: React.FC = () => {
     }
   }
 
-  function handleGenerate() {
-    if (recipe) {
-      setLoading(true);
-      grantProposalService.generate(recipe)
-        .then(_generated => {
-          // Add generated to list of proposals?
-          notifications.success(`A proposal for ${recipe.description} has been successfully generated.`)
-        })
-        .catch(err => {
-          console.error(err)
-          notifications.error(`Could not generate a proposal for his recipe. ${err.message}`)
-        })
-        .finally(() => setLoading(false))
+  async function handleGenerate() {
+      if (!recipe || !user) return;
+    
+      try {
+        setLoading(true);
+    
+        //AI -> returns a draft proposal object (not saved)
+        const draft = await grantProposalService.generate(recipe);
+    
+        // Persist proposal
+        const saved = await grantProposalService.insert(
+          {
+            ...draft,
+            // make sure the proposal points back to this recipe
+            grantRecipeId: String(recipe.id),
+          },
+          undefined,
+          undefined,
+          user
+        );
+    
+        notifications.success(`Proposal generated for ${recipe.description}.`);
+    
+        //Navigate to proposal detail
+        navigate(`/grant-proposals/${saved.id}`);
+      } catch (err: any) {
+        console.error(err);
+        notifications.error(
+          `Could not generate a proposal for this recipe. ${
+            err?.message ?? "Unknown error"
+          }`
+        );
+      } finally {
+        setLoading(false);
+      }
     }
-  }
 
   function updatePrompt(changed: GrantRecipe): Promise<GrantRecipe> {
     return grantRecipeService.updatePrompt(changed);
