@@ -6,11 +6,10 @@
 import { DeleteOutlined, InfoCircleOutlined, PlusOutlined } from '@ant-design/icons';
 import { useHelp } from '@digitalaidseattle/core';
 import {
-  Button, Card,
-  CardContent, CardHeader, FormControlLabel,
+  Button, ButtonGroup,
+  Card, CardContent, CardHeader,
   IconButton,
   Stack,
-  Switch,
   TextField
 } from "@mui/material";
 import { useContext, useEffect, useState } from "react";
@@ -62,7 +61,7 @@ export const GrantOutputEditor = ({ fields, onChange }: { fields: GrantOutput[],
         action={
           <Button
             variant="outlined"
-            color="success"
+            color="primary"
             onClick={handleAddOutputField}
             startIcon={<PlusOutlined />}
             sx={{ alignSelf: 'flex-start' }}
@@ -87,15 +86,16 @@ export const GrantOutputEditor = ({ fields, onChange }: { fields: GrantOutput[],
                 value={field.maxWords}
                 onChange={(e) => handleOutputFieldChange(index, 'maxWords', parseInt(e.target.value) || 0)}
               />
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={field.unit === 'characters'}
-                    onChange={() => handleOutputUnitToggle(index)}
-                  />
-                }
-                label={field.unit === 'words' ? 'Words' : 'Chars'}
-              />
+              <ButtonGroup variant="contained" aria-label="Basic button group">
+                <Button
+                  variant={field.unit === 'words' ? 'contained' : 'outlined'}
+                  onClick={() => handleOutputUnitToggle(index)}
+                >Words</Button>
+                <Button
+                  variant={field.unit === 'characters' ? 'contained' : 'outlined'}
+                  onClick={() => handleOutputUnitToggle(index)}
+                >Characters</Button>
+              </ButtonGroup>
               <Button
                 color="error"
                 onClick={() => handleRemoveOutputField(index)}

@@ -136,7 +136,7 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
    * self-limits its response rather than being truncated later.
    */
   generatePromptWithInputs(recipe: GrantRecipe): string {
-    const compiled = Handlebars.compile(recipe.template);
+    const compiled = Handlebars.compile(recipe.template ?? "");
 
     const basePrompt = compiled({
       inputs: recipe.inputParameters,

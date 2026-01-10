@@ -1,8 +1,15 @@
-import { Box, Card, CardContent, CardHeader, Stack, Typography } from "@mui/material";
+/**
+ * GrantProposalsDetailPage.tsx
+ * 
+ * @copyright 2026 Digital Aid Seattle
+*/
+import { HomeOutlined } from "@ant-design/icons";
+import { Box, Breadcrumbs, Card, CardContent, CardHeader, IconButton, Stack, Typography } from "@mui/material";
 import { useEffect, useState, useMemo } from "react";
-import { useParams } from "react-router-dom";
+import { NavLink, useParams } from "react-router-dom";
 import dayjs from "dayjs";
 
+import { LoadingOverlay } from "../../components/LoadingOverlay";
 import { grantProposalService } from "../../services/grantProposalService";
 import { grantRecipeService } from "../../services/grantRecipeService";
 import type { GrantProposal, GrantOutput } from "../../types";
@@ -82,10 +89,19 @@ const GrantProposalsDetailPage: React.FC = () => {
     return proposal?.createdAt ? formatCreatedAt(proposal.createdAt) : "";
   }, [proposal?.createdAt]);
 
-  if (loading) return <Typography>Loading...</Typography>;
+  if (loading) return <LoadingOverlay />;
 
   if (!proposal || !proposal.structuredResponse) {
-    return <Typography>No proposal data found.</Typography>;
+    return (
+      <>
+        <Breadcrumbs aria-label="breadcrumb">
+          <NavLink to="/" ><IconButton size="medium"><HomeOutlined /></IconButton></NavLink>
+          <NavLink to={`/grant-proposals`} >Proposals</NavLink>
+          <Typography color="text.primary">Proposal Detail</Typography>
+        </Breadcrumbs>
+        <Typography>No proposal data found.</Typography>
+      </>
+    );
   }
 
   // If we have recipe outputs, render in that order.
@@ -104,44 +120,52 @@ const GrantProposalsDetailPage: React.FC = () => {
       : Object.keys(proposal.structuredResponse).map((k) => ({ name: k }));
 
   return (
-    <Box sx={{ maxWidth: 1000, mx: "auto", p: 3 }}>
-      <Stack spacing={3}>
-        <Typography variant="h4">Grant Proposal Detail</Typography>
+    <>
+      <LoadingOverlay />
+      <Breadcrumbs aria-label="breadcrumb">
+        <NavLink to="/" ><IconButton size="medium"><HomeOutlined /></IconButton></NavLink>
+        <NavLink to={`/grant-proposals`} >Proposals</NavLink>
+        <Typography color="text.primary">Proposal Detail</Typography>
+      </Breadcrumbs>
+      <Box sx={{ maxWidth: 1000, mx: "auto", p: 3 }}>
+        <Stack spacing={3}>
+          <Typography variant="h4">Grant Proposal Detail</Typography>
 
-        {createdAtLabel && (
-          <Typography variant="body2" color="text.secondary">
-            Generated on {createdAtLabel}
-          </Typography>
-        )}
+          {createdAtLabel && (
+            <Typography variant="body2" color="text.secondary">
+              Generated on {createdAtLabel}
+            </Typography>
+          )}
 
-        {fieldsToRender.map((field) => {
-          const value: string = proposal.structuredResponse?.[field.name] || "";
+          {fieldsToRender.map((field) => {
+            const value: string = proposal.structuredResponse?.[field.name] || "";
         
-          const wordCount = countWords(value);
-          const charCount = countCharacters(value);
+            const wordCount = countWords(value);
+            const charCount = countCharacters(value);
 
-          const hasLimits = typeof field.maxWords === "number" && !!field.unit;
+            const hasLimits = typeof field.maxWords === "number" && !!field.unit;
 
-          return (
-            <Card key={field.name} variant="outlined">
-              <CardHeader
-                title={field.name}
-                subheader={
-                  hasLimits
-                    ? field.unit === "words"
-                      ? `${wordCount} / ${field.maxWords} words`
-                      : `${charCount} / ${field.maxWords} characters`
-                    : `${wordCount} words • ${charCount} characters`
-                }
-              />
-              <CardContent>
-                <Typography whiteSpace="pre-wrap">{value || "—"}</Typography>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </Stack>
-    </Box>
+            return (
+              <Card key={field.name} variant="outlined">
+                <CardHeader
+                  title={field.name}
+                  subheader={
+                    hasLimits
+                      ? field.unit === "words"
+                        ? `${wordCount} / ${field.maxWords} words`
+                        : `${charCount} / ${field.maxWords} characters`
+                      : `${wordCount} words • ${charCount} characters`
+                  }
+                />
+                <CardContent>
+                  <Typography whiteSpace="pre-wrap">{value || "—"}</Typography>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </Stack>
+      </Box>
+    </>
   );
 };
 
