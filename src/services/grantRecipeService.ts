@@ -110,7 +110,7 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
   }
 
   generatePromptWithInputs(recipe: GrantRecipe): string {
-    const compiled = Handlebars.compile(recipe.template);
+    const compiled = Handlebars.compile(recipe.template ?? "");
 
     const basePrompt = compiled({
       inputs: recipe.inputParameters,

@@ -1,8 +1,8 @@
-import { CopyOutlined, DeleteOutlined, PlusCircleOutlined } from "@ant-design/icons";
-import { Box, Card, CardContent, CardHeader, IconButton, Toolbar, Tooltip } from "@mui/material";
+import { CopyOutlined, DeleteOutlined, HomeOutlined, PlusCircleOutlined } from "@ant-design/icons";
+import { Box, Breadcrumbs, Card, CardContent, CardHeader, IconButton, Toolbar, Tooltip, Typography } from "@mui/material";
 import { DataGrid, GridColDef, GridRowParams, GridRowSelectionModel } from "@mui/x-data-grid";
 import { useContext, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 
 import { LoadingContext, useNotifications } from "@digitalaidseattle/core";
 import dayjs from 'dayjs';
@@ -148,6 +148,10 @@ const GrantRecipesListPage: React.FC = () => {
   return (
     <>
       <LoadingOverlay />
+      <Breadcrumbs aria-label="breadcrumb">
+        <NavLink color="text.primary" to="/" ><IconButton size="medium"><HomeOutlined /></IconButton></NavLink>
+        <Typography color="text.primary">Recipes</Typography>
+      </Breadcrumbs>
       <Card>
         <CardHeader title="Grant Recipes" />
         <CardContent>

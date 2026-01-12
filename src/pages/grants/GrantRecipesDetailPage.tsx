@@ -3,15 +3,18 @@
  * 
  * @copyright 2025 Digital Aid Seattle
 */
+import { InfoCircleOutlined } from "@ant-design/icons";
+import { LoadingContext, useHelp, useNotifications, UserContext } from "@digitalaidseattle/core";
+import { Box, Button, Card, CardActions, CardContent, CardHeader, Divider, IconButton, Stack, TextField } from "@mui/material";
+import dayjs from "dayjs";
 import { useContext, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { InfoCircleOutlined } from "@ant-design/icons";
-import { Box, Button, Card, CardActions, CardContent, CardHeader, IconButton, Stack, TextField } from "@mui/material";
-import dayjs from "dayjs";
-import { LoadingContext, useHelp, useNotifications, UserContext } from "@digitalaidseattle/core";
 import { HelpDrawer } from "../../components/HelpDrawer";
+import { HelpTopicContext } from "../../components/HelpTopicContext";
+import { LoadingOverlay } from "../../components/LoadingOverlay";
 import { grantProposalService } from "../../services/grantProposalService";
 import { grantRecipeService } from "../../services/grantRecipeService";
+import type { GrantInput, GrantOutput } from "../../types";
 import { GrantRecipe } from "../../types";
 import { GrantInputEditor } from "./GrantInputEditor";
 import { GrantOutputEditor } from "./GrantOutputEditor";
@@ -28,8 +31,6 @@ const HELP_DICTIONARY = {
   "Inputs": "Facts to be used in the prompt.",
   "Outputs": "Guidance for output constraints.",
 }
-
-const AUTO_SAVE_DELAY = 1000 * 2;
 
 export const TextEditor = ({ title, value, onChange }: { title: string, value: string, onChange: (updated: string) => void }) => {
   const { setHelpTopic } = useContext(HelpTopicContext);
@@ -74,13 +75,6 @@ const GrantRecipesDetailPage: React.FC = () => {
   }, [id])
 
   useEffect(() => {
-    if (dirty) {
-      const id = setInterval(() => saveRecipe(), AUTO_SAVE_DELAY);
-      return () => clearInterval(id);
-    }
-  }, [dirty]);
-
-  useEffect(() => {
     if (recipe && recipe.updatedAt) {
       const date = ('seconds' in recipe.updatedAt) ? new Date((recipe.updatedAt as any).seconds * 1000) : recipe.updatedAt;
       setLastUpdated(dayjs(date).format("MM/DD/YYYY hh:mm a"));
@@ -119,21 +113,42 @@ const GrantRecipesDetailPage: React.FC = () => {
     }
   }
 
-  function handleGenerate() {
-    if (recipe) {
-      setLoading(true);
-      grantProposalService.generate(recipe)
-        .then(_generated => {
-          // Add generated to list of proposals?
-          notifications.success(`A proposal for ${recipe.description} has been successfully generated.`)
-        })
-        .catch(err => {
-          console.error(err)
-          notifications.error(`Could not generate a proposal for his recipe. ${err.message}`)
-        })
-        .finally(() => setLoading(false))
+  async function handleGenerate() {
+      if (!recipe || !user) return;
+    
+      try {
+        setLoading(true);
+    
+        //AI -> returns a draft proposal object (not saved)
+        const draft = await grantProposalService.generate(recipe);
+    
+        // Persist proposal
+        const saved = await grantProposalService.insert(
+          {
+            ...draft,
+            // make sure the proposal points back to this recipe
+            grantRecipeId: String(recipe.id),
+          },
+          undefined,
+          undefined,
+          user
+        );
+    
+        notifications.success(`Proposal generated for ${recipe.description}.`);
+    
+        //Navigate to proposal detail
+        navigate(`/grant-proposals/${saved.id}`);
+      } catch (err: any) {
+        console.error(err);
+        notifications.error(
+          `Could not generate a proposal for this recipe. ${
+            err?.message ?? "Unknown error"
+          }`
+        );
+      } finally {
+        setLoading(false);
+      }
     }
-  }
 
   function updatePrompt(changed: GrantRecipe): Promise<GrantRecipe> {
     return grantRecipeService.updatePrompt(changed);
@@ -190,6 +205,8 @@ const GrantRecipesDetailPage: React.FC = () => {
                 </Stack>
               </CardContent>
               <CardActions>
+                <Button variant="contained" disabled={loading || !dirty} onClick={() => saveRecipe()}>Save</Button>
+                <Divider orientation="vertical" />
                 <Button variant="contained" disabled={loading} onClick={() => handleClone()}>Clone</Button>
                 <Button variant="contained" disabled={loading} onClick={() => handleGenerate()}>Generate</Button>
               </CardActions>
