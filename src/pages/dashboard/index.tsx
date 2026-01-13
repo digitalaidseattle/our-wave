@@ -43,6 +43,7 @@ import avatar1 from '/src/assets/images/users/avatar-1.png';
 import avatar2 from '/src/assets/images/users/avatar-2.png';
 import avatar3 from '/src/assets/images/users/avatar-3.png';
 import avatar4 from '/src/assets/images/users/avatar-4.png';
+import { cloneRecipe } from '../../transactions/CloneRecipe';
 
 // avatar style
 const avatarSX = {
@@ -125,8 +126,10 @@ const CloneRecipeCard = () => {
   }
 
   function handleClick() {
-    createRecipe()
-      .then(recipe => navigate(`/grant-recipes/${recipe.id}`))
+    if (selectedRecipe) {
+      cloneRecipe(selectedRecipe)
+        .then(recipe => navigate(`/grant-recipes/${recipe.id}`))
+    }
   }
 
   return (
@@ -178,13 +181,13 @@ const DashboardDefault = () => {
       <Grid size={12} sx={{ mb: -2.25 }}>
         <Typography variant="h5" color={theme.palette.text.primary}>Dashboard</Typography>
       </Grid>
-      <Grid size={2}>
-        <CreateRecipeCard />
+      <Grid size={6}>
+        <Stack spacing={2} >
+          <CreateRecipeCard />
+          <CloneRecipeCard />
+        </Stack>
       </Grid>
-      <Grid size={5}>
-        <CloneRecipeCard />
-      </Grid>
-      <Grid size={5}>
+      <Grid size={6}>
         <RecentRecipesCard />
       </Grid>
 
