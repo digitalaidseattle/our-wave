@@ -6,6 +6,7 @@
  */
 import { DeleteOutlined, FileSearchOutlined, InfoCircleOutlined, PlusOutlined } from '@ant-design/icons';
 <<<<<<< HEAD
+<<<<<<< HEAD
 import { useHelp } from '@digitalaidseattle/core';
 import { Button, Card, CardContent, CardHeader, IconButton, InputAdornment, OutlinedInput, Stack, Toolbar, Typography } from "@mui/material";
 import React, { useContext, useEffect } from "react";
@@ -23,6 +24,17 @@ import { GoogleDriveFileSearchDialog } from '../../components/GoogleDriveFileSea
 import { HelpTopicContext } from '../../components/HelpTopicContext';
 import { useHelp } from '@digitalaidseattle/core';
 >>>>>>> c0d332a (project context)
+=======
+import { useHelp } from '@digitalaidseattle/core';
+import { Button, Card, CardContent, CardHeader, IconButton, InputAdornment, OutlinedInput, Stack, Toolbar, Typography } from "@mui/material";
+import React, { useContext, useEffect } from "react";
+import { geminiService } from '../../api/geminiService';
+import { GoogleDriveFileSearchDialog } from '../../components/GoogleDriveFileSearchDialog';
+import { GrantRecipeContext } from '../../components/GrantRecipeContext';
+import { HelpTopicContext } from '../../components/HelpTopicContext';
+import { GoogleFile } from '../../services/googleDriveService';
+import { GrantContext, GrantRecipe } from '../../types';
+>>>>>>> 77917b0 (Project Context)
 
 interface ContextRowProps {
     index: number;
@@ -40,6 +52,9 @@ const ContextRow = ({ index, disabled, context, onChange, onDelete }: ContextRow
     }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 77917b0 (Project Context)
     function handleFileSelection(gf: GoogleFile | null): void {
         if (gf) {
             // const tokenCount = geminiService.calcTokenCount();
@@ -52,8 +67,11 @@ const ContextRow = ({ index, disabled, context, onChange, onDelete }: ContextRow
         onChange(index, { ...context, value: e.target.value });
     }
 
+<<<<<<< HEAD
 =======
 >>>>>>> c0d332a (project context)
+=======
+>>>>>>> 77917b0 (Project Context)
     return (
         <Stack
             direction={'row'}
@@ -72,6 +90,7 @@ const ContextRow = ({ index, disabled, context, onChange, onDelete }: ContextRow
                 <DeleteOutlined />
             </Button>
 <<<<<<< HEAD
+<<<<<<< HEAD
             {(context.type === 'text') &&
                 <OutlinedInput
                     disabled={disabled}
@@ -86,13 +105,21 @@ const ContextRow = ({ index, disabled, context, onChange, onDelete }: ContextRow
                 <MenuItem value={'text'}>Text</MenuItem>
                 <MenuItem value={'file'}>File</MenuItem>
             </Select>
+=======
+>>>>>>> 77917b0 (Project Context)
             {(context.type === 'text') &&
-                <TextField
+                <OutlinedInput
                     disabled={disabled}
                     fullWidth={true}
+<<<<<<< HEAD
                     value={context.value}
                     onChange={(e) => onChange(index, { ...context, value: e.target.value })}
 >>>>>>> c0d332a (project context)
+=======
+                    placeholder='Enter context information here'
+                    value={context.value ?? ''}
+                    onChange={handleTextChange}
+>>>>>>> 77917b0 (Project Context)
                     multiline={true}
                     rows={1}
                     sx={{
@@ -106,6 +133,7 @@ const ContextRow = ({ index, disabled, context, onChange, onDelete }: ContextRow
                     <OutlinedInput
                         disabled={disabled}
 <<<<<<< HEAD
+<<<<<<< HEAD
                         fullWidth={true}
                         value={context.filePath ?? ''}
                         startAdornment={
@@ -113,18 +141,25 @@ const ContextRow = ({ index, disabled, context, onChange, onDelete }: ContextRow
                                 <IconButton onClick={handleFileSearch}>
 =======
 
+=======
+>>>>>>> 77917b0 (Project Context)
                         fullWidth={true}
-                        value={context.value}
+                        value={context.filePath ?? ''}
                         startAdornment={
                             <InputAdornment position="start" sx={{ mr: -0.5 }}>
+<<<<<<< HEAD
                                 <IconButton onClick={() => handleFileSearch()}>
 >>>>>>> c0d332a (project context)
+=======
+                                <IconButton onClick={handleFileSearch}>
+>>>>>>> 77917b0 (Project Context)
                                     <FileSearchOutlined />
                                 </IconButton>
                             </InputAdornment>
                         }
                         onChange={(e) => onChange(index, { ...context, value: e.target.value })}
                     />
+<<<<<<< HEAD
 <<<<<<< HEAD
                     <GoogleDriveFileSearchDialog open={fileSearchModalOpen} onChange={handleFileSelection} />
                 </>
@@ -137,10 +172,19 @@ const ContextRow = ({ index, disabled, context, onChange, onDelete }: ContextRow
                 </>
             }
 >>>>>>> c0d332a (project context)
+=======
+                    <GoogleDriveFileSearchDialog open={fileSearchModalOpen} onChange={handleFileSelection} />
+                </>
+            }
+            <Typography variant="body2" sx={{ alignSelf: 'center', minWidth: 80 }}>
+                Tokens: {context.tokenCount}
+            </Typography>
+>>>>>>> 77917b0 (Project Context)
         </Stack >
     )
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 type GrantContextEditorProps = {
     disabled: boolean;
@@ -175,15 +219,42 @@ export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ disabled
 =======
 
 // Dummy KeyValueForm component for demonstration; replace with your actual implementation or import
+=======
+>>>>>>> 77917b0 (Project Context)
 type GrantContextEditorProps = {
     disabled: boolean;
-    contexts: GrantContext[];
-    onChange: (newContexts: GrantContext[]) => void;
+    onChange: (recipe: GrantRecipe) => void;
 };
-export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ disabled, contexts, onChange }) => {
+export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ disabled, onChange }) => {
     const { setHelpTopic } = useContext(HelpTopicContext);
     const { setShowHelp } = useHelp();
+<<<<<<< HEAD
 >>>>>>> c0d332a (project context)
+=======
+    const { recipe } = useContext(GrantRecipeContext);
+    const [contexts, setContexts] = React.useState<GrantContext[]>(recipe.contexts || []);
+
+    useEffect(() => {
+        setContexts(recipe.contexts || []);
+    }, [recipe]);
+
+    async function addContext(newContext: GrantContext) {
+        newContext.tokenCount = await geminiService.calcTokenCount(recipe.modelType, newContext.value || '')
+        const revised =[...contexts, newContext]
+        onChange({ ...recipe, contexts: revised });
+    }
+
+    async function udpateContext(index: number, revised: GrantContext) {
+        revised.tokenCount = await geminiService.calcTokenCount(recipe.modelType, revised.value || '');
+        contexts[index] = revised;
+        onChange({ ...recipe, contexts: contexts.slice() });
+    }
+
+    function removeContext(index: number) {
+        const revised = contexts.filter((_, i) => i !== index);
+        onChange({ ...recipe, contexts: revised });
+    }
+>>>>>>> 77917b0 (Project Context)
 
     return (
         <Card>
@@ -193,6 +264,7 @@ export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ disabled
                         <Button
                             disabled={disabled}
                             variant="outlined"
+<<<<<<< HEAD
 <<<<<<< HEAD
                             onClick={() => addContext({ type: "file", value: "", tokenCount: 0 })}
                             startIcon={<PlusOutlined />}
@@ -207,11 +279,17 @@ export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ disabled
                             sx={{ alignSelf: 'flex-start' }}
                         >
 >>>>>>> c0d332a (project context)
+=======
+                            onClick={() => addContext({ type: "file", value: "", tokenCount: 0 })}
+                            startIcon={<PlusOutlined />}
+                            sx={{ alignSelf: 'flex-start' }}>
+>>>>>>> 77917b0 (Project Context)
                             File
                         </Button>
                         <Button
                             disabled={disabled}
                             variant="outlined"
+<<<<<<< HEAD
 <<<<<<< HEAD
                             onClick={() => addContext({ type: "text", value: "", tokenCount: 0 })}
                             startIcon={<PlusOutlined />}
@@ -226,6 +304,11 @@ export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ disabled
                             sx={{ alignSelf: 'flex-start' }}
                         >
 >>>>>>> c0d332a (project context)
+=======
+                            onClick={() => addContext({ type: "text", value: "", tokenCount: 0 })}
+                            startIcon={<PlusOutlined />}
+                            sx={{ alignSelf: 'flex-start' }}>
+>>>>>>> 77917b0 (Project Context)
                             Text
                         </Button>
                     </Toolbar>}
@@ -242,6 +325,7 @@ export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ disabled
                             disabled={disabled}
                             context={context}
 <<<<<<< HEAD
+<<<<<<< HEAD
                             onChange={udpateContext}
                             onDelete={removeContext} />
 =======
@@ -253,6 +337,10 @@ export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ disabled
                                 onChange(contexts.filter((_, i) => i !== index));
                             }} />
 >>>>>>> c0d332a (project context)
+=======
+                            onChange={udpateContext}
+                            onDelete={removeContext} />
+>>>>>>> 77917b0 (Project Context)
                     ))}
                 </Stack>
             </CardContent>

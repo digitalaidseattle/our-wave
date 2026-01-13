@@ -16,12 +16,19 @@ import { useNavigate, useParams } from "react-router-dom";
 import { InfoCircleOutlined } from "@ant-design/icons";
 import { LoadingContext, useHelp, useNotifications, UserContext } from "@digitalaidseattle/core";
 import { Box, Button, Card, CardActions, CardContent, CardHeader, IconButton, Stack, TextField } from "@mui/material";
+<<<<<<< HEAD
 >>>>>>> c0d332a (project context)
+=======
+import { useContext, useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { GrantRecipeContext } from "../../components/GrantRecipeContext";
+>>>>>>> 77917b0 (Project Context)
 import { HelpDrawer } from "../../components/HelpDrawer";
 import { HelpTopicContext } from "../../components/HelpTopicContext";
 import { LoadingOverlay } from "../../components/LoadingOverlay";
 import { grantProposalService } from "../../services/grantProposalService";
 import { grantRecipeService } from "../../services/grantRecipeService";
+<<<<<<< HEAD
 <<<<<<< HEAD
 import type { GrantOutput } from "../../types";
 import { GrantRecipe } from "../../types";
@@ -33,6 +40,9 @@ import { cloneRecipe } from "../../transactions/CloneRecipe";
 import { GrantInfoEditor } from "./GrantInfoEditor";
 >>>>>>> f2961b4 (tags & ratings)
 =======
+=======
+import type { GrantOutput } from "../../types";
+>>>>>>> 77917b0 (Project Context)
 import { GrantRecipe } from "../../types";
 import { GrantContextEditor } from "./GrantContextEditor";
 import { GrantOutputEditor } from "./GrantOutputEditor";
@@ -190,12 +200,11 @@ const GrantRecipesDetailPage: React.FC = () => {
     setDirty(true);
   }
 
-  function handleGrantContextsChange(contexts: GrantContext[]): void {
-    updatePrompt({ ...recipe, contexts: contexts })
-      .then(revised => {
-        setRecipe(revised);
-        setDirty(true);
-      })
+  function handleGrantContextsChange(revised: GrantRecipe): void {
+    console.log(revised);
+    // prompt not affected by contexts change
+    setRecipe(revised);
+    setDirty(true);
   }
 
   function handlePromptChange(updated: string): void {
@@ -207,6 +216,7 @@ const GrantRecipesDetailPage: React.FC = () => {
 >>>>>>> f2961b4 (tags & ratings)
   }
 
+<<<<<<< HEAD
   function handleTemplateChange(updated: string): void {
     updatePrompt({ ...recipe, template: updated })
       .then(revised => {
@@ -215,6 +225,8 @@ const GrantRecipesDetailPage: React.FC = () => {
       })
   }
 
+=======
+>>>>>>> 77917b0 (Project Context)
   return (
     <>
       <LoadingOverlay />
