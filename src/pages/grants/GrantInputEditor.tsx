@@ -3,22 +3,26 @@
  * 
  * @copyright 2025 Digital Aid Seattle
 */
-import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
+import { DeleteOutlined, InfoCircleOutlined, PlusOutlined } from '@ant-design/icons';
+import { useHelp } from '@digitalaidseattle/core';
 import {
   Button,
   Card,
-  CardActions,
   CardContent,
   CardHeader,
+  IconButton,
   Stack,
   TextField
 } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
+import { HelpTopicContext } from '../../components/HelpTopicContext';
 import type { GrantInput } from "../../types";
 
 export const GrantInputEditor = ({ recipeInputs, onChange }: { recipeInputs: GrantInput[], onChange: (updated: GrantInput[]) => void }) => {
 
   const [inputs, setInputs] = useState<GrantInput[]>([]);
+  const { setHelpTopic } = useContext(HelpTopicContext);
+  const { setShowHelp } = useHelp();
 
   useEffect(() => {
     if (recipeInputs) {
@@ -42,7 +46,20 @@ export const GrantInputEditor = ({ recipeInputs, onChange }: { recipeInputs: Gra
 
   return (
     <Card>
-      <CardHeader title='Input Parameters (key/value):' />
+      <CardHeader title='Input Parameters (key/value):'
+        slotProps={{ title: { fontWeight: 600, fontSize: 16 } }}
+        avatar={<IconButton
+          onClick={() => { setHelpTopic('Inputs'); setShowHelp(true) }}
+          color="primary"><InfoCircleOutlined /></IconButton>}
+        action={<Button
+          variant="outlined"
+          color="primary"
+          onClick={handleAddField}
+          startIcon={<PlusOutlined />}
+          sx={{ alignSelf: 'flex-start' }}
+        >
+          Add Input Parameters
+        </Button>} />
       <CardContent>
         <Stack spacing={2} sx={{ mt: 2 }}>
           {inputs.map((field, index) => (
@@ -61,8 +78,8 @@ export const GrantInputEditor = ({ recipeInputs, onChange }: { recipeInputs: Gra
                 onChange={(e) => handleFieldChange(index, 'value', e.target.value)}
                 sx={{
                   '& .MuiInputBase-inputMultiline': {
-                    resize: 'both', // Allows resizing both horizontally and vertically
-                    overflow: 'auto', // Ensures scrollbars appear if content exceeds bounds
+                    resize: 'vertical', // Allows resizing both horizontally and vertically
+                    overflowY: 'auto', // Ensures scrollbars appear if content exceeds bounds
                   },
                 }}
               />
@@ -77,19 +94,7 @@ export const GrantInputEditor = ({ recipeInputs, onChange }: { recipeInputs: Gra
           ))}
         </Stack>
       </CardContent>
-      <CardActions>
-        <Button
-          variant="outlined"
-          color="success"
-          onClick={handleAddField}
-          startIcon={<PlusOutlined />}
-          sx={{ alignSelf: 'flex-start' }}
-        >
-          Add Input Parameters
-        </Button>
-      </CardActions>
     </Card >
-
   );
 
 }
