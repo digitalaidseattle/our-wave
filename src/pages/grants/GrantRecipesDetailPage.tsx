@@ -59,6 +59,7 @@ const HELP_DRAWER_WIDTH = 300;
 const HELP_TITLE = "Our Wave";
 const HELP_DICTIONARY = {
 <<<<<<< HEAD
+<<<<<<< HEAD
   "Description": "Change this field for easier tracking in the application.",
   "Template": "This template is filled with text and combined with the output parameters.",
   "Contexts": "Information about your organization and project that will be included in the project conext.",
@@ -68,6 +69,14 @@ const HELP_DICTIONARY = {
 <<<<<<< HEAD
 >>>>>>> f2961b4 (tags & ratings)
 =======
+=======
+  "Info": "Change the description for easier tracking in the application.  A rating change can aid in selecting better recipes.  Tags can help categorize recipes.",
+  "Prompt": "This prompt template is filled with text using the input and output parameters.",
+=======
+  "Description": "Change this field for easier tracking in the application.",
+  "Template": "This template is filled with text and combined with the output parameters.",
+>>>>>>> 44bdc35 (make buttons consistent)
+>>>>>>> 3c5ecba (make buttons consistent)
   "Contexts": "Information about your organization and project that will be included in the project conext.",
 >>>>>>> c0d332a (project context)
   "Inputs": "Facts to be used in the prompt.",
@@ -211,7 +220,9 @@ const GrantRecipesDetailPage: React.FC = () => {
     setDirty(true);
   }
 
+<<<<<<< HEAD
   function handlePromptChange(updated: string): void {
+<<<<<<< HEAD
     updatePrompt({ ...recipe, prompt: updated })
       .then(revised => {
         setRecipe(revised);
@@ -223,6 +234,13 @@ const GrantRecipesDetailPage: React.FC = () => {
 <<<<<<< HEAD
   function handleTemplateChange(updated: string): void {
     updatePrompt({ ...recipe, template: updated })
+=======
+    grantRecipeService.updatePrompt({ ...recipe, prompt: updated })
+=======
+  function handleTemplateChange(updated: string): void {
+    updatePrompt({ ...recipe, template: updated })
+>>>>>>> 44bdc35 (make buttons consistent)
+>>>>>>> 3c5ecba (make buttons consistent)
       .then(revised => {
         setRecipe(revised);
         setDirty(true);
@@ -235,6 +253,7 @@ const GrantRecipesDetailPage: React.FC = () => {
     <>
       <LoadingOverlay />
       <HelpTopicContext.Provider value={{ helpTopic, setHelpTopic }} >
+<<<<<<< HEAD
 <<<<<<< HEAD
         <GrantRecipeContext.Provider value={{ recipe, setRecipe }} >
           <Breadcrumbs aria-label="breadcrumbs">
@@ -269,6 +288,8 @@ const GrantRecipesDetailPage: React.FC = () => {
           </Box>
         </GrantRecipeContext.Provider>
 =======
+=======
+>>>>>>> 3c5ecba (make buttons consistent)
         <Breadcrumbs aria-label="breadcrumbs">
           <NavLink to="/" ><IconButton size="medium"><HomeOutlined /></IconButton></NavLink>
           <NavLink to={`/grant-recipes`} >Recipes</NavLink>
@@ -299,7 +320,39 @@ const GrantRecipesDetailPage: React.FC = () => {
           </Stack>
           <HelpDrawer title={HELP_TITLE} width={HELP_DRAWER_WIDTH} dictionary={HELP_DICTIONARY} />
         </Box>
+<<<<<<< HEAD
 >>>>>>> f2961b4 (tags & ratings)
+=======
+=======
+        <GrantRecipeContext.Provider value={{ recipe, setRecipe }} >
+          <Box gap={4}>
+            <Stack sx={{ gap: 2, marginRight: `${showHelp ? HELP_DRAWER_WIDTH : 0}px` }}>
+              <Card>
+                <CardHeader title="Grant Recipe Detail"
+                  action={`Token count = ${recipe.tokenCount}`}
+                  subheader={`Last updated: ${lastUpdated}`} />
+                <CardContent>
+                  <Stack gap={1}>
+                    <TextEditor title="Description" value={recipe.description} onChange={handleDescriptionChange} />
+                    <TextEditor title="Template" value={recipe.template} onChange={handleTemplateChange} />
+                    <GrantContextEditor disabled={false} onChange={handleGrantContextsChange} />
+                    <GrantOutputEditor fields={recipe.outputsWithWordCount} onChange={handleGrantOutputChange} />
+                    <TextEditor title="Prompt" value={recipe.prompt} onChange={() => { }} />
+                  </Stack>
+                </CardContent>
+                <CardActions>
+                  <Button variant="contained" disabled={loading || !dirty} onClick={() => saveRecipe()}>Save</Button>
+                  <Divider orientation="vertical" />
+                  <Button variant="contained" disabled={loading} onClick={() => handleClone()}>Clone</Button>
+                  <Button variant="contained" disabled={loading} onClick={() => handleGenerate()}>Generate</Button>
+                </CardActions>
+              </Card>
+            </Stack>
+            <HelpDrawer title={HELP_TITLE} width={HELP_DRAWER_WIDTH} dictionary={HELP_DICTIONARY} />
+          </Box>
+        </GrantRecipeContext.Provider>
+>>>>>>> 44bdc35 (make buttons consistent)
+>>>>>>> 3c5ecba (make buttons consistent)
       </HelpTopicContext.Provider>
     </>
   );
