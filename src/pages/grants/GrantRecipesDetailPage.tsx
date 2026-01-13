@@ -3,11 +3,12 @@
  * 
  * @copyright 2025 Digital Aid Seattle
 */
-import { InfoCircleOutlined } from "@ant-design/icons";
-import { LoadingContext, useHelp, useNotifications, UserContext } from "@digitalaidseattle/core";
-import { Box, Button, Card, CardActions, CardContent, CardHeader, IconButton, Stack, TextField } from "@mui/material";
 import { useContext, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { InfoCircleOutlined } from "@ant-design/icons";
+import dayjs from "dayjs";
+import { LoadingContext, useHelp, useNotifications, UserContext } from "@digitalaidseattle/core";
+import { Box, Button, Card, CardActions, CardContent, CardHeader, Divider, IconButton, Stack, TextField } from "@mui/material";
 import { GrantRecipeContext } from "../../components/GrantRecipeContext";
 import { HelpDrawer } from "../../components/HelpDrawer";
 import { HelpTopicContext } from "../../components/HelpTopicContext";
@@ -18,6 +19,7 @@ import type { GrantOutput } from "../../types";
 import { GrantRecipe } from "../../types";
 import { GrantContextEditor } from "./GrantContextEditor";
 import { GrantOutputEditor } from "./GrantOutputEditor";
+import { cloneRecipe } from "../../transactions/CloneRecipe";
 
 const HELP_DRAWER_WIDTH = 300;
 const HELP_TITLE = "Our Wave";
@@ -111,41 +113,40 @@ const GrantRecipesDetailPage: React.FC = () => {
   }
 
   async function handleGenerate() {
-      if (!recipe || !user) return;
-    
-      try {
-        setLoading(true);
-    
-        //AI -> returns a draft proposal object (not saved)
-        const draft = await grantProposalService.generate(recipe);
-    
-        // Persist proposal
-        const saved = await grantProposalService.insert(
-          {
-            ...draft,
-            // make sure the proposal points back to this recipe
-            grantRecipeId: String(recipe.id),
-          },
-          undefined,
-          undefined,
-          user
-        );
-    
-        notifications.success(`Proposal generated for ${recipe.description}.`);
-    
-        //Navigate to proposal detail
-        navigate(`/grant-proposals/${saved.id}`);
-      } catch (err: any) {
-        console.error(err);
-        notifications.error(
-          `Could not generate a proposal for this recipe. ${
-            err?.message ?? "Unknown error"
-          }`
-        );
-      } finally {
-        setLoading(false);
-      }
+    if (!recipe || !user) return;
+
+    try {
+      setLoading(true);
+
+      //AI -> returns a draft proposal object (not saved)
+      const draft = await grantProposalService.generate(recipe);
+
+      // Persist proposal
+      const saved = await grantProposalService.insert(
+        {
+          ...draft,
+          // make sure the proposal points back to this recipe
+          grantRecipeId: String(recipe.id),
+        },
+        undefined,
+        undefined,
+        user
+      );
+
+      notifications.success(`Proposal generated for ${recipe.description}.`);
+
+      //Navigate to proposal detail
+      navigate(`/grant-proposals/${saved.id}`);
+    } catch (err: any) {
+      console.error(err);
+      notifications.error(
+        `Could not generate a proposal for this recipe. ${err?.message ?? "Unknown error"
+        }`
+      );
+    } finally {
+      setLoading(false);
     }
+  }
 
   function updatePrompt(changed: GrantRecipe): Promise<GrantRecipe> {
     return grantRecipeService.updatePrompt(changed);
@@ -191,16 +192,19 @@ const GrantRecipesDetailPage: React.FC = () => {
             <Stack sx={{ gap: 2, marginRight: `${showHelp ? HELP_DRAWER_WIDTH : 0}px` }}>
               <Card>
                 <CardHeader title="Grant Recipe Detail"
-                  action={`Token count = ${recipe.tokenCount}`} />
+                  action={`Token count = ${recipe.tokenCount}`}
+                  subheader={`Last updated: ${lastUpdated}`} />
                 <CardContent>
                   <Stack gap={1}>
-                    <TextEditor title="Description" value={recipe.description ?? ""} onChange={handleDescriptionChange} />
-                    <TextEditor title="Prompt" value={recipe.prompt ?? ""} onChange={handlePromptChange} />
+                    <TextEditor title="Description" value={recipe.description} onChange={handleDescriptionChange} />
+                    <TextEditor title="Prompt" value={recipe.prompt} onChange={handlePromptChange} />
                     <GrantContextEditor disabled={false} onChange={handleGrantContextsChange} />
                     <GrantOutputEditor fields={recipe.outputsWithWordCount} onChange={handleGrantOutputChange} />
                   </Stack>
                 </CardContent>
                 <CardActions>
+                  <Button variant="contained" disabled={loading || !dirty} onClick={() => saveRecipe()}>Save</Button>
+                  <Divider orientation="vertical" />
                   <Button variant="contained" disabled={loading} onClick={() => handleClone()}>Clone</Button>
                   <Button variant="contained" disabled={loading} onClick={() => handleGenerate()}>Generate</Button>
                 </CardActions>
@@ -209,30 +213,6 @@ const GrantRecipesDetailPage: React.FC = () => {
             <HelpDrawer title={HELP_TITLE} width={HELP_DRAWER_WIDTH} dictionary={HELP_DICTIONARY} />
           </Box>
         </GrantRecipeContext.Provider>
-        <Box gap={4}>
-          <Stack sx={{ gap: 2, marginRight: `${showHelp ? HELP_DRAWER_WIDTH : 0}px` }}>
-            <Card>
-              <CardHeader title="Grant Recipe Detail"
-                action={`Token count = ${recipe.tokenCount}`}
-                subheader={`Last updated: ${lastUpdated}`} />
-              <CardContent>
-                <Stack gap={1}>
-                  <TextEditor title="Description" value={recipe.description} onChange={handleDescriptionChange} />
-                  <TextEditor title="Prompt" value={recipe.prompt} onChange={handlePromptChange} />
-                  <GrantInputEditor recipeInputs={recipe.inputParameters} onChange={handleGrantInputChange} />
-                  <GrantOutputEditor fields={recipe.outputsWithWordCount} onChange={handleGrantOutputChange} />
-                </Stack>
-              </CardContent>
-              <CardActions>
-                <Button variant="contained" disabled={loading || !dirty} onClick={() => saveRecipe()}>Save</Button>
-                <Divider orientation="vertical" />
-                <Button variant="contained" disabled={loading} onClick={() => handleClone()}>Clone</Button>
-                <Button variant="contained" disabled={loading} onClick={() => handleGenerate()}>Generate</Button>
-              </CardActions>
-            </Card>
-          </Stack>
-          <HelpDrawer title={HELP_TITLE} width={HELP_DRAWER_WIDTH} dictionary={HELP_DICTIONARY} />
-        </Box>
       </HelpTopicContext.Provider>
     </>
   );

@@ -43,7 +43,6 @@ import avatar1 from '/src/assets/images/users/avatar-1.png';
 import avatar2 from '/src/assets/images/users/avatar-2.png';
 import avatar3 from '/src/assets/images/users/avatar-3.png';
 import avatar4 from '/src/assets/images/users/avatar-4.png';
-import { useTheme } from '@mui/material/styles';
 import { GoogleDriveService } from '../../services/googleDriveService';
 import { cloneRecipe } from '../../transactions/CloneRecipe';
 

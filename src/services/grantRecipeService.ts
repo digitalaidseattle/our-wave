@@ -31,9 +31,9 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
       updatedAt: now,
       updatedBy: "",
       description: "",
-      prompt: "Create a grant proposal",
+      template: "Create a grant proposal",
+      prompt: "",
       contexts: [],
-      inputParameters: [],
       outputsWithWordCount: [],
       tokenCount: 0,
       proposalIds: [],
@@ -113,7 +113,6 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
     const compiled = Handlebars.compile(recipe.template ?? "");
 
     const basePrompt = compiled({
-      inputs: recipe.inputParameters,
       outputs: recipe.outputsWithWordCount,
     });
 

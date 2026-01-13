@@ -32,7 +32,7 @@ describe("grantProposalService.generate", () => {
       description: "Test recipe",
       template: "Test {{#each outputs}}{{name}} {{/each}}",
       prompt: "compiled prompt",
-      inputParameters: [],
+      contexts: [],
       outputsWithWordCount: [
         { name: "Summary", maxWords: 3, unit: "words" },
         { name: "Notes", maxWords: 10, unit: "characters" },
@@ -75,7 +75,7 @@ describe("grantProposalService.generate", () => {
       description: "",
       template: "",
       prompt: "",
-      inputParameters: [],
+      contexts: [],
       outputsWithWordCount: [],
       tokenCount: 0,
       proposalIds: [],
