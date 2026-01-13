@@ -25,10 +25,11 @@ const HELP_DRAWER_WIDTH = 300;
 const HELP_TITLE = "Our Wave";
 const HELP_DICTIONARY = {
   "Description": "Change this field for easier tracking in the application.",
-  "Prompt": "This prompt template is filled with text using the input and output parameters.",
+  "Template": "This template is filled with text and combined with the output parameters.",
   "Contexts": "Information about your organization and project that will be included in the project conext.",
   "Inputs": "Facts to be used in the prompt.",
   "Outputs": "Guidance for output constraints.",
+  "Prompt": "This prompt is what is sent to the AI model to generate the proposal.",
 }
 
 export const TextEditor = ({ title, value, onChange }: { title: string, value: string, onChange: (updated: string) => void }) => {
@@ -87,6 +88,7 @@ const GrantRecipesDetailPage: React.FC = () => {
         .then(saved => {
           setRecipe(saved);
           setDirty(false);
+          notifications.success(`${saved.description} has been successfully saved.`)
         })
         .catch(err => {
           console.error(err)
@@ -175,8 +177,8 @@ const GrantRecipesDetailPage: React.FC = () => {
     setDirty(true);
   }
 
-  function handlePromptChange(updated: string): void {
-    updatePrompt({ ...recipe, prompt: updated })
+  function handleTemplateChange(updated: string): void {
+    updatePrompt({ ...recipe, template: updated })
       .then(revised => {
         setRecipe(revised);
         setDirty(true);
@@ -197,9 +199,10 @@ const GrantRecipesDetailPage: React.FC = () => {
                 <CardContent>
                   <Stack gap={1}>
                     <TextEditor title="Description" value={recipe.description} onChange={handleDescriptionChange} />
-                    <TextEditor title="Prompt" value={recipe.prompt} onChange={handlePromptChange} />
+                    <TextEditor title="Template" value={recipe.template} onChange={handleTemplateChange} />
                     <GrantContextEditor disabled={false} onChange={handleGrantContextsChange} />
                     <GrantOutputEditor fields={recipe.outputsWithWordCount} onChange={handleGrantOutputChange} />
+                    <TextEditor title="Prompt" value={recipe.prompt} onChange={() => { }} />
                   </Stack>
                 </CardContent>
                 <CardActions>
