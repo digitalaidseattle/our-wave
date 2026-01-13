@@ -1,26 +1,24 @@
 /**
  * grants/types.ts
-*
-*/
+ */
 
 import { Entity } from "@digitalaidseattle/core";
 
-
 export type Timestamp = {
-    seconds: number;
-    nanoseconds: number;
-}
+  seconds: number;
+  nanoseconds: number;
+};
 
 export type GrantInput = {
-    key: string;
-    value: string;
-}
+  key: string;
+  value: string;
+};
 
 export type GrantOutput = {
-    name: string;
-    maxWords: number;
-    unit: 'words' | 'characters';
-}
+  name: string;
+  maxWords: number;
+  unit: "words" | "characters";
+};
 
 export type GrantContext = {
     type: "text" | "file";
@@ -46,11 +44,9 @@ export type GrantRecipe = Entity & {
 }
 
 export type GrantProposal = Entity & {
-    createdAt: Timestamp | Date;
-    createdBy: string;
-    grantRecipeId: string;
-    rating: number | null;  // Allow User to rate the response
-    textResponse?: string;  // Store AI respons3
-    structuredResponse?: { [key: string]: string }; // Store AI structured response
-}
-
+  createdAt: Timestamp | Date;
+  createdBy: string;
+  grantRecipeId: string;
+  rating: number | null;
+  structuredResponse?: { [key: string]: string };
+};

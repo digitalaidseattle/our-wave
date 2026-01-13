@@ -1,140 +1,143 @@
-import { DeleteOutlined } from "@ant-design/icons";
+import { DeleteOutlined, EyeOutlined, HomeOutlined } from "@ant-design/icons";
 import { UserContext } from "@digitalaidseattle/core";
-import { Box, Stack, Typography } from "@mui/material";
-import { DataGrid, GridActionsCellItem, GridColDef, GridRowParams } from "@mui/x-data-grid";
+import { Breadcrumbs, Card, CardContent, CardHeader, IconButton, Link, Typography } from "@mui/material";
+import {
+  DataGrid,
+  GridActionsCellItem,
+  GridColDef,
+  GridRowParams,
+} from "@mui/x-data-grid";
 import dayjs from "dayjs";
 import { useContext, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { grantProposalService } from "../../services/grantProposalService";
 import type { GrantProposal } from "../../types";
 
+function formatCreatedAt(createdAt: any): string {
+  if (!createdAt) return "";
+
+  // Firestore Timestamp
+  if (typeof createdAt?.seconds === "number") {
+    return dayjs(new Date(createdAt.seconds * 1000)).format("MM/DD/YYYY hh:mm a");
+  }
+
+  // JS Date / ISO string / etc
+  return dayjs(createdAt).format("MM/DD/YYYY hh:mm a");
+}
+
 const GrantProposalsListPage: React.FC = () => {
-  const { user } = useContext(UserContext);
-  const [proposals, setProposals] = useState<GrantProposal[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const navigate = useNavigate();
+  const { user } = useContext(UserContext);
 
-  useEffect(() => {
-    fetchProposals();
-  }, []);
+  const [proposals, setProposals] = useState<GrantProposal[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
-  const fetchProposals = async () => {
-    try {
-      setLoading(true);
-      const data = await grantProposalService.getAll();
-      setProposals(data || []);
-    } catch (error) {
-      console.error("Error fetching grant proposals:", error);
-      setProposals([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    fetchProposals();
+  }, []);
 
-  const columns: GridColDef<GrantProposal>[] = [
-    {
-      field: "description",
-      headerName: "Description",
-      flex: 1,
-      minWidth: 200,
-      valueGetter: (_value, row) => {
-        // Return full text for editing, or truncated for display
-        return row.textResponse || (row.structuredResponse ? Object.values(row.structuredResponse)[0] : "") || "";
-      },
-    },
-    {
-      field: "tokenCount",
-      headerName: "Token Count",
-      width: 130,
-      type: "number",
-    },
-    {
-      field: "createdAt",
-      headerName: "Date",
-      width: 150,
-      valueGetter: (_value, row) => dayjs(new Date((row.createdAt as any).seconds * 1000)).format("MM/DD/YYYY hh:mm")
-    },
-    {
-      field: "actions",
-      type: "actions",
-      headerName: "Actions",
-      width: 180,
-      getActions: (params) => {
-        const row_id = params.row.id!.toString();
-        return [
-          <GridActionsCellItem
-            icon={<DeleteOutlined />}
-            label="Delete"
-            onClick={() => handleDelete(row_id)}
-            disabled={!user}
-            showInMenu={false}
-          />,
-        ];
-      },
-    },
-  ];
+  const fetchProposals = async () => {
+    try {
+      setLoading(true);
+      const data = await grantProposalService.getAll();
+      setProposals(data || []);
+    } catch (error) {
+      console.error("Error fetching grant proposals:", error);
+      setProposals([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const handleDelete = async (id: string | undefined) => {
-    if (!id || !user) {
-      return;
-    }
+  const handleDelete = async (id?: string) => {
+    if (!id || !user) return;
 
-    // Confirm deletion
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this proposal? This action cannot be undone."
-    );
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this proposal? This action cannot be undone."
+    );
+    if (!confirmed) return;
 
-    if (!confirmed) {
-      return;
-    }
+    try {
+      await grantProposalService.delete(id);
+      await fetchProposals();
+      alert("Proposal deleted successfully!");
+    } catch (error) {
+      console.error("Error deleting proposal:", error);
+      alert("Failed to delete proposal");
+    }
+  };
 
-    try {
-      await grantProposalService.delete(id);
-      // Refresh the list after deletion
-      await fetchProposals();
-      alert("Proposal deleted successfully!");
-    } catch (error) {
-      console.error("Error deleting proposal:", error);
-      alert(`Failed to delete proposal: ${error instanceof Error ? error.message : "Unknown error"}`);
-    }
-  };
+  const handleRowDoubleClick = (params: GridRowParams<GrantProposal>) => {
+    const id = params.row.id?.toString();
+    if (id) navigate(`/grant-proposals/${id}`);
+  };
 
-  const handleRowDoubleClick = (params: GridRowParams<GrantProposal>) => {
-    if (params.row.id) {
-      alert('not implemented')
-    }
-  };
+  const columns: GridColDef<GrantProposal>[] = [
+    {
+      field: "preview",
+      headerName: "Preview",
+      flex: 1,
+      minWidth: 200,
+      valueGetter: (_value, row) => {
+        if (!row.structuredResponse) return "";
+        return Object.values(row.structuredResponse)[0] ?? "";
+      },
+    },
+    {
+      field: "createdAt",
+      headerName: "Date",
+      width: 180,
+      valueGetter: (_value, row) => formatCreatedAt((row as any).createdAt),
+    },
+    {
+      field: "actions",
+      type: "actions",
+      headerName: "Actions",
+      width: 140,
+      getActions: (params) => {
+        const rowId = params.row.id?.toString();
 
-  return (
-    <Box sx={{ height: "100%", width: "100%", p: 3 }}>
-      <Stack spacing={3}>
-        <Typography variant="h4">Grant Proposals</Typography>
-        <DataGrid
-          rows={proposals}
-          columns={columns}
-          loading={loading}
-          getRowId={(row) => row.id || ""}
-          onRowDoubleClick={handleRowDoubleClick}
-          editMode="cell"
-          initialState={{
-            pagination: {
-              paginationModel: { pageSize: 10 },
-            },
-          }}
-          pageSizeOptions={[10, 25, 50]}
-          disableRowSelectionOnClick
-          sx={{
-            "& .MuiDataGrid-row": {
-              cursor: "pointer",
-            },
-            "& .MuiDataGrid-cell": {
-              display: "flex",
-              alignItems: "center",
-            },
-          }}
-        />
-      </Stack>
-    </Box>
-  );
+        return [
+          <GridActionsCellItem
+            key={`view-${rowId ?? "no-id"}`}
+            icon={<EyeOutlined />}
+            label="View"
+            onClick={() => rowId && navigate(`/grant-proposals/${rowId}`)}
+          />,
+          <GridActionsCellItem
+            key={`delete-${rowId ?? "no-id"}`}
+            icon={<DeleteOutlined />}
+            label="Delete"
+            onClick={() => handleDelete(rowId)}
+            disabled={!user}
+          />,
+        ];
+      },
+    },
+  ];
+
+  return (
+    <>
+      <Breadcrumbs aria-label="breadcrumb">
+        <Link color="text.primary"><IconButton size="medium"><HomeOutlined /></IconButton></Link>
+        <Typography color="text.primary">Proposals</Typography>
+      </Breadcrumbs>
+      <Card>
+        <CardHeader title="Grant Proposals" />
+        <CardContent>
+          <DataGrid
+            rows={proposals}
+            columns={columns}
+            loading={loading}
+            getRowId={(row) => row.id || ""}
+            onRowDoubleClick={handleRowDoubleClick}
+            pageSizeOptions={[10, 25, 50]}
+            disableRowSelectionOnClick
+          />
+        </CardContent>
+      </Card >
+    </>
+  );
 };
 
 export default GrantProposalsListPage;
-

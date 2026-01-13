@@ -15,8 +15,6 @@
  * </ol>
  */
 
-
-
 import { firebaseClient } from "@digitalaidseattle/firebase";
 import { getAI, getGenerativeModel, GoogleAIBackend, Schema } from "firebase/ai";
 
@@ -24,55 +22,69 @@ class GrantAiService {
 
     ai = getAI(firebaseClient, { backend: new GoogleAIBackend() });
 
-    // Create a `GenerativeModel` instance with a model that supports your use case
+    // Default model used for simple text generation
     model = getGenerativeModel(this.ai, {
         model: "gemini-2.5-flash"
     });
 
+    /**
+     * Runs a basic text generation request.
+     * This is for prompts where we just want the model to return a text response.
+     */
+    query(prompt: string): Promise<string> {
+        console.log("Querying AI with prompt:", prompt, this.model);
 
-    // Wrap in an async function so you can use await
-    query(prompt: string): Promise<any> {
-        // To generate text output, call generateContent with the text input
-        console.log("Querying AI with prompt: ", prompt, this.model);
         return this.model.generateContent(prompt)
             .then(result => result.response.text())
             .catch(error => {
-                console.error("Error querying AI: ", error);
+                console.error("Error querying AI:", error);
                 throw new Error("Failed to query AI: " + error.message);
             });
     }
 
-    // Wrap in an async function so you can use await
-    parameterizedQuery(schemaParams: string[], prompt: string): Promise<any> {
-        // Provide a JSON schema object using a standard format.
-        // Later, pass this schema object into `responseSchema` in the generation config.
+  /**
+ * Sends a prompt to the AI and tells it which fields to return.
+ * 
+ * You give it a list of field names (like ["Summary", "Budget"]),
+ * and the AI will return a JSON object with those fields filled in.
+ */
+
+    parameterizedQuery(
+        schemaParams: string[],
+        prompt: string,
+        modelType: string = "gemini-2.5-flash"
+    ): Promise<Record<string, string>> {
+
+        // Build a schema where each field is expected to be a string.
+        // This tells the model exactly what shape the output should have.
         const schema = Schema.object({
-            properties: {
-                characters: Schema.array({
-                    items: Schema.object({
-                        properties: Object.fromEntries(schemaParams.map(field => [field, Schema.string()]))
-                    }),
-                }),
-            }
+            properties: Object.fromEntries(
+                schemaParams.map(field => [field, Schema.string()])
+            ),
         });
 
-        // Create a `GenerativeModel` instance with a model that supports your use case
+        // Create a model instance that will use this schema for responses.
         const jModel = getGenerativeModel(this.ai, {
-            model: "gemini-2.5-flash",
-            // In the generation config, set the `responseMimeType` to `application/json`
-            // and pass the JSON schema object into `responseSchema`.
+            model: modelType,
             generationConfig: {
                 responseMimeType: "application/json",
                 responseSchema: schema
             },
         });
 
-        // To generate text output, call generateContent with the text input
-        console.log("Querying AI with prompt: ", prompt, this.model);
+        console.log("Querying AI with structured prompt:", prompt, jModel);
+
         return jModel.generateContent(prompt)
-            .then(result => JSON.parse(result.response.text()).characters[0])
+            .then(result => {
+                const text = result.response.text();
+
+                // We expect the model to return a valid JSON object
+                // matching the schema we provided.
+                const parsed = JSON.parse(text) as Record<string, string>;
+                return parsed;
+            })
             .catch(error => {
-                console.error("Error querying AI: ", error);
+                console.error("Error querying AI (structured):", error);
                 throw new Error("Failed to query AI: " + error.message);
             });
     }
@@ -81,4 +93,3 @@ class GrantAiService {
 
 const grantAiService = new GrantAiService();
 export { grantAiService };
-

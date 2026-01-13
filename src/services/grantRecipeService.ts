@@ -3,23 +3,27 @@ import { FirestoreService } from "@digitalaidseattle/firebase";
 import type { GrantRecipe } from "../types";
 import Handlebars from "handlebars";
 import { authService } from "../App";
-import { geminiService } from "../api/geminiService";
 
 class GrantRecipeService extends FirestoreService<GrantRecipe> {
-
   constructor() {
     super("grant-recipes");
   }
 
+  /**
+   * Returns the currently authenticated user (if available).
+   */
   getUser(): User | null | undefined {
     if (authService) {
       return authService.currentUser;
     }
   }
 
-  // Creates a blank recipe with default values
+  /**
+   * Creates a blank recipe with default values.
+   */
   empty(): GrantRecipe {
     const now = new Date();
+
     return {
       id: undefined,
       createdAt: now,
@@ -31,27 +35,37 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
       contexts: [],
       inputParameters: [],
       outputsWithWordCount: [],
-      tokenString: "",
       tokenCount: 0,
       proposalIds: [],
       modelType: "gemini-2.5-flash",
     };
   }
 
-  // Create: adds timestamps and user info before saving
+  /**
+   * Create: generates and stores the compiled prompt,
+   * then adds timestamps and user metadata.
+   */
   async insert(
     entity: GrantRecipe,
     select?: string,
     mapper?: (json: any) => GrantRecipe,
-    user?: User): Promise<GrantRecipe> {
+    user?: User
+  ): Promise<GrantRecipe> {
+    const sessionUser = user ?? this.getUser();
+    if (!sessionUser?.email) {
+      throw new Error("grantRecipeService.insert: user.email is required");
+    }
 
-    const sessionUser = user ?? this.getUser()!;
     const now = new Date();
-    // Remove id field as Firestore will auto-generate it
+
+    // Compile prompt from template before saving
+    const prompt = this.generatePromptWithInputs(entity);
     const { id, ...entityWithoutId } = entity;
+
     return super.insert(
       {
         ...entityWithoutId,
+        prompt,
         createdAt: now,
         updatedAt: now,
         createdBy: sessionUser.email,
@@ -63,7 +77,10 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
     );
   }
 
-  // Update: updates fields and refreshes metadata
+  /**
+   * Update: regenerates the prompt from the template
+   * and refreshes metadata.
+   */
   async update(
     entityId: Identifier,
     updatedFields: GrantRecipe,
@@ -71,11 +88,18 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
     mapper?: (json: any) => GrantRecipe,
     user?: User
   ): Promise<GrantRecipe> {
-    const sessionUser = user ?? this.getUser()!;
+    const sessionUser = user ?? this.getUser();
+    if (!sessionUser?.email) {
+      throw new Error("grantRecipeService.update: user.email is required");
+    }
+
+    const prompt = this.generatePromptWithInputs(updatedFields);
+
     return super.update(
       entityId,
       {
         ...updatedFields,
+        prompt,
         updatedAt: new Date(),
         updatedBy: sessionUser.email,
       },
@@ -85,36 +109,36 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
     );
   }
 
-  async clone(recipe: GrantRecipe): Promise<GrantRecipe> {
-    const now = new Date();
-    const user = this.getUser();
-    const name = user?.email;
-    const clone = {
-      ...recipe,
-      id: null,
-      createdAt: now,
-      createdBy: name,
-      updatedAt: now,
-      updatedBy: name,
-      description: `Clone of ${recipe.description}`,
-    } as GrantRecipe;
-    return this.insert(clone);
-  }
-
   generatePromptWithInputs(recipe: GrantRecipe): string {
-    var template = Handlebars.compile(recipe.prompt);
-    return template({
-      inputs: recipe.inputParameters,
-      outputs: recipe.outputsWithWordCount
-    });
-  }
+    const compiled = Handlebars.compile(recipe.template ?? "");
 
+    const basePrompt = compiled({
+      inputs: recipe.inputParameters,
+      outputs: recipe.outputsWithWordCount,
+    });
+
+    const outputConstraints = recipe.outputsWithWordCount
+      .map(o => `- ${o.name}: maximum ${o.maxWords} ${o.unit}`)
+      .join("\n");
+
+    return `
+${basePrompt}
+
+Please follow these output constraints strictly:
+${outputConstraints}
+
+Adjust wording as needed to stay within these limits.
+`;
+  }
   async updatePrompt(recipe: GrantRecipe): Promise<GrantRecipe> {
-    // TODO include generating the tokenString using Handlebars
-    const newPrompt = recipe.prompt + JSON.stringify(recipe.inputParameters);
-    //
-    return geminiService.calcTokenCount(recipe.modelType ?? "gemini-2.5-flash", newPrompt)
-      .then(count => ({ ...recipe, tokenCount: count, tokenString: newPrompt }));
+    const prompt = this.generatePromptWithInputs(recipe);
+  
+    // If token counting is needed later, it can live here
+    // For now we keep existing tokenCount
+    return {
+      ...recipe,
+      prompt,
+    };
   }
 }
 

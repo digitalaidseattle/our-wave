@@ -32,7 +32,14 @@ export const TemplateConfig = () => {
                 type: 'item',
                 url: '/grant-recipes',
                 icon: <FormOutlined />,
-            } as MenuItem
+            }, {
+                id: 'GRNT-PROPOSALS',
+                title: 'Grant Proposals',
+                type: 'item',
+                url: '/grant-proposals',
+                icon: <FormOutlined />,
+              } as MenuItem
+
         ],
     } as MenuItem;
 
