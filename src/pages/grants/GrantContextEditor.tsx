@@ -5,12 +5,15 @@
  *
  */
 import { DeleteOutlined, FileSearchOutlined, InfoCircleOutlined, PlusOutlined } from '@ant-design/icons';
-import { Button, Card, CardContent, CardHeader, IconButton, InputAdornment, MenuItem, OutlinedInput, Select, Stack, TextField, Toolbar } from "@mui/material";
-import React, { useContext } from "react";
-import { GrantContext } from '../../types';
-import { GoogleDriveFileSearchDialog } from '../../components/GoogleDriveFileSearchDialog';
-import { HelpTopicContext } from '../../components/HelpTopicContext';
 import { useHelp } from '@digitalaidseattle/core';
+import { Button, Card, CardContent, CardHeader, IconButton, InputAdornment, OutlinedInput, Stack, Toolbar, Typography } from "@mui/material";
+import React, { useContext, useEffect } from "react";
+import { geminiService } from '../../api/geminiService';
+import { GoogleDriveFileSearchDialog } from '../../components/GoogleDriveFileSearchDialog';
+import { GrantRecipeContext } from '../../components/GrantRecipeContext';
+import { HelpTopicContext } from '../../components/HelpTopicContext';
+import { GoogleFile } from '../../services/googleDriveService';
+import { GrantContext, GrantRecipe } from '../../types';
 
 interface ContextRowProps {
     index: number;
@@ -25,6 +28,18 @@ const ContextRow = ({ index, disabled, context, onChange, onDelete }: ContextRow
 
     function handleFileSearch(): void {
         setFileSearchModalOpen(true)
+    }
+
+    function handleFileSelection(gf: GoogleFile | null): void {
+        if (gf) {
+            // const tokenCount = geminiService.calcTokenCount();
+            onChange(index, gf ? { ...context, filePath: gf.name, value: gf.contents ?? '' } : context);
+        }
+        setFileSearchModalOpen(false)
+    }
+
+    function handleTextChange(e: React.ChangeEvent<HTMLInputElement>): void {
+        onChange(index, { ...context, value: e.target.value });
     }
 
     return (
@@ -44,18 +59,13 @@ const ContextRow = ({ index, disabled, context, onChange, onDelete }: ContextRow
                 onClick={() => onDelete(index)}>
                 <DeleteOutlined />
             </Button>
-            <Select
-                value={context.type ?? 'text'}
-                onChange={(e) => onChange(index, { ...context, type: (e.target.value === "text") ? "text" : "file" })}>
-                <MenuItem value={'text'}>Text</MenuItem>
-                <MenuItem value={'file'}>File</MenuItem>
-            </Select>
             {(context.type === 'text') &&
-                <TextField
+                <OutlinedInput
                     disabled={disabled}
                     fullWidth={true}
-                    value={context.value}
-                    onChange={(e) => onChange(index, { ...context, value: e.target.value })}
+                    placeholder='Enter context information here'
+                    value={context.value ?? ''}
+                    onChange={handleTextChange}
                     multiline={true}
                     rows={1}
                     sx={{
@@ -68,35 +78,57 @@ const ContextRow = ({ index, disabled, context, onChange, onDelete }: ContextRow
                 <>
                     <OutlinedInput
                         disabled={disabled}
-
                         fullWidth={true}
-                        value={context.value}
+                        value={context.filePath ?? ''}
                         startAdornment={
                             <InputAdornment position="start" sx={{ mr: -0.5 }}>
-                                <IconButton onClick={() => handleFileSearch()}>
+                                <IconButton onClick={handleFileSearch}>
                                     <FileSearchOutlined />
                                 </IconButton>
                             </InputAdornment>
                         }
                         onChange={(e) => onChange(index, { ...context, value: e.target.value })}
                     />
-                    <GoogleDriveFileSearchDialog open={fileSearchModalOpen} onChange={() => setFileSearchModalOpen(false)} />
+                    <GoogleDriveFileSearchDialog open={fileSearchModalOpen} onChange={handleFileSelection} />
                 </>
             }
+            <Typography variant="body2" sx={{ alignSelf: 'center', minWidth: 80 }}>
+                Tokens: {context.tokenCount}
+            </Typography>
         </Stack >
     )
 }
 
-
-// Dummy KeyValueForm component for demonstration; replace with your actual implementation or import
 type GrantContextEditorProps = {
     disabled: boolean;
-    contexts: GrantContext[];
-    onChange: (newContexts: GrantContext[]) => void;
+    onChange: (recipe: GrantRecipe) => void;
 };
-export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ disabled, contexts, onChange }) => {
+export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ disabled, onChange }) => {
     const { setHelpTopic } = useContext(HelpTopicContext);
     const { setShowHelp } = useHelp();
+    const { recipe } = useContext(GrantRecipeContext);
+    const [contexts, setContexts] = React.useState<GrantContext[]>(recipe.contexts || []);
+
+    useEffect(() => {
+        setContexts(recipe.contexts || []);
+    }, [recipe]);
+
+    async function addContext(newContext: GrantContext) {
+        newContext.tokenCount = await geminiService.calcTokenCount(recipe.modelType, newContext.value || '')
+        const revised =[...contexts, newContext]
+        onChange({ ...recipe, contexts: revised });
+    }
+
+    async function udpateContext(index: number, revised: GrantContext) {
+        revised.tokenCount = await geminiService.calcTokenCount(recipe.modelType, revised.value || '');
+        contexts[index] = revised;
+        onChange({ ...recipe, contexts: contexts.slice() });
+    }
+
+    function removeContext(index: number) {
+        const revised = contexts.filter((_, i) => i !== index);
+        onChange({ ...recipe, contexts: revised });
+    }
 
     return (
         <Card>
@@ -106,27 +138,17 @@ export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ disabled
                         <Button
                             disabled={disabled}
                             variant="outlined"
-                            onClick={() => {
-                                const newContexts = (contexts ?? []).slice();
-                                newContexts.push({ type: "text", value: "" });
-                                onChange(newContexts);
-                            }}
+                            onClick={() => addContext({ type: "file", value: "", tokenCount: 0 })}
                             startIcon={<PlusOutlined />}
-                            sx={{ alignSelf: 'flex-start' }}
-                        >
+                            sx={{ alignSelf: 'flex-start' }}>
                             File
                         </Button>
                         <Button
                             disabled={disabled}
                             variant="outlined"
-                            onClick={() => {
-                                const newContexts = (contexts ?? []).slice();
-                                newContexts.push({ type: "text", value: "" });
-                                onChange(newContexts);
-                            }}
+                            onClick={() => addContext({ type: "text", value: "", tokenCount: 0 })}
                             startIcon={<PlusOutlined />}
-                            sx={{ alignSelf: 'flex-start' }}
-                        >
+                            sx={{ alignSelf: 'flex-start' }}>
                             Text
                         </Button>
                     </Toolbar>}
@@ -142,13 +164,8 @@ export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ disabled
                             index={idx}
                             disabled={disabled}
                             context={context}
-                            onChange={(index: number, context: GrantContext) => {
-                                contexts[index] = context;
-                                onChange(contexts.slice());
-                            }}
-                            onDelete={(index: number) => {
-                                onChange(contexts.filter((_, i) => i !== index));
-                            }} />
+                            onChange={udpateContext}
+                            onDelete={removeContext} />
                     ))}
                 </Stack>
             </CardContent>

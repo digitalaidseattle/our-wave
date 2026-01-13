@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 // material-ui
 import {
@@ -35,6 +35,7 @@ import avatar2 from '/src/assets/images/users/avatar-2.png';
 import avatar3 from '/src/assets/images/users/avatar-3.png';
 import avatar4 from '/src/assets/images/users/avatar-4.png';
 import { useTheme } from '@mui/material/styles';
+import { GoogleDriveService } from '../../services/googleDriveService';
 
 // avatar style
 const avatarSX = {
@@ -72,9 +73,14 @@ const status = [
 // ==============================|| DASHBOARD - DEFAULT ||============================== //
 
 const DashboardDefault = () => {
+  const googleDriveService = GoogleDriveService.getInstance();
   const theme = useTheme();
   const [value, setValue] = useState('today');
   const [slot, setSlot] = useState('week');
+
+  useEffect(() => {
+    googleDriveService.signIn((token: string) => console.log("Google Drive signed in with token:", token));
+  }, [googleDriveService]);
 
   return (
     <Grid container rowSpacing={4.5} columnSpacing={2.75}>

@@ -8,12 +8,13 @@ import { LoadingContext, useHelp, useNotifications, UserContext } from "@digital
 import { Box, Button, Card, CardActions, CardContent, CardHeader, IconButton, Stack, TextField } from "@mui/material";
 import { useContext, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { GrantRecipeContext } from "../../components/GrantRecipeContext";
 import { HelpDrawer } from "../../components/HelpDrawer";
 import { HelpTopicContext } from "../../components/HelpTopicContext";
 import { LoadingOverlay } from "../../components/LoadingOverlay";
 import { grantProposalService } from "../../services/grantProposalService";
 import { grantRecipeService } from "../../services/grantRecipeService";
-import type { GrantContext, GrantInput, GrantOutput } from "../../types";
+import type { GrantOutput } from "../../types";
 import { GrantRecipe } from "../../types";
 import { GrantContextEditor } from "./GrantContextEditor";
 import { GrantOutputEditor } from "./GrantOutputEditor";
@@ -146,12 +147,11 @@ const GrantRecipesDetailPage: React.FC = () => {
     setDirty(true);
   }
 
-  function handleGrantContextsChange(contexts: GrantContext[]): void {
-    updatePrompt({ ...recipe, contexts: contexts })
-      .then(revised => {
-        setRecipe(revised);
-        setDirty(true);
-      })
+  function handleGrantContextsChange(revised: GrantRecipe): void {
+    console.log(revised);
+    // prompt not affected by contexts change
+    setRecipe(revised);
+    setDirty(true);
   }
 
   function handlePromptChange(updated: string): void {
@@ -162,40 +162,33 @@ const GrantRecipesDetailPage: React.FC = () => {
       })
   }
 
-  function handleGrantInputChange(inputs: GrantInput[]): void {
-    updatePrompt({ ...recipe, inputParameters: inputs })
-      .then(revised => {
-        setRecipe(revised);
-        setDirty(true);
-      })
-  }
-
   return (
     <>
       <LoadingOverlay />
       <HelpTopicContext.Provider value={{ helpTopic, setHelpTopic }} >
-        <Box gap={4}>
-          <Stack sx={{ gap: 2, marginRight: `${showHelp ? HELP_DRAWER_WIDTH : 0}px` }}>
-            <Card>
-              <CardHeader title="Grant Recipe Detail"
-                action={`Token count = ${recipe.tokenCount}`} />
-              <CardContent>
-                <Stack gap={1}>
-                  <TextEditor title="Description" value={recipe.description} onChange={handleDescriptionChange} />
-                  <TextEditor title="Prompt" value={recipe.prompt} onChange={handlePromptChange} />
-                  <GrantContextEditor disabled={false} contexts={recipe.contexts} onChange={handleGrantContextsChange} />
-                  {/* <GrantInputEditor recipeInputs={recipe.inputParameters} onChange={handleGrantInputChange} /> */}
-                  <GrantOutputEditor fields={recipe.outputsWithWordCount} onChange={handleGrantOutputChange} />
-                </Stack>
-              </CardContent>
-              <CardActions>
-                <Button variant="contained" disabled={loading} onClick={() => handleClone()}>Clone</Button>
-                <Button variant="contained" disabled={loading} onClick={() => handleGenerate()}>Generate</Button>
-              </CardActions>
-            </Card>
-          </Stack>
-          <HelpDrawer title={HELP_TITLE} width={HELP_DRAWER_WIDTH} dictionary={HELP_DICTIONARY} />
-        </Box>
+        <GrantRecipeContext.Provider value={{ recipe, setRecipe }} >
+          <Box gap={4}>
+            <Stack sx={{ gap: 2, marginRight: `${showHelp ? HELP_DRAWER_WIDTH : 0}px` }}>
+              <Card>
+                <CardHeader title="Grant Recipe Detail"
+                  action={`Token count = ${recipe.tokenCount}`} />
+                <CardContent>
+                  <Stack gap={1}>
+                    <TextEditor title="Description" value={recipe.description ?? ""} onChange={handleDescriptionChange} />
+                    <TextEditor title="Prompt" value={recipe.prompt ?? ""} onChange={handlePromptChange} />
+                    <GrantContextEditor disabled={false} onChange={handleGrantContextsChange} />
+                    <GrantOutputEditor fields={recipe.outputsWithWordCount} onChange={handleGrantOutputChange} />
+                  </Stack>
+                </CardContent>
+                <CardActions>
+                  <Button variant="contained" disabled={loading} onClick={() => handleClone()}>Clone</Button>
+                  <Button variant="contained" disabled={loading} onClick={() => handleGenerate()}>Generate</Button>
+                </CardActions>
+              </Card>
+            </Stack>
+            <HelpDrawer title={HELP_TITLE} width={HELP_DRAWER_WIDTH} dictionary={HELP_DICTIONARY} />
+          </Box>
+        </GrantRecipeContext.Provider>
       </HelpTopicContext.Provider>
     </>
   );

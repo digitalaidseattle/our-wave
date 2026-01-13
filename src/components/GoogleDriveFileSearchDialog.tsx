@@ -4,82 +4,87 @@
  *  @copyright 2026 Digital Aid Seattle
  *
  */
-import { useContext, useEffect, useState } from "react";
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle, List, ListItemButton, ListItemIcon, ListItemText, Stack, Typography } from "@mui/material";
 import { FileExcelOutlined, FileMarkdownOutlined, FolderOutlined } from "@ant-design/icons";
+import { Button, Dialog, DialogActions, DialogContent, DialogTitle, List, ListItemButton, ListItemIcon, ListItemText } from "@mui/material";
+import { useContext, useEffect, useState } from "react";
 
-import { GoogleDriveService, GoogleFile } from "../services/googleDriveService";
 import { LoadingContext, useNotifications } from "@digitalaidseattle/core";
+import { GoogleDriveService, GoogleFile } from "../services/googleDriveService";
 
 const OUR_WAVE_FOLDER = "1VQodPsyhs3KBVCfnYpuIfOZoh7WLaVvn";
 
 interface GoogleDriveFileSearchDialogProps {
+    title?: string;
     open: boolean
-    onChange: (file: any | null) => void
+    onChange: (file: GoogleFile | null) => void
 };
 
-const GoogleDriveFileSearchDialog = ({ open, onChange }: GoogleDriveFileSearchDialogProps) => {
+const GoogleDriveFileSearchDialog = ({ title = "File Search", open, onChange }: GoogleDriveFileSearchDialogProps) => {
     const googleDriveService = GoogleDriveService.getInstance();
     const { setLoading } = useContext(LoadingContext);
     const notifications = useNotifications();
 
-    const [token, setToken] = useState<string>();
+    const [folders, setFolders] = useState<GoogleFile[]>([]);
     const [files, setFiles] = useState<GoogleFile[]>([]);
-    const [folder, setFolder] = useState<string>(OUR_WAVE_FOLDER);
     const [selectedFile, setSelectedFile] = useState<GoogleFile>();
-    const [fileContents, setFileContents] = useState<string>();
 
     useEffect(() => {
-        googleDriveService.signIn((token) => setToken(token));
-    }, []);
+        if (open) {
+            googleDriveService.getMetadata(OUR_WAVE_FOLDER)
+                .then(resp => setFolders([resp]))
+                .catch(err => console.error(err));
+        }
+    }, [open]);
 
     useEffect(() => {
         fetchData();
-    }, [token, folder]);
+    }, [folders]);
 
     function fetchData() {
-        googleDriveService.listFolder(folder)
+        const folderId = folders.length === 0 ? OUR_WAVE_FOLDER : folders[folders.length - 1].id;
+        googleDriveService.listFolder(folderId)
             .then(files => setFiles(files))
     }
 
-    function handleConfirm(event: any): void {
-        console.log(event)
-        throw new Error("Function not implemented.");
+    async function handleConfirm(): Promise<void> {
+        if (selectedFile) {
+            switch (selectedFile.type) {
+                case 'application/vnd.google-apps.document':
+                    const fileContents = await downloadMarkdown(selectedFile);
+                    onChange({ ...selectedFile, contents: fileContents });
+                    break;
+                case 'application/vnd.google-apps.folder':
+                    if (folders.find(f => f.id === selectedFile.id)) {
+                        // Must be parent folder selection
+                        folders.pop();
+                        setFolders([...folders]);
+                    } else {
+                        setFolders([...folders, selectedFile]);
+                    }
+                    break;
+                default:
+                    notifications.error('File type not handled.')
+            }
+        }
     }
-
 
     function handleSelection(gf: GoogleFile) {
-        switch (gf.type) {
-            case 'application/vnd.google-apps.document':
-                setSelectedFile(gf);
-                downloadMarkdown(gf);
-                break;
-            case 'application/vnd.google-apps.folder':
-                setFolder(gf.id);
-                break;
-            default:
-                setSelectedFile(gf);
-                notifications.error('File type not handled.')
-        }
+        setSelectedFile(gf);
     }
 
-    function downloadMarkdown(file: GoogleFile) {
-        if (selectedFile) {
-            setLoading(true)
-            setFileContents(undefined);
-            googleDriveService.downloadMarkdown(file.id)
-                .then(resp => setFileContents(resp))
-                .finally(() => setLoading(false))
-        } else {
-            setFileContents(undefined);
-        }
+    function downloadMarkdown(file: GoogleFile): Promise<string> {
+        setLoading(true)
+        return googleDriveService.downloadMarkdown(file.id)
+            .then(resp => resp)
+            .finally(() => setLoading(false))
     }
 
     return <Dialog
         fullWidth={true}
         open={open}
-        onClose={() => onChange(null)}>
-        <DialogTitle>File Selection</DialogTitle>
+        onClose={() => onChange(null)}
+        sx={{ minHeight: '600px' }}>
+        <DialogTitle sx={{ fontSize: 16, fontWeight: 600 }}>{title} : {folders.map(folder => folder.name).join(' > ')}</DialogTitle>
         <DialogContent>
             <List
                 sx={{
@@ -90,9 +95,23 @@ const GoogleDriveFileSearchDialog = ({ open, onChange }: GoogleDriveFileSearchDi
                     maxHeight: 300,
                     '& ul': { padding: 0 },
                 }}>
+                {folders.length > 1
+                    && <ListItemButton
+                        key={folders[folders.length - 2].id}
+                        selected={selectedFile?.id === folders[folders.length - 2].id}
+                        onClick={() => handleSelection(folders[folders.length - 2])}
+                        onDoubleClick={() => { handleSelection(folders[folders.length - 2]); handleConfirm(); }}>
+                        <ListItemIcon>
+                            <FolderOutlined />
+                        </ListItemIcon>
+                        <ListItemText primary={"..."} />
+                    </ListItemButton>}
                 {files.map(gf =>
-                    <ListItemButton key={gf.id}
-                        onClick={() => handleSelection(gf)}>
+                    <ListItemButton
+                        key={gf.id}
+                        selected={selectedFile?.id === gf.id}
+                        onClick={() => handleSelection(gf)}
+                        onDoubleClick={() => { handleSelection(gf); handleConfirm(); }}>
                         <ListItemIcon>
                             {gf.type === 'application/vnd.google-apps.document' && <FileMarkdownOutlined />}
                             {gf.type === 'application/vnd.google-apps.folder' && <FolderOutlined />}
@@ -114,4 +133,4 @@ const GoogleDriveFileSearchDialog = ({ open, onChange }: GoogleDriveFileSearchDi
     </Dialog>
 }
 
-export { GoogleDriveFileSearchDialog }
+export { GoogleDriveFileSearchDialog };

@@ -26,6 +26,7 @@ export type GrantContext = {
     type: "text" | "file";
     filePath?: string;
     value: string | null;
+    tokenCount: number;
 }
 
 export type GrantRecipe = Entity & {

@@ -7,11 +7,10 @@ import {
   MarkdownPage,
   MinimalLayout
 } from "@digitalaidseattle/mui";
-import GrantRecipesListPage from './grants/GrantRecipesListPage';
-import GrantRecipesDetailPage from './grants/GrantRecipesDetailPage';
-import GrantProposalsListPage from './grants/GrantProposalsListPage';
 import GrantProposalsDetailPage from './grants/GrantProposalsDetailPage';
-import { GoogleDrivePage } from './GoogleDrivePage';
+import GrantProposalsListPage from './grants/GrantProposalsListPage';
+import GrantRecipesDetailPage from './grants/GrantRecipesDetailPage';
+import GrantRecipesListPage from './grants/GrantRecipesListPage';
 
 const routes = [
   {
@@ -37,10 +36,6 @@ const routes = [
       {
         path: "grant-proposals/:id",
         element: <GrantProposalsDetailPage />,
-      },
-      {
-        path: "gdrive",
-        element: <GoogleDrivePage />,
       },
       {
         path: "privacy",

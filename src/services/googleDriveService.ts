@@ -9,6 +9,7 @@ export type GoogleFile = {
     id: string;
     name: string;
     type: string;
+    contents: string;
 }
 
 const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
@@ -39,7 +40,7 @@ class GoogleDriveService {
                 await gapi.client.init({
                     discoveryDocs: [DISCOVERY_DOC],
                 });
-                this.drive =(gapi.client as any).drive;
+                this.drive = (gapi.client as any).drive;
                 this.isReady = true;
             });
         } else {
@@ -78,14 +79,24 @@ class GoogleDriveService {
         return res.body;
     }
 
-    async downloadFile(fileId: string) {
-        const meta = await this.drive.files.get({
-            fileId,
-            fields: 'name, mimeType, size',
-            supportsAllDrives: true,
-        });
-        console.log(meta)
+    async getMetadata(fileId: string) {
+        return this.drive.files
+            .get({
+                'fileId': fileId,
+                supportsAllDrives: true,
+                'fields': 'id, name, mimeType, createdTime, size' // Specify the fields you want to retrieve
+            })
+            .then((resp: any) =>
+            ({
+                id: resp.result.id,
+                name: resp.result.name,
+                type: resp.result.mimeType,
+                createdTime: resp.result.createdTime,
+                size: resp.result.size
+            }))
+    }
 
+    async downloadFile(fileId: string) {
         const res = await this.drive.files.export(
             {
                 fileId,
