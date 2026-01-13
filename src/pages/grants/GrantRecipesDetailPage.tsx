@@ -3,12 +3,12 @@
  * 
  * @copyright 2025 Digital Aid Seattle
 */
-import { InfoCircleOutlined } from "@ant-design/icons";
+import { HomeOutlined, InfoCircleOutlined } from "@ant-design/icons";
 import { LoadingContext, useHelp, useNotifications, UserContext } from "@digitalaidseattle/core";
-import { Box, Button, Card, CardActions, CardContent, CardHeader, Divider, IconButton, Stack, TextField } from "@mui/material";
+import { Box, Breadcrumbs, Button, Card, CardActions, CardContent, CardHeader, Divider, IconButton, Stack, TextField, Typography } from "@mui/material";
 import dayjs from "dayjs";
 import { useContext, useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { NavLink, useNavigate, useParams } from "react-router-dom";
 import { HelpDrawer } from "../../components/HelpDrawer";
 import { HelpTopicContext } from "../../components/HelpTopicContext";
 import { LoadingOverlay } from "../../components/LoadingOverlay";
@@ -111,41 +111,40 @@ const GrantRecipesDetailPage: React.FC = () => {
   }
 
   async function handleGenerate() {
-      if (!recipe || !user) return;
-    
-      try {
-        setLoading(true);
-    
-        //AI -> returns a draft proposal object (not saved)
-        const draft = await grantProposalService.generate(recipe);
-    
-        // Persist proposal
-        const saved = await grantProposalService.insert(
-          {
-            ...draft,
-            // make sure the proposal points back to this recipe
-            grantRecipeId: String(recipe.id),
-          },
-          undefined,
-          undefined,
-          user
-        );
-    
-        notifications.success(`Proposal generated for ${recipe.description}.`);
-    
-        //Navigate to proposal detail
-        navigate(`/grant-proposals/${saved.id}`);
-      } catch (err: any) {
-        console.error(err);
-        notifications.error(
-          `Could not generate a proposal for this recipe. ${
-            err?.message ?? "Unknown error"
-          }`
-        );
-      } finally {
-        setLoading(false);
-      }
+    if (!recipe || !user) return;
+
+    try {
+      setLoading(true);
+
+      //AI -> returns a draft proposal object (not saved)
+      const draft = await grantProposalService.generate(recipe);
+
+      // Persist proposal
+      const saved = await grantProposalService.insert(
+        {
+          ...draft,
+          // make sure the proposal points back to this recipe
+          grantRecipeId: String(recipe.id),
+        },
+        undefined,
+        undefined,
+        user
+      );
+
+      notifications.success(`Proposal generated for ${recipe.description}.`);
+
+      //Navigate to proposal detail
+      navigate(`/grant-proposals/${saved.id}`);
+    } catch (err: any) {
+      console.error(err);
+      notifications.error(
+        `Could not generate a proposal for this recipe. ${err?.message ?? "Unknown error"
+        }`
+      );
+    } finally {
+      setLoading(false);
     }
+  }
 
   function updatePrompt(changed: GrantRecipe): Promise<GrantRecipe> {
     return grantRecipeService.updatePrompt(changed);
@@ -187,6 +186,11 @@ const GrantRecipesDetailPage: React.FC = () => {
     <>
       <LoadingOverlay />
       <HelpTopicContext.Provider value={{ helpTopic, setHelpTopic }} >
+        <Breadcrumbs aria-label="breadcrumbs">
+          <NavLink to="/" ><IconButton size="medium"><HomeOutlined /></IconButton></NavLink>
+          <NavLink to={`/grant-recipes`} >Recipes</NavLink>
+          <Typography color="text.primary">Recipe Detail</Typography>
+        </Breadcrumbs>
         <Box gap={4}>
           <Stack sx={{ gap: 2, marginRight: `${showHelp ? HELP_DRAWER_WIDTH : 0}px` }}>
             <Card>

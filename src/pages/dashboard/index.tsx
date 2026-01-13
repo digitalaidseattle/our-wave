@@ -8,12 +8,14 @@ import {
   Avatar,
   AvatarGroup,
   Box,
+  Breadcrumbs,
   Button,
   Card,
   CardActions,
   CardContent,
   CardHeader,
   Grid,
+  IconButton,
   List,
   ListItemAvatar,
   ListItemButton,
@@ -25,7 +27,7 @@ import {
   TextField,
   Typography
 } from '@mui/material';
-import { useNavigate } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 
 // project import
 import IncomeAreaChart from './IncomeAreaChart';
@@ -34,7 +36,7 @@ import ReportAreaChart from './ReportAreaChart';
 import SalesColumnChart from './SalesColumnChart';
 
 // assets
-import { GiftOutlined, MessageOutlined, SettingOutlined } from '@ant-design/icons';
+import { GiftOutlined, HomeOutlined, MessageOutlined, SettingOutlined } from '@ant-design/icons';
 import { useTheme } from '@mui/material/styles';
 import { grantRecipeService } from '../../services/grantRecipeService';
 import { createRecipe } from '../../transactions/CreateRecipe';
@@ -175,12 +177,13 @@ const DashboardDefault = () => {
   const [value, setValue] = useState('today');
   const [slot, setSlot] = useState('week');
 
-  return (
+  return (<>
+    <Breadcrumbs aria-label="breadcrumbs">
+      <NavLink to="/" ><IconButton size="medium"><HomeOutlined /></IconButton></NavLink>
+      <Typography color="text.primary">Dashboard</Typography>
+    </Breadcrumbs>
     <Grid container rowSpacing={4.5} columnSpacing={2.75}>
       {/* row 1 */}
-      <Grid size={12} sx={{ mb: -2.25 }}>
-        <Typography variant="h5" color={theme.palette.text.primary}>Dashboard</Typography>
-      </Grid>
       <Grid size={6}>
         <Stack spacing={2} >
           <CreateRecipeCard />
@@ -431,6 +434,7 @@ const DashboardDefault = () => {
         </MainCard>
       </Grid>
     </Grid>
+  </>
   );
 };
 

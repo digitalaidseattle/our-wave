@@ -4,15 +4,18 @@
  * @copyright 2026 Digital Aid Seattle
 */
 import { HomeOutlined } from "@ant-design/icons";
-import { Box, Breadcrumbs, Card, CardContent, CardHeader, IconButton, Stack, Typography } from "@mui/material";
-import { useEffect, useState, useMemo } from "react";
-import { NavLink, useParams } from "react-router-dom";
+import { Breadcrumbs, Card, CardContent, CardHeader, IconButton, Stack, Typography } from "@mui/material";
 import dayjs from "dayjs";
+import { useContext, useEffect, useMemo, useState } from "react";
+import { NavLink, useParams } from "react-router-dom";
 
+import { LoadingContext } from "@digitalaidseattle/core";
+import { Clipboard } from "@digitalaidseattle/mui";
 import { LoadingOverlay } from "../../components/LoadingOverlay";
 import { grantProposalService } from "../../services/grantProposalService";
 import { grantRecipeService } from "../../services/grantRecipeService";
-import type { GrantProposal, GrantOutput } from "../../types";
+import type { GrantOutput, GrantProposal, GrantRecipe } from "../../types";
+import Markdown from "react-markdown";
 
 //Count words in string
 function countWords(text: string): number {
@@ -36,11 +39,12 @@ function formatCreatedAt(createdAt: any): string {
 }
 
 const GrantProposalsDetailPage: React.FC = () => {
+  const { setLoading } = useContext(LoadingContext);
   const { id } = useParams<{ id: string }>();
 
   const [proposal, setProposal] = useState<GrantProposal | null>(null);
+  const [recipe, setRecipe] = useState<GrantRecipe | null>(null);
   const [outputs, setOutputs] = useState<GrantOutput[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
     if (!id) return;
@@ -56,68 +60,72 @@ const GrantProposalsDetailPage: React.FC = () => {
 
         const recipeId = proposalData?.grantRecipeId;
 
-      
         // If the recipe fetch fails (ex: scaffold proposal points to a non-existent recipe),
         // keep rendering the proposal anyway and fall back to structuredResponse keys.
         if (recipeId != null && String(recipeId).trim() !== "") {
           try {
-            const recipe = await grantRecipeService.getById(String(recipeId));
-            setOutputs(recipe.outputsWithWordCount ?? []);
+            setRecipe(await grantRecipeService.getById(String(recipeId)));
           } catch (err) {
             console.warn(
               "Could not load recipe for proposal. Rendering proposal without recipe outputs.",
               err
             );
-            setOutputs([]);
           }
-        } else {
-          setOutputs([]);
         }
       } catch (err) {
         console.error("Error loading proposal detail:", err);
         setProposal(null);
-        setOutputs([]);
       } finally {
         setLoading(false);
       }
     }
-  
+
     fetchData();
   }, [id]);
+
+  useEffect(() => {
+    setOutputs([]);
+    if (recipe) {
+      setOutputs(recipe.outputsWithWordCount ?? []);
+    }
+  }, [recipe]);
+
+  // If we have recipe outputs, render in that order.
+  // Otherwise, render whatever keys exist in structuredResponse.
+  const reponses: {
+    name: string;
+    subheader: string;
+    value: string;
+  }[] = useMemo(() => {
+    return proposal ?
+      outputs.length > 0 ?
+        outputs.map((o) => {
+          const value = proposal.structuredResponse ? proposal.structuredResponse[o.name] : "";
+          const wordCount = countWords(value);
+          const charCount = countCharacters(value);
+          return {
+            name: o.name,
+            subheader: o.unit === "words" ? `${wordCount} / ${o.maxWords} words` : `${charCount} / ${o.maxWords} characters`,
+            value: value
+          }
+        })
+        : proposal.structuredResponse ?
+          Object.entries(proposal.structuredResponse).map(([key, value]) => {
+            const wordCount = countWords(value);
+            const charCount = countCharacters(value);
+            return {
+              name: key,
+              subheader: `${wordCount} words, ${charCount} characters`,
+              value: value
+            }
+          })
+          : []
+      : []
+  }, [proposal, outputs]);
 
   const createdAtLabel = useMemo(() => {
     return proposal?.createdAt ? formatCreatedAt(proposal.createdAt) : "";
   }, [proposal?.createdAt]);
-
-  if (loading) return <LoadingOverlay />;
-
-  if (!proposal || !proposal.structuredResponse) {
-    return (
-      <>
-        <Breadcrumbs aria-label="breadcrumb">
-          <NavLink to="/" ><IconButton size="medium"><HomeOutlined /></IconButton></NavLink>
-          <NavLink to={`/grant-proposals`} >Proposals</NavLink>
-          <Typography color="text.primary">Proposal Detail</Typography>
-        </Breadcrumbs>
-        <Typography>No proposal data found.</Typography>
-      </>
-    );
-  }
-
-  // If we have recipe outputs, render in that order.
-  // Otherwise, render whatever keys exist in structuredResponse.
-  const fieldsToRender: {
-    name: string;
-    unit?: "words" | "characters";
-    maxWords?: number;
-  }[] =
-    outputs.length > 0
-      ? outputs.map((o) => ({
-          name: o.name,
-          unit: o.unit,
-          maxWords: o.maxWords,
-        }))
-      : Object.keys(proposal.structuredResponse).map((k) => ({ name: k }));
 
   return (
     <>
@@ -127,44 +135,30 @@ const GrantProposalsDetailPage: React.FC = () => {
         <NavLink to={`/grant-proposals`} >Proposals</NavLink>
         <Typography color="text.primary">Proposal Detail</Typography>
       </Breadcrumbs>
-      <Box sx={{ maxWidth: 1000, mx: "auto", p: 3 }}>
-        <Stack spacing={3}>
-          <Typography variant="h4">Grant Proposal Detail</Typography>
-
-          {createdAtLabel && (
-            <Typography variant="body2" color="text.secondary">
-              Generated on {createdAtLabel}
-            </Typography>
-          )}
-
-          {fieldsToRender.map((field) => {
-            const value: string = proposal.structuredResponse?.[field.name] || "";
-        
-            const wordCount = countWords(value);
-            const charCount = countCharacters(value);
-
-            const hasLimits = typeof field.maxWords === "number" && !!field.unit;
-
+      {!proposal && <Typography>No proposal data found.</Typography>}
+      {proposal &&
+        <Stack spacing={2}>
+          <Card>
+            <CardHeader title={recipe ? recipe.description : "Grant Proposal Detail"}
+              subheader={`Generated on : ${createdAtLabel}`}
+              action={<Clipboard text={Object.values(proposal.structuredResponse!).join('\n')} />} />
+          </Card>
+          {reponses.map((response) => {
             return (
-              <Card key={field.name} variant="outlined">
+              <Card key={response.name} variant="outlined">
                 <CardHeader
-                  title={field.name}
-                  subheader={
-                    hasLimits
-                      ? field.unit === "words"
-                        ? `${wordCount} / ${field.maxWords} words`
-                        : `${charCount} / ${field.maxWords} characters`
-                      : `${wordCount} words • ${charCount} characters`
-                  }
+                  title={response.name}
+                  subheader={response.subheader}
+                  action={<Clipboard text={response.value} />}
                 />
                 <CardContent>
-                  <Typography whiteSpace="pre-wrap">{value || "—"}</Typography>
+                  <Markdown>{response.value}</Markdown>
                 </CardContent>
               </Card>
             );
           })}
         </Stack>
-      </Box>
+      }
     </>
   );
 };
