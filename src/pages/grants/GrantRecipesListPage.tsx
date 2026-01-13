@@ -4,16 +4,17 @@ import { DataGrid, GridColDef, GridRowParams, GridRowSelectionModel } from "@mui
 import { useContext, useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 
-import { LoadingContext, useNotifications, UserContext } from "@digitalaidseattle/core";
+import { LoadingContext, useNotifications } from "@digitalaidseattle/core";
 import dayjs from 'dayjs';
 import { LoadingOverlay } from "../../components/LoadingOverlay";
 import { grantRecipeService } from "../../services/grantRecipeService";
+import { createRecipe } from "../../transactions/CreateRecipe";
 import type { GrantRecipe } from "../../types";
+import { cloneRecipe } from "../../transactions/CloneRecipe";
 
 const GrantRecipesListPage: React.FC = () => {
   const notifications = useNotifications();
   const navigate = useNavigate();
-  const { user } = useContext(UserContext);
   const { loading, setLoading } = useContext(LoadingContext);
   const [recipes, setRecipes] = useState<GrantRecipe[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -66,23 +67,17 @@ const GrantRecipesListPage: React.FC = () => {
   }
 
   const handleAdd = async () => {
-    if (user) {
-      const newRecipe = grantRecipeService.empty();
-      newRecipe.description = `Recipe created ${dayjs().format('MM/DD/YYYY hh:mm a')}`;
-      const inserted = await grantRecipeService.insert(newRecipe, undefined, undefined, user);
-      navigate(`/grant-recipes/${inserted.id}`);
-    }
+    createRecipe()
+      .then(recipe => navigate(`/grant-recipes/${recipe.id}`))
   }
 
   const handleClone = async () => {
-    if (user) {
-      const recipe = recipes.find(r => r.id === selectedIds[0]);
-      if (recipe) {
-        const inserted = await grantRecipeService.clone(recipe);
-        navigate(`/grant-recipes/${inserted.id}`);
-      } else {
-        notifications.error(`Failed to clone the recipe.`);
-      }
+    const recipe = recipes.find(r => r.id === selectedIds[0]);
+    if (recipe) {
+      const inserted = await cloneRecipe(recipe);
+      navigate(`/grant-recipes/${inserted.id}`);
+    } else {
+      notifications.error(`Failed to clone the recipe.`);
     }
   }
 

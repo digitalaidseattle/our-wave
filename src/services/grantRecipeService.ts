@@ -109,32 +109,6 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
     );
   }
 
-  /**
-   * Creates a copy of an existing recipe.
-   */
-  async clone(recipe: GrantRecipe): Promise<GrantRecipe> {
-    const now = new Date();
-    const user = this.getUser();
-
-    const clone: GrantRecipe = {
-      ...recipe,
-      id: undefined,
-      createdAt: now,
-      createdBy: user?.email ?? "",
-      updatedAt: now,
-      updatedBy: user?.email ?? "",
-      description: `Clone of ${recipe.description}`,
-    };
-
-    return this.insert(clone);
-  }
-
-  /**
-   * Compiles the Handlebars template into the final prompt.
-   *
-   * Output constraints are included in the prompt so the AI
-   * self-limits its response rather than being truncated later.
-   */
   generatePromptWithInputs(recipe: GrantRecipe): string {
     const compiled = Handlebars.compile(recipe.template ?? "");
 
