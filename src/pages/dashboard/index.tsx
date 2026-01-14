@@ -183,7 +183,6 @@ const DashboardDefault = () => {
     googleDriveService.signIn((token: string) => console.log("Google Drive signed in with token:", token));
   }, [googleDriveService]);
 
-  return (
   return (<>
     <Breadcrumbs aria-label="breadcrumbs">
       <NavLink to="/" ><IconButton size="medium"><HomeOutlined /></IconButton></NavLink>
