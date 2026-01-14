@@ -17,6 +17,8 @@ import type { GrantInput, GrantOutput, Timestamp } from "../../types";
 import { GrantRecipe } from "../../types";
 import { GrantInputEditor } from "./GrantInputEditor";
 import { GrantOutputEditor } from "./GrantOutputEditor";
+import { DateUtils } from "../../utils/dateUtils";
+import { generateProposal } from "../../transactions/GenerateProposal";
 import { GrantInfoEditor } from "./GrantInfoEditor";
 
 const HELP_DRAWER_WIDTH = 300;

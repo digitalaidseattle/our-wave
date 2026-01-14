@@ -16,6 +16,7 @@ import { grantProposalService } from "../../services/grantProposalService";
 import { grantRecipeService } from "../../services/grantRecipeService";
 import type { GrantOutput, GrantProposal, GrantRecipe } from "../../types";
 import { DateUtils } from "../../utils/dateUtils";
+import { TextEdit } from "../../components/TextEdit";
 
 //Count words in string
 function countWords(text: string): number {

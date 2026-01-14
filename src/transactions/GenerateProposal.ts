@@ -22,6 +22,8 @@ function getUser(): User | null | undefined {
 
 // --- real generation (still returns a draft; not persisted) ---
 export async function generateProposal(recipe: GrantRecipe): Promise<GrantProposal> {
+    if (!recipe.id) throw new Error("Recipe ID is required");
+
     const outputs = recipe.outputsWithWordCount ?? [];
     if (outputs.length === 0) {
         throw new Error("Recipe is missing output fields");
@@ -42,12 +44,10 @@ export async function generateProposal(recipe: GrantRecipe): Promise<GrantPropos
         ...recipe,
         lastSubmitted: now
     }
-
-    let savedRecipe: GrantRecipe;
     if (recipe.id) {
-        savedRecipe = await grantRecipeService.update(recipe.id, updatedRecipe);
+        await grantRecipeService.update(recipe.id, updatedRecipe);
     } else {
-        savedRecipe = await grantRecipeService.insert(updatedRecipe);
+        await grantRecipeService.insert(updatedRecipe);
     }
 
     // Ask AI for structured JSON using output field names as keys
@@ -60,7 +60,7 @@ export async function generateProposal(recipe: GrantRecipe): Promise<GrantPropos
 
     const proposal = {
         ...grantProposalService.empty(),
-        grantRecipeId: String(savedRecipe.id),
+        grantRecipeId: String(recipe.id),
         structuredResponse,
         rating: null,
     };
