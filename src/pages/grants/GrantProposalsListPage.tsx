@@ -7,23 +7,12 @@ import {
   GridColDef,
   GridRowParams,
 } from "@mui/x-data-grid";
-import dayjs from "dayjs";
 import { useContext, useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { grantProposalService } from "../../services/grantProposalService";
-import type { GrantProposal } from "../../types";
+import type { GrantProposal, Timestamp } from "../../types";
+import { DateUtils } from "../../utils/dateUtils";
 
-function formatCreatedAt(createdAt: any): string {
-  if (!createdAt) return "";
-
-  // Firestore Timestamp
-  if (typeof createdAt?.seconds === "number") {
-    return dayjs(new Date(createdAt.seconds * 1000)).format("MM/DD/YYYY hh:mm a");
-  }
-
-  // JS Date / ISO string / etc
-  return dayjs(createdAt).format("MM/DD/YYYY hh:mm a");
-}
 
 const GrantProposalsListPage: React.FC = () => {
   const navigate = useNavigate();
@@ -87,7 +76,7 @@ const GrantProposalsListPage: React.FC = () => {
       field: "createdAt",
       headerName: "Date",
       width: 180,
-      valueGetter: (_value, row) => formatCreatedAt((row as any).createdAt),
+      valueGetter: (_value, row) => DateUtils.formatDateTime(row.createdAt as Timestamp),
     },
     {
       field: "actions",

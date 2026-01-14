@@ -5,17 +5,17 @@
 */
 import { HomeOutlined } from "@ant-design/icons";
 import { Breadcrumbs, Card, CardContent, CardHeader, IconButton, Stack, Typography } from "@mui/material";
-import dayjs from "dayjs";
 import { useContext, useEffect, useMemo, useState } from "react";
 import { NavLink, useParams } from "react-router-dom";
 
 import { LoadingContext } from "@digitalaidseattle/core";
 import { Clipboard } from "@digitalaidseattle/mui";
+import Markdown from "react-markdown";
 import { LoadingOverlay } from "../../components/LoadingOverlay";
 import { grantProposalService } from "../../services/grantProposalService";
 import { grantRecipeService } from "../../services/grantRecipeService";
 import type { GrantOutput, GrantProposal, GrantRecipe } from "../../types";
-import Markdown from "react-markdown";
+import { DateUtils } from "../../utils/dateUtils";
 
 //Count words in string
 function countWords(text: string): number {
@@ -24,18 +24,6 @@ function countWords(text: string): number {
 //Count characters in a string
 function countCharacters(text: string): number {
   return text.length;
-}
-
-function formatCreatedAt(createdAt: any): string {
-  if (!createdAt) return "";
-
-  // Firestore Timestamp
-  if (typeof createdAt?.seconds === "number") {
-    return dayjs(new Date(createdAt.seconds * 1000)).format("MM/DD/YYYY hh:mm a");
-  }
-
-  // JS Date / ISO string / etc
-  return dayjs(createdAt).format("MM/DD/YYYY hh:mm a");
 }
 
 const GrantProposalsDetailPage: React.FC = () => {
@@ -124,7 +112,7 @@ const GrantProposalsDetailPage: React.FC = () => {
   }, [proposal, outputs]);
 
   const createdAtLabel = useMemo(() => {
-    return proposal?.createdAt ? formatCreatedAt(proposal.createdAt) : "";
+    return proposal ? DateUtils.formatDateTime(proposal.createdAt) : "";
   }, [proposal?.createdAt]);
 
   return (

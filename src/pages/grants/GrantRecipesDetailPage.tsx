@@ -6,19 +6,19 @@
 import { HomeOutlined, InfoCircleOutlined } from "@ant-design/icons";
 import { LoadingContext, useHelp, useNotifications, UserContext } from "@digitalaidseattle/core";
 import { Box, Breadcrumbs, Button, Card, CardActions, CardContent, CardHeader, Divider, IconButton, Stack, TextField, Typography } from "@mui/material";
-import dayjs from "dayjs";
 import { useContext, useEffect, useState } from "react";
 import { NavLink, useNavigate, useParams } from "react-router-dom";
 import { HelpDrawer } from "../../components/HelpDrawer";
 import { HelpTopicContext } from "../../components/HelpTopicContext";
 import { LoadingOverlay } from "../../components/LoadingOverlay";
-import { grantProposalService } from "../../services/grantProposalService";
 import { grantRecipeService } from "../../services/grantRecipeService";
 import { cloneRecipe } from "../../transactions/CloneRecipe";
-import type { GrantInput, GrantOutput } from "../../types";
+import type { GrantInput, GrantOutput, Timestamp } from "../../types";
 import { GrantRecipe } from "../../types";
 import { GrantInputEditor } from "./GrantInputEditor";
 import { GrantOutputEditor } from "./GrantOutputEditor";
+import { DateUtils } from "../../utils/dateUtils";
+import { generateProposal } from "../../transactions/GenerateProposal";
 
 const HELP_DRAWER_WIDTH = 300;
 const HELP_TITLE = "Our Wave";
@@ -72,9 +72,8 @@ const GrantRecipesDetailPage: React.FC = () => {
   }, [id])
 
   useEffect(() => {
-    if (recipe && recipe.updatedAt) {
-      const date = ('seconds' in recipe.updatedAt) ? new Date((recipe.updatedAt as any).seconds * 1000) : recipe.updatedAt;
-      setLastUpdated(dayjs(date).format("MM/DD/YYYY hh:mm a"));
+    if (recipe) {
+      setLastUpdated(DateUtils.formatDateTime(recipe.updatedAt as Timestamp));
     }
   }, [recipe]);
 
@@ -111,38 +110,24 @@ const GrantRecipesDetailPage: React.FC = () => {
   }
 
   async function handleGenerate() {
-    if (!recipe || !user) return;
-
-    try {
+    if (recipe) {  // TODO display error ?
       setLoading(true);
-
-      //AI -> returns a draft proposal object (not saved)
-      const draft = await grantProposalService.generate(recipe);
-
-      // Persist proposal
-      const saved = await grantProposalService.insert(
-        {
-          ...draft,
-          // make sure the proposal points back to this recipe
-          grantRecipeId: String(recipe.id),
-        },
-        undefined,
-        undefined,
-        user
-      );
-
-      notifications.success(`Proposal generated for ${recipe.description}.`);
-
-      //Navigate to proposal detail
-      navigate(`/grant-proposals/${saved.id}`);
-    } catch (err: any) {
-      console.error(err);
-      notifications.error(
-        `Could not generate a proposal for this recipe. ${err?.message ?? "Unknown error"
-        }`
-      );
-    } finally {
-      setLoading(false);
+      generateProposal(recipe)
+        .then(proposal => {
+          notifications.success(`Proposal generated for ${recipe.description}.`);
+          //Navigate to proposal detail
+          navigate(`/grant-proposals/${proposal.id}`);
+        })
+        .catch((err: any) => {
+          console.error(err);
+          notifications.error(
+            `Could not generate a proposal for this recipe. ${err?.message ?? "Unknown error"
+            }`
+          )
+        })
+        .finally(() => {
+          setLoading(false);
+        });
     }
   }
 

@@ -25,6 +25,7 @@ export type GrantRecipe = Entity & {
   createdBy: string;
   updatedAt: Timestamp | Date;
   updatedBy: string;
+  lastSubmitted: Timestamp | Date | null;
   description: string;
   template: string;
   prompt: string;
