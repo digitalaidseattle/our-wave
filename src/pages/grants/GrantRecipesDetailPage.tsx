@@ -5,6 +5,7 @@
 */
 import { useContext, useEffect, useState } from "react";
 <<<<<<< HEAD
+<<<<<<< HEAD
 import { NavLink, useNavigate, useParams } from "react-router-dom";
 import { HomeOutlined, InfoCircleOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
@@ -12,6 +13,8 @@ import { LoadingContext, useHelp, useNotifications, UserContext } from "@digital
 import { Box, Breadcrumbs, Button, Card, CardActions, CardContent, CardHeader, Divider, IconButton, Stack, TextField, Typography } from "@mui/material";
 import { GrantRecipeContext } from "../../components/GrantRecipeContext";
 =======
+=======
+>>>>>>> b1d7968 (dev merge)
 import { useNavigate, useParams } from "react-router-dom";
 import { InfoCircleOutlined } from "@ant-design/icons";
 import { LoadingContext, useHelp, useNotifications, UserContext } from "@digitalaidseattle/core";
@@ -22,9 +25,13 @@ import { Box, Button, Card, CardActions, CardContent, CardHeader, IconButton, St
 import { useContext, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { InfoCircleOutlined } from "@ant-design/icons";
+=======
+import { NavLink, useNavigate, useParams } from "react-router-dom";
+import { HomeOutlined, InfoCircleOutlined } from "@ant-design/icons";
+>>>>>>> 64067f7 (dev merge)
 import dayjs from "dayjs";
 import { LoadingContext, useHelp, useNotifications, UserContext } from "@digitalaidseattle/core";
-import { Box, Button, Card, CardActions, CardContent, CardHeader, Divider, IconButton, Stack, TextField } from "@mui/material";
+import { Box, Breadcrumbs, Button, Card, CardActions, CardContent, CardHeader, Divider, IconButton, Stack, TextField, Typography } from "@mui/material";
 import { GrantRecipeContext } from "../../components/GrantRecipeContext";
 >>>>>>> 77917b0 (Project Context)
 import { HelpDrawer } from "../../components/HelpDrawer";
@@ -325,6 +332,11 @@ const GrantRecipesDetailPage: React.FC = () => {
 =======
 =======
         <GrantRecipeContext.Provider value={{ recipe, setRecipe }} >
+          <Breadcrumbs aria-label="breadcrumbs">
+            <NavLink to="/" ><IconButton size="medium"><HomeOutlined /></IconButton></NavLink>
+            <NavLink to={`/grant-recipes`} >Recipes</NavLink>
+            <Typography color="text.primary">Recipe Detail</Typography>
+          </Breadcrumbs>
           <Box gap={4}>
             <Stack sx={{ gap: 2, marginRight: `${showHelp ? HELP_DRAWER_WIDTH : 0}px` }}>
               <Card>
