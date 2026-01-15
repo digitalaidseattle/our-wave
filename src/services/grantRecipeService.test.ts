@@ -1,14 +1,12 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { GrantAiService } from "../pages/grants/grantAiService";
 import { GrantRecipe } from "../types";
 import { grantRecipeService } from "./grantRecipeService";
-import { beforeEach } from "node:test";
 
 describe("grantRecipeService", () => {
   const grantAiService = {
     calcTokenCount: vi.fn(),
   } as unknown as GrantAiService;
-  const singletonSpy = vi.spyOn(GrantAiService, "getInstance").mockReturnValue(grantAiService);
 
   beforeEach(() => {
     vi.resetAllMocks();
@@ -49,6 +47,7 @@ describe("grantRecipeService", () => {
       outputsWithWordCount: []
     } as unknown as GrantRecipe;
 
+    const singletonSpy = vi.spyOn(GrantAiService, "getInstance").mockReturnValue(grantAiService);
     const tokenSpy = vi.spyOn(grantAiService, "calcTokenCount").mockResolvedValue(5)
 
     grantRecipeService.updatePrompt(recipe)
