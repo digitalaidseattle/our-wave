@@ -29,25 +29,18 @@ class GrantAiService {
     }
 
     ai;
-    model;
 
     private constructor() {
         this.ai = getAI(firebaseClient, { backend: new GoogleAIBackend() });
-
-        // Default model used for simple text generation
-        this.model = getGenerativeModel(this.ai, {
-            model: "gemini-2.5-flash"
-        });
     }
 
     /**
      * Runs a basic text generation request.
      * This is for prompts where we just want the model to return a text response.
      */
-    query(prompt: string): Promise<string> {
-        console.log("Querying AI with prompt:", prompt, this.model);
-
-        return this.model.generateContent(prompt)
+    query(modelType: string, prompt: string): Promise<string> {
+        const model = getGenerativeModel(this.ai, { model: modelType });
+        return model.generateContent(prompt)
             .then(result => result.response.text())
             .catch(error => {
                 console.error("Error querying AI:", error);
@@ -55,17 +48,16 @@ class GrantAiService {
             });
     }
 
-  /**
- * Sends a prompt to the AI and tells it which fields to return.
- * 
- * You give it a list of field names (like ["Summary", "Budget"]),
- * and the AI will return a JSON object with those fields filled in.
- */
-
+    /**
+     * Sends a prompt to the AI and tells it which fields to return.
+     * 
+     * You give it a list of field names (like ["Summary", "Budget"]),
+     * and the AI will return a JSON object with those fields filled in.
+    */
     parameterizedQuery(
-        schemaParams: string[],
+        modelType: string = "gemini-2.5-flash",
         prompt: string,
-        modelType: string = "gemini-2.5-flash"
+        schemaParams: string[]
     ): Promise<Record<string, string>> {
 
         // Build a schema where each field is expected to be a string.
@@ -77,7 +69,7 @@ class GrantAiService {
         });
 
         // Create a model instance that will use this schema for responses.
-        const jModel = getGenerativeModel(this.ai, {
+        const model = getGenerativeModel(this.ai, {
             model: modelType,
             generationConfig: {
                 responseMimeType: "application/json",
@@ -85,9 +77,7 @@ class GrantAiService {
             },
         });
 
-        console.log("Querying AI with structured prompt:", prompt, jModel);
-
-        return jModel.generateContent(prompt)
+        return model.generateContent(prompt)
             .then(result => {
                 const text = result.response.text();
 

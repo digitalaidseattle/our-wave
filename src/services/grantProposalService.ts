@@ -22,30 +22,30 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
   }
 
   // Insert a new proposal with metadata added
-async insert(
-  entity: GrantProposal,
-  select?: string,
-  mapper?: (json: any) => GrantProposal,
-  user?: User
-): Promise<GrantProposal> {
-  if (!user?.email) throw new Error("User email is required");
+  async insert(
+    entity: GrantProposal,
+    select?: string,
+    mapper?: (json: any) => GrantProposal,
+    user?: User
+  ): Promise<GrantProposal> {
+    if (!user?.email) throw new Error("User email is required");
 
-  // Firestore can't store `undefined` (and we don't want to persist id anyway)
-  // so remove it before insert.
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { id, ...entityWithoutId } = entity;
+    // Firestore can't store `undefined` (and we don't want to persist id anyway)
+    // so remove it before insert.
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { id, ...entityWithoutId } = entity;
 
-  return super.insert(
-    {
-      ...entityWithoutId,
-      createdAt: new Date(),
-      createdBy: user.email,
-    } as GrantProposal,
-    select,
-    mapper,
-    user
-  );
-}
+    return super.insert(
+      {
+        ...entityWithoutId,
+        createdAt: new Date(),
+        createdBy: user.email,
+      } as GrantProposal,
+      select,
+      mapper,
+      user
+    );
+  }
 
   // Update a proposal
   async update(
@@ -118,10 +118,10 @@ async insert(
         return this.mockAll();
       }
     }
-  
+
     return super.getAll(count, select, mapper);
   }
-  
+
   async getById(
     entityId: string,
     select?: string,
@@ -133,7 +133,7 @@ async insert(
         return this.mockProposal(entityId);
       }
     }
-  
+
     return super.getById(entityId, select, mapper);
   }
 
@@ -156,9 +156,9 @@ async insert(
     // Ask AI for structured JSON using output field names as keys
     const schemaParams = outputs.map((o) => o.name);
     const structuredResponse = await grantAiService.parameterizedQuery(
-      schemaParams,
+      recipe.modelType,
       recipe.prompt,
-      recipe.modelType
+      schemaParams
     );
 
     return {
