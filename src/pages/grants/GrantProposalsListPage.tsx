@@ -1,5 +1,5 @@
-import { DeleteOutlined, EyeOutlined, HomeOutlined } from "@ant-design/icons";
-import { LoadingContext, useNotifications, UserContext } from "@digitalaidseattle/core";
+import { DeleteOutlined, HomeOutlined } from "@ant-design/icons";
+import { LoadingContext, useNotifications } from "@digitalaidseattle/core";
 import {
   Box, Breadcrumbs, Card, CardContent, CardHeader,
   IconButton, Toolbar, Tooltip, Typography
@@ -13,9 +13,9 @@ import {
 import dayjs from "dayjs";
 import { useContext, useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
+import { LoadingOverlay } from "../../components/LoadingOverlay";
 import { grantProposalService } from "../../services/grantProposalService";
 import type { GrantProposal } from "../../types";
-import { LoadingOverlay } from "../../components/LoadingOverlay";
 
 const GrantProposalsListPage: React.FC = () => {
   const notifications = useNotifications();
