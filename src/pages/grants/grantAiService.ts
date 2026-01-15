@@ -20,12 +20,25 @@ import { getAI, getGenerativeModel, GoogleAIBackend, Schema } from "firebase/ai"
 
 class GrantAiService {
 
-    ai = getAI(firebaseClient, { backend: new GoogleAIBackend() });
+    static _instance: GrantAiService;
+    static getInstance(): GrantAiService {
+        if (!GrantAiService._instance) {
+            GrantAiService._instance = new GrantAiService();
+        }
+        return GrantAiService._instance;
+    }
 
-    // Default model used for simple text generation
-    model = getGenerativeModel(this.ai, {
-        model: "gemini-2.5-flash"
-    });
+    ai;
+    model;
+
+    private constructor() {
+        this.ai = getAI(firebaseClient, { backend: new GoogleAIBackend() });
+
+        // Default model used for simple text generation
+        this.model = getGenerativeModel(this.ai, {
+            model: "gemini-2.5-flash"
+        });
+    }
 
     /**
      * Runs a basic text generation request.
@@ -89,7 +102,12 @@ class GrantAiService {
             });
     }
 
+    calcTokenCount(model: string, prompt: string): Promise<number> {
+        return getGenerativeModel(this.ai, { model: model })
+            .countTokens(prompt)
+            .then(response => response.totalTokens)
+    }
+
 }
 
-const grantAiService = new GrantAiService();
-export { grantAiService };
+export { GrantAiService };

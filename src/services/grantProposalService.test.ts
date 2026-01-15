@@ -1,25 +1,18 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { GrantRecipe } from "../types";
-
-// Mock AI service
-vi.mock("../pages/grants/grantAiService", () => ({
-  grantAiService: {
-    parameterizedQuery: vi.fn(),
-  },
-}));
 
 // Mock Firebase
 vi.mock("@digitalaidseattle/firebase", () => ({
   firebaseClient: { app: {} },
-  FirestoreService: class {},
+  FirestoreService: class { },
 }));
 
-import { grantAiService } from "../pages/grants/grantAiService";
 import { grantProposalService } from "./grantProposalService";
+import { GrantAiService } from "../pages/grants/grantAiService";
 
 describe("grantProposalService.generate", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
   it("builds structuredResponse from AI output", async () => {
@@ -42,14 +35,18 @@ describe("grantProposalService.generate", () => {
       modelType: "gemini-2.5-flash",
     };
 
-    (grantAiService.parameterizedQuery as any).mockResolvedValue({
-      Summary: "This should be trimmed",
-      Notes: "abcdefghijklmnop",
-    });
+    const querySpy = vi.spyOn(GrantAiService, "getInstance").mockReturnValue(
+      ({
+        parameterizedQuery: vi.fn().mockResolvedValue({
+          Summary: "This should be trimmed",
+          Notes: "abcdefghijklmnop",
+        }),
+      } as any)
+    );
 
     const proposal = await grantProposalService.generate(recipe);
 
-    expect(grantAiService.parameterizedQuery).toHaveBeenCalledTimes(1);
+    expect(querySpy).toHaveBeenCalledTimes(1);
     expect(proposal.grantRecipeId).toBe("recipe-123");
 
     // AI output is preserved as-is

@@ -3,6 +3,7 @@ import { FirestoreService } from "@digitalaidseattle/firebase";
 import type { GrantRecipe } from "../types";
 import Handlebars from "handlebars";
 import { authService } from "../App";
+import { GrantAiService } from "../pages/grants/grantAiService";
 
 class GrantRecipeService extends FirestoreService<GrantRecipe> {
   constructor() {
@@ -132,12 +133,14 @@ Adjust wording as needed to stay within these limits.
   }
   async updatePrompt(recipe: GrantRecipe): Promise<GrantRecipe> {
     const prompt = this.generatePromptWithInputs(recipe);
-  
+    const tokenCount = await GrantAiService.getInstance().calcTokenCount(recipe.modelType, prompt);
+
     // If token counting is needed later, it can live here
     // For now we keep existing tokenCount
     return {
       ...recipe,
       prompt,
+      tokenCount: tokenCount
     };
   }
 }

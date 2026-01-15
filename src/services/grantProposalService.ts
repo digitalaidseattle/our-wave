@@ -1,7 +1,7 @@
 import type { Identifier, User } from "@digitalaidseattle/core";
 import { FirestoreService } from "@digitalaidseattle/firebase";
 import type { GrantProposal, GrantRecipe } from "../types";
-import { grantAiService } from "../pages/grants/grantAiService";
+import { GrantAiService } from "../pages/grants/grantAiService";
 
 class GrantProposalService extends FirestoreService<GrantProposal> {
   constructor() {
@@ -139,6 +139,8 @@ async insert(
 
   // --- real generation (still returns a draft; not persisted) ---
   async generate(recipe: GrantRecipe): Promise<GrantProposal> {
+    const grantAiService = GrantAiService.getInstance();
+
     if (!recipe.id) throw new Error("Recipe ID is required");
 
     const outputs = recipe.outputsWithWordCount ?? [];
