@@ -34,6 +34,13 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
     user?: User
   ): Promise<GrantProposal> {
     if (!user?.email) throw new Error("User email is required");
+  async insert(
+    entity: GrantProposal,
+    select?: string,
+    mapper?: (json: any) => GrantProposal,
+    user?: User
+  ): Promise<GrantProposal> {
+    if (!user?.email) throw new Error("User email is required");
 
     // Firestore can't store `undefined` (and we don't want to persist id anyway)
     // so remove it before insert.
