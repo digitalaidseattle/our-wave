@@ -7,8 +7,8 @@
  *
  */
 
-import { CheckCircleOutlined, CloseCircleOutlined, EditOutlined } from "@ant-design/icons";
-import { Box, IconButton, Stack, TextField, Tooltip, Typography } from "@mui/material";
+import { CheckCircleOutlined, CloseCircleOutlined } from "@ant-design/icons";
+import { IconButton, Stack, TextField, Tooltip, Typography } from "@mui/material";
 import { useState } from "react";
 
 export type TextEditProps = {
