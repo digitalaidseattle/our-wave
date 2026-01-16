@@ -62,18 +62,17 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
   ): Promise<GrantProposal> {
     const sessionUser = user ?? await authService.getUser();
     if (!sessionUser) throw new Error("User email is required");
-
-    return super.update(
-      entityId,
-      {
-        ...updatedFields,
-        updatedAt: new Date(),
-        updatedBy: sessionUser.email,
-      },
-      select,
-      mapper,
-      user
-    );
+    const partial = {
+      ...updatedFields,
+      updatedAt: new Date(),
+      updatedBy: sessionUser.email
+    };
+    try {
+      return super.update(entityId, partial, select, mapper, sessionUser)
+    } catch (e) {
+      console.error("Error updating document: ", e);
+      throw e;
+    }
   }
 
   // --- real generation (still returns a draft; not persisted) ---
