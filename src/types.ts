@@ -28,19 +28,21 @@ export type GrantContext = {
 }
 
 export type GrantRecipe = Entity & {
-    createdAt: Timestamp | Date;
-    createdBy: string;
-    updatedAt: Timestamp | Date;
-    updatedBy: string;
-    description: string;
-    template: string;  // Instructions for AI
-    prompt: string;  // Instructions for AI
-    contexts: GrantContext[]; // AI will be asked to include this information
-    outputsWithWordCount: GrantOutput[]; // AI will be based to output the data with these constraints
-    tokenCount: number;
-    proposalIds: string[];
-    modelType: string;  // "gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.5-flash-lite";
-}
+  createdAt: Timestamp | Date;
+  createdBy: string;
+  updatedAt: Timestamp | Date;
+  updatedBy: string;
+  description: string;
+  rating: number;
+  tags: string[];
+  template: string;
+  prompt: string;
+  inputParameters: GrantInput[];
+  outputsWithWordCount: GrantOutput[];
+  tokenCount: number;
+  proposalIds: string[];
+  modelType: string; // "gemini-2.5-flash", etc.
+};
 
 export type GrantProposal = Entity & {
   createdAt: Timestamp | Date;
