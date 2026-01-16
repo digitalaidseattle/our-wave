@@ -74,6 +74,12 @@ const GrantProposalsListPage: React.FC = () => {
 
   const columns: GridColDef<GrantProposal>[] = [
     {
+      field: "name",
+      headerName: "Name",
+      flex: 1,
+      minWidth: 150,
+    },
+    {
       field: "preview",
       headerName: "Preview",
       flex: 1,
