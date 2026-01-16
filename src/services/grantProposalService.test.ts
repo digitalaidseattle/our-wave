@@ -11,7 +11,7 @@ vi.mock("../pages/grants/grantAiService", () => ({
 // Mock Firebase
 vi.mock("@digitalaidseattle/firebase", () => ({
   firebaseClient: { app: {} },
-  FirestoreService: class {},
+  FirestoreService: class { },
 }));
 
 import { grantAiService } from "../pages/grants/grantAiService";
@@ -30,6 +30,8 @@ describe("grantProposalService.generate", () => {
       updatedAt: new Date(),
       updatedBy: "tester@example.com",
       description: "Test recipe",
+      tags: [],
+      rating: 0,
       template: "Test {{#each outputs}}{{name}} {{/each}}",
       prompt: "compiled prompt",
       contexts: [],
@@ -73,6 +75,8 @@ describe("grantProposalService.generate", () => {
       updatedAt: new Date(),
       updatedBy: "",
       description: "",
+      tags: [],
+      rating: 0,
       template: "",
       prompt: "",
       contexts: [],

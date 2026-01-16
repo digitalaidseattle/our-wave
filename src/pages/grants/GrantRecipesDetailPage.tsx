@@ -146,6 +146,7 @@ const GrantRecipesDetailPage: React.FC = () => {
       })
   }
 
+<<<<<<< HEAD
   function handleDescriptionChange(updated: string): void {
     // no prompt update here
     setRecipe({
@@ -162,11 +163,12 @@ const GrantRecipesDetailPage: React.FC = () => {
     setRecipe(revised);
     setDirty(true);
 =======
+=======
+>>>>>>> cc06741 (lint)
   function handleInfoChange(updated: GrantRecipe): void {
     setRecipe(updated);
     setDirty(true);
   }
-
 
   function handlePromptChange(updated: string): void {
     updatePrompt({ ...recipe, prompt: updated })
