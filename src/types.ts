@@ -26,6 +26,8 @@ export type GrantRecipe = Entity & {
   updatedAt: Timestamp | Date;
   updatedBy: string;
   description: string;
+  rating: number;
+  tags: string[];
   template: string;
   prompt: string;
   inputParameters: GrantInput[];
