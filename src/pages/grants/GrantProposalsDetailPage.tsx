@@ -130,8 +130,8 @@ const GrantProposalsDetailPage: React.FC = () => {
 
   function handleNameChange(text: string): void {
     if (proposal) {
-      grantProposalService.update(proposal.id as string, { ...proposal, name: text })
-        .then(updated => setProposal(updated))
+      grantProposalService.update(proposal.id as string, { name: text } as GrantProposal)
+        .then(updated => setProposal({ ...proposal, ...updated }))
     }
   }
 

@@ -76,8 +76,7 @@ const GrantProposalsListPage: React.FC = () => {
     {
       field: "name",
       headerName: "Name",
-      flex: 1,
-      minWidth: 150,
+      width: 200,
     },
     {
       field: "preview",
