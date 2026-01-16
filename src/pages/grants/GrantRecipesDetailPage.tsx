@@ -159,19 +159,10 @@ const GrantRecipesDetailPage: React.FC = () => {
       })
   }
 
-  function handleDescriptionChange(updated: string): void {
-    setRecipe({
-      ...recipe,
-      description: updated
-    });
-    setDirty(true);
-  }
-
   function handleInfoChange(updated: GrantRecipe): void {
     setRecipe(updated);
     setDirty(true);
   }
-
 
   function handlePromptChange(updated: string): void {
     updatePrompt({ ...recipe, prompt: updated })
