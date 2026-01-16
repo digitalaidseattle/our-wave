@@ -11,7 +11,7 @@ import dayjs from "dayjs";
 import { useContext, useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { grantProposalService } from "../../services/grantProposalService";
-import type { GrantProposal } from "../../types";
+import type { GrantProposal, Timestamp } from "../../types";
 
 function formatCreatedAt(createdAt: any): string {
   if (!createdAt) return "";
@@ -39,8 +39,14 @@ const GrantProposalsListPage: React.FC = () => {
   const fetchProposals = async () => {
     try {
       setLoading(true);
-      const data = await grantProposalService.getAll();
-      setProposals(data || []);
+      const sorted = await grantProposalService.getAll()
+        .then(proposals =>
+          proposals.sort((a, b) => {
+            const dateA = new Date((a.createdAt as Timestamp).seconds * 1000);
+            const dateB = new Date((b.createdAt as Timestamp).seconds * 1000);
+            return dateB.getTime() - dateA.getTime();
+          }));
+      setProposals(sorted || []);
     } catch (error) {
       console.error("Error fetching grant proposals:", error);
       setProposals([]);

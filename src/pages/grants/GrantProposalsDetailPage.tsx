@@ -3,11 +3,11 @@
  * 
  * @copyright 2026 Digital Aid Seattle
 */
-import { HomeOutlined } from "@ant-design/icons";
-import { Breadcrumbs, Card, CardContent, CardHeader, IconButton, Stack, Typography } from "@mui/material";
+import { HomeOutlined, InfoCircleOutlined } from "@ant-design/icons";
+import { Box, Breadcrumbs, Card, CardContent, CardHeader, Icon, IconButton, Stack, Tooltip, Typography } from "@mui/material";
 import dayjs from "dayjs";
 import { useContext, useEffect, useMemo, useState } from "react";
-import { NavLink, useParams } from "react-router-dom";
+import { Link, NavLink, useParams } from "react-router-dom";
 
 import { LoadingContext } from "@digitalaidseattle/core";
 import { Clipboard } from "@digitalaidseattle/mui";
@@ -123,6 +123,14 @@ const GrantProposalsDetailPage: React.FC = () => {
       : []
   }, [proposal, outputs]);
 
+  const download: string = useMemo(() => {
+    const responses = proposal && proposal.structuredResponse ?
+      (Object.entries(proposal.structuredResponse)
+        .map(([key, value]) => `${key}\n${value}`))
+        .join('\n\n') : '';
+    return `${recipe ? recipe.description : "Grant Proposal Detail"}\n${responses}`;
+  }, [recipe, proposal]);
+
   const createdAtLabel = useMemo(() => {
     return proposal?.createdAt ? formatCreatedAt(proposal.createdAt) : "";
   }, [proposal?.createdAt]);
@@ -140,8 +148,15 @@ const GrantProposalsDetailPage: React.FC = () => {
         <Stack spacing={2}>
           <Card>
             <CardHeader title={recipe ? recipe.description : "Grant Proposal Detail"}
-              subheader={`Generated on : ${createdAtLabel}`}
-              action={<Clipboard text={Object.values(proposal.structuredResponse!).join('\n')} />} />
+              subheader={<>
+                <Box component="span">Generated on : </Box>
+                <Typography component="span" fontWeight={600}>{createdAtLabel}</Typography>
+                <Box component="span"> from </Box>
+                <Link to={`/grant-recipes/${recipe?.id}`}>
+                  <Typography component="span" fontWeight={600}>{recipe ? recipe.description : 'Grant Recipe'}</Typography>
+                </Link>
+              </>}
+              action={<Tooltip title="Copies entire proposal into clipboard."><Box><Clipboard text={download} /></Box></Tooltip>} />
           </Card>
           {reponses.map((response) => {
             return (
@@ -149,7 +164,7 @@ const GrantProposalsDetailPage: React.FC = () => {
                 <CardHeader
                   title={response.name}
                   subheader={response.subheader}
-                  action={<Clipboard text={response.value} />}
+                  action={<Tooltip title="Copies this section of the proposal into clipboard."><Box><Clipboard text={response.value} /></Box></Tooltip>}
                 />
                 <CardContent>
                   <Markdown>{response.value}</Markdown>
