@@ -3,19 +3,19 @@
  * 
  * @copyright 2026 Digital Aid Seattle
 */
-import { HomeOutlined, InfoCircleOutlined } from "@ant-design/icons";
-import { Box, Breadcrumbs, Card, CardContent, CardHeader, Icon, IconButton, Stack, Tooltip, Typography } from "@mui/material";
+import { HomeOutlined } from "@ant-design/icons";
+import { Box, Breadcrumbs, Card, CardContent, CardHeader, IconButton, Stack, Tooltip, Typography } from "@mui/material";
 import dayjs from "dayjs";
 import { useContext, useEffect, useMemo, useState } from "react";
 import { Link, NavLink, useParams } from "react-router-dom";
 
 import { LoadingContext } from "@digitalaidseattle/core";
 import { Clipboard } from "@digitalaidseattle/mui";
+import Markdown from "react-markdown";
 import { LoadingOverlay } from "../../components/LoadingOverlay";
 import { grantProposalService } from "../../services/grantProposalService";
 import { grantRecipeService } from "../../services/grantRecipeService";
 import type { GrantOutput, GrantProposal, GrantRecipe } from "../../types";
-import Markdown from "react-markdown";
 
 //Count words in string
 function countWords(text: string): number {
