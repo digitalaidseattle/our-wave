@@ -115,47 +115,22 @@ const GrantRecipesDetailPage: React.FC = () => {
   }
 
   async function handleGenerate() {
-    if (!recipe || !user) return;
-
+    if (!recipe) return;
     try {
       setLoading(true);
-
-      //AI -> returns a draft proposal object (not saved)
-      const draft = await grantProposalService.generate(recipe);
-
-      // Persist proposal
-      const saved = await grantProposalService.insert(
-        {
-          ...draft,
-          // make sure the proposal points back to this recipe
-          grantRecipeId: String(recipe.id),
-        },
-        undefined,
-        undefined,
-        user
-      );
-
+      const saved = await grantProposalService.generate(recipe);
       notifications.success(`Proposal generated for ${recipe.description}.`);
-
-      //Navigate to proposal detail
       navigate(`/grant-proposals/${saved.id}`);
     } catch (err: any) {
       console.error(err);
-      notifications.error(
-        `Could not generate a proposal for this recipe. ${err?.message ?? "Unknown error"
-        }`
-      );
+      notifications.error(`Could not generate a proposal for this recipe. ${err?.message ?? "Unknown error"}`);
     } finally {
       setLoading(false);
     }
   }
 
-  function updatePrompt(changed: GrantRecipe): Promise<GrantRecipe> {
-    return grantRecipeService.updatePrompt(changed);
-  }
-
   function handleGrantOutputChange(updated: GrantOutput[]): void {
-    updatePrompt({ ...recipe, outputsWithWordCount: updated })
+    grantRecipeService.updatePrompt({ ...recipe, outputsWithWordCount: updated })
       .then(revised => {
         setRecipe(revised);
         setDirty(true);
@@ -163,6 +138,7 @@ const GrantRecipesDetailPage: React.FC = () => {
   }
 
   function handleDescriptionChange(updated: string): void {
+    // no prompt update here
     setRecipe({
       ...recipe,
       description: updated
