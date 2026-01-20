@@ -55,7 +55,7 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
   // Update a proposal
   async update(
     entityId: Identifier,
-    updatedFields: GrantProposal,
+    updatedFields: Partial<GrantProposal>,
     select?: string,
     mapper?: (json: any) => GrantProposal,
     user?: User
@@ -65,13 +65,16 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
     // Firestore can't store `undefined` (and we don't want to persist id anyway)
     // so remove it before insert.
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { id, ...entityWithoutId } = entity;
+    const { id, ...entityWithoutId } = updatedFields;
 
-    return super.insert(
+    return super.update(
+      entityId,
       {
         ...entityWithoutId,
         createdAt: new Date(),
         createdBy: user.email,
+        updatedAt: new Date(),
+        updatedBy: user.email,
       } as GrantProposal,
       select,
       mapper,
