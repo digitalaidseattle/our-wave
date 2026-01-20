@@ -1,36 +1,30 @@
-import { DeleteOutlined, EyeOutlined, HomeOutlined } from "@ant-design/icons";
-import { UserContext } from "@digitalaidseattle/core";
-import { Breadcrumbs, Card, CardContent, CardHeader, IconButton, Typography } from "@mui/material";
+import { DeleteOutlined, HomeOutlined } from "@ant-design/icons";
+import { LoadingContext, useNotifications } from "@digitalaidseattle/core";
+import {
+  Box, Breadcrumbs, Card, CardContent, CardHeader,
+  IconButton, Toolbar, Tooltip, Typography
+} from "@mui/material";
 import {
   DataGrid,
-  GridActionsCellItem,
   GridColDef,
   GridRowParams,
+  GridRowSelectionModel
 } from "@mui/x-data-grid";
 import dayjs from "dayjs";
 import { useContext, useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
+import { LoadingOverlay } from "../../components/LoadingOverlay";
 import { grantProposalService } from "../../services/grantProposalService";
 import type { GrantProposal, Timestamp } from "../../types";
 
-function formatCreatedAt(createdAt: any): string {
-  if (!createdAt) return "";
-
-  // Firestore Timestamp
-  if (typeof createdAt?.seconds === "number") {
-    return dayjs(new Date(createdAt.seconds * 1000)).format("MM/DD/YYYY hh:mm a");
-  }
-
-  // JS Date / ISO string / etc
-  return dayjs(createdAt).format("MM/DD/YYYY hh:mm a");
-}
-
 const GrantProposalsListPage: React.FC = () => {
+  const notifications = useNotifications();
+
   const navigate = useNavigate();
-  const { user } = useContext(UserContext);
+  const { loading, setLoading } = useContext(LoadingContext);
 
   const [proposals, setProposals] = useState<GrantProposal[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   useEffect(() => {
     fetchProposals();
@@ -55,30 +49,47 @@ const GrantProposalsListPage: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id?: string) => {
-    if (!id || !user) return;
-
+  const handleDelete = () => {
+    // Confirm deletion
     const confirmed = window.confirm(
-      "Are you sure you want to delete this proposal? This action cannot be undone."
+      "Are you sure you want to delete the recipes? This action cannot be undone."
     );
-    if (!confirmed) return;
 
-    try {
-      await grantProposalService.delete(id);
-      await fetchProposals();
-      alert("Proposal deleted successfully!");
-    } catch (error) {
-      console.error("Error deleting proposal:", error);
-      alert("Failed to delete proposal");
+    if (!confirmed) {
+      return;
     }
-  };
+
+    setLoading(true);
+    Promise
+      .all(selectedIds.map(id => grantProposalService.delete(id)))
+      .then(() => {
+        fetchProposals();
+        notifications.success("Proposals deleted!")
+      })
+      .catch(error => {
+        console.error("Error deleting proposal:", error);
+        notifications.error(`Failed to delete proposal: ${error instanceof Error ? error.message : "Unknown error"}`);
+      })
+      .finally(() => setLoading(false));
+  }
 
   const handleRowDoubleClick = (params: GridRowParams<GrantProposal>) => {
     const id = params.row.id?.toString();
     if (id) navigate(`/grant-proposals/${id}`);
   };
 
+  function handleRowSelection(model: GridRowSelectionModel) {
+    if (model) {
+      setSelectedIds([...model.ids as unknown as string[]]);
+    }
+  }
+
   const columns: GridColDef<GrantProposal>[] = [
+    {
+      field: "name",
+      headerName: "Name",
+      width: 200,
+    },
     {
       field: "preview",
       headerName: "Preview",
@@ -93,37 +104,29 @@ const GrantProposalsListPage: React.FC = () => {
       field: "createdAt",
       headerName: "Date",
       width: 180,
-      valueGetter: (_value, row) => formatCreatedAt((row as any).createdAt),
-    },
-    {
-      field: "actions",
-      type: "actions",
-      headerName: "Actions",
-      width: 140,
-      getActions: (params) => {
-        const rowId = params.row.id?.toString();
-
-        return [
-          <GridActionsCellItem
-            key={`view-${rowId ?? "no-id"}`}
-            icon={<EyeOutlined />}
-            label="View"
-            onClick={() => rowId && navigate(`/grant-proposals/${rowId}`)}
-          />,
-          <GridActionsCellItem
-            key={`delete-${rowId ?? "no-id"}`}
-            icon={<DeleteOutlined />}
-            label="Delete"
-            onClick={() => handleDelete(rowId)}
-            disabled={!user}
-          />,
-        ];
-      },
-    },
+      valueGetter: (_value, row) => dayjs(new Date((row.createdAt as any).seconds * 1000)).format("MM/DD/YYYY hh:mm a"),
+    }
   ];
+
+  function CustomToolbar() {
+    return (
+      <Toolbar sx={{ gap: 2, backgroundColor: 'background.default' }}>
+        <Tooltip title="Delete Recipes">
+          <Box>
+            <IconButton color="error"
+              onClick={handleDelete}
+              disabled={selectedIds.length === 0} >
+              <DeleteOutlined />
+            </IconButton>
+          </Box>
+        </Tooltip>
+      </Toolbar>
+    );
+  }
 
   return (
     <>
+      <LoadingOverlay />
       <Breadcrumbs aria-label="breadcrumb">
         <NavLink to="/" ><IconButton size="medium"><HomeOutlined /></IconButton></NavLink>
         <Typography color="text.primary">Proposals</Typography>
@@ -137,8 +140,32 @@ const GrantProposalsListPage: React.FC = () => {
             loading={loading}
             getRowId={(row) => row.id || ""}
             onRowDoubleClick={handleRowDoubleClick}
+
+            showToolbar={true}
+            slots={{
+              toolbar: CustomToolbar
+            }}
+
+            checkboxSelection={true}
+            onRowSelectionModelChange={handleRowSelection}
+
+            initialState={{
+              pagination: {
+                paginationModel: { pageSize: 10 },
+              },
+            }}
             pageSizeOptions={[10, 25, 50]}
             disableRowSelectionOnClick
+            sx={{
+              width: '100%',
+              "& .MuiDataGrid-row": {
+                cursor: "pointer",
+              },
+              "& .MuiDataGrid-cell": {
+                display: "flex",
+                alignItems: "center",
+              },
+            }}
           />
         </CardContent>
       </Card >

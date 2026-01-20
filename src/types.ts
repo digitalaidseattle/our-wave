@@ -2,7 +2,7 @@
  * grants/types.ts
  */
 
-import { Entity } from "@digitalaidseattle/core";
+import { Entity, Identifier } from "@digitalaidseattle/core";
 
 export type Timestamp = {
   seconds: number;
@@ -26,6 +26,8 @@ export type GrantRecipe = Entity & {
   updatedAt: Timestamp | Date;
   updatedBy: string;
   description: string;
+  rating: number;
+  tags: string[];
   template: string;
   prompt: string;
   inputParameters: GrantInput[];
@@ -40,7 +42,8 @@ export type GrantProposal = Entity & {
   createdBy: string;
   updatedAt: Timestamp | Date;
   updatedBy: string;
-  grantRecipeId: string;
+  grantRecipeId: Identifier;
+  name: string;
   rating: number | null;
   structuredResponse?: { [key: string]: string };
 };
