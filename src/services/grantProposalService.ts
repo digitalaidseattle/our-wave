@@ -62,7 +62,7 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
   // Update a proposal
   async update(
     entityId: Identifier,
-    updatedFields: GrantProposal,
+    updatedFields: Partial<GrantProposal>,
     select?: string,
     mapper?: (json: any) => GrantProposal,
     user?: User
