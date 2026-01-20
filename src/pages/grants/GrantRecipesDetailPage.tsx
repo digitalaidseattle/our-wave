@@ -80,7 +80,7 @@ const GrantRecipesDetailPage: React.FC = () => {
   }, [recipe]);
 
   function saveRecipe() {
-    if (recipe && user) {
+    if (user) {
       setLoading(true);
       grantRecipeService.update(recipe.id!, recipe, undefined, undefined, user)
         .then(saved => {
@@ -96,23 +96,20 @@ const GrantRecipesDetailPage: React.FC = () => {
   }
 
   function handleClone() {
-    if (recipe) {
-      setLoading(true);
-      cloneRecipe(recipe)
-        .then(cloned => {
-          navigate(`/grant-recipes/${cloned.id}`);
-          notifications.success(`${recipe.description} has been successfully cloned.`)
-        })
-        .catch(err => {
-          console.error(err)
-          notifications.error(`Could not clone this recipe. ${err.message}`)
-        })
-        .finally(() => setLoading(false))
-    }
+    setLoading(true);
+    cloneRecipe(recipe)
+      .then(cloned => {
+        navigate(`/grant-recipes/${cloned.id}`);
+        notifications.success(`${recipe.description} has been successfully cloned.`)
+      })
+      .catch(err => {
+        console.error(err)
+        notifications.error(`Could not clone this recipe. ${err.message}`)
+      })
+      .finally(() => setLoading(false))
   }
 
   async function handleGenerate() {
-    if (!recipe) return;
     try {
       setLoading(true);
       const saved = await grantProposalService.generate(recipe);
@@ -155,7 +152,7 @@ const GrantRecipesDetailPage: React.FC = () => {
       })
   }
 
-  return (
+  return (recipe &&
     <>
       <LoadingOverlay />
       <HelpTopicContext.Provider value={{ helpTopic, setHelpTopic }} >
@@ -167,7 +164,7 @@ const GrantRecipesDetailPage: React.FC = () => {
         <Box gap={4}>
           <Stack sx={{ gap: 2, marginRight: `${showHelp ? HELP_DRAWER_WIDTH : 0}px` }}>
             <Card>
-              <CardHeader title="Grant Recipe Detail"
+              <CardHeader title={recipe.description}
                 action={`Token count = ${recipe.tokenCount}`}
                 subheader={`Last updated: ${lastUpdated}`} />
               <CardContent>
