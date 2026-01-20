@@ -15,6 +15,8 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
       id: undefined,
       createdAt: now,
       createdBy: "",
+      updatedAt: now,
+      updatedBy: "",
       grantRecipeId: "",
       rating: null,
       structuredResponse: undefined,
@@ -22,35 +24,38 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
   }
 
   // Insert a new proposal with metadata added
-async insert(
-  entity: GrantProposal,
-  select?: string,
-  mapper?: (json: any) => GrantProposal,
-  user?: User
-): Promise<GrantProposal> {
-  if (!user?.email) throw new Error("User email is required");
+  async insert(
+    entity: GrantProposal,
+    select?: string,
+    mapper?: (json: any) => GrantProposal,
+    user?: User
+  ): Promise<GrantProposal> {
+    if (!user?.email) throw new Error("User email is required");
 
-  // Firestore can't store `undefined` (and we don't want to persist id anyway)
-  // so remove it before insert.
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { id, ...entityWithoutId } = entity;
+    const now = new Date();
+    // Firestore can't store `undefined` (and we don't want to persist id anyway)
+    // so remove it before insert.
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { id, ...entityWithoutId } = entity;
 
-  return super.insert(
-    {
-      ...entityWithoutId,
-      createdAt: new Date(),
-      createdBy: user.email,
-    } as GrantProposal,
-    select,
-    mapper,
-    user
-  );
-}
+    return super.insert(
+      {
+        ...entityWithoutId,
+        createdAt: now,
+        createdBy: user.email,
+        updatedAt: now,
+        updatedBy: user.email,
+      } as GrantProposal,
+      select,
+      mapper,
+      user
+    );
+  }
 
   // Update a proposal
   async update(
     entityId: Identifier,
-    updatedFields: GrantProposal,
+    updatedFields: Partial<GrantProposal>,
     select?: string,
     mapper?: (json: any) => GrantProposal,
     user?: User
@@ -61,8 +66,9 @@ async insert(
       entityId,
       {
         ...updatedFields,
-        createdBy: user.email,
-      },
+        updatedAt: new Date(),
+        updatedBy: user.email,
+      } as GrantProposal,
       select,
       mapper,
       user
@@ -76,6 +82,8 @@ async insert(
       id,
       createdAt: new Date(),
       createdBy: "scaffold@digitalaidseattle.org",
+      updatedAt: new Date(),
+      updatedBy: "scaffold@digitalaidseattle.org",
       grantRecipeId: "mock-recipe-id",
       rating: null,
       structuredResponse: {
@@ -118,10 +126,10 @@ async insert(
         return this.mockAll();
       }
     }
-  
+
     return super.getAll(count, select, mapper);
   }
-  
+
   async getById(
     entityId: string,
     select?: string,
@@ -133,7 +141,7 @@ async insert(
         return this.mockProposal(entityId);
       }
     }
-  
+
     return super.getById(entityId, select, mapper);
   }
 

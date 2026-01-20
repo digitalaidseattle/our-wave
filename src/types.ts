@@ -38,6 +38,8 @@ export type GrantRecipe = Entity & {
 export type GrantProposal = Entity & {
   createdAt: Timestamp | Date;
   createdBy: string;
+  updatedAt: Timestamp | Date;
+  updatedBy: string;
   grantRecipeId: string;
   rating: number | null;
   structuredResponse?: { [key: string]: string };

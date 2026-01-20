@@ -9,7 +9,7 @@ import dayjs from 'dayjs';
 import { LoadingOverlay } from "../../components/LoadingOverlay";
 import { grantRecipeService } from "../../services/grantRecipeService";
 import { createRecipe } from "../../transactions/CreateRecipe";
-import type { GrantRecipe } from "../../types";
+import type { GrantRecipe, Timestamp } from "../../types";
 import { cloneRecipe } from "../../transactions/CloneRecipe";
 
 const GrantRecipesListPage: React.FC = () => {
@@ -27,7 +27,14 @@ const GrantRecipesListPage: React.FC = () => {
     if (grantRecipeService) {
       setLoading(true);
       grantRecipeService.getAll()
-        .then(data => setRecipes(data))
+        .then(data => {
+          data.sort((a, b) => {
+            const dateA = new Date((a.updatedAt as Timestamp).seconds * 1000);
+            const dateB = new Date((b.updatedAt as Timestamp).seconds * 1000);
+            return dateB.getTime() - dateA.getTime();
+          })
+          setRecipes(data)
+        })
         .catch(error => {
           console.error("Error fetching grant recipes:", error);
           notifications.error(`Failed to retrieve grant recipes: ${error instanceof Error ? error.message : "Unknown error"}`);
