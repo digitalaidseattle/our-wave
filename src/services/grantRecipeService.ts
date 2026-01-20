@@ -32,6 +32,8 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
       updatedAt: now,
       updatedBy: "",
       description: "",
+      tags:[],
+      rating: 0,
       template: "Create a grant proposal",
       prompt: "",
       inputParameters: [],
