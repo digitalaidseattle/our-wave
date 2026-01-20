@@ -16,6 +16,7 @@ import { grantProposalService } from "../../services/grantProposalService";
 import { grantRecipeService } from "../../services/grantRecipeService";
 import type { GrantOutput, GrantProposal, GrantRecipe } from "../../types";
 import Markdown from "react-markdown";
+import { TextEdit } from "../../components/TextEdit";
 
 //Count words in string
 function countWords(text: string): number {
@@ -127,6 +128,13 @@ const GrantProposalsDetailPage: React.FC = () => {
     return proposal?.createdAt ? formatCreatedAt(proposal.createdAt) : "";
   }, [proposal?.createdAt]);
 
+  function handleNameChange(text: string): void {
+    if (proposal) {
+      grantProposalService.update(proposal.id as string, { name: text } as GrantProposal)
+        .then(updated => setProposal({ ...proposal, ...updated }))
+    }
+  }
+
   return (
     <>
       <LoadingOverlay />
@@ -139,7 +147,9 @@ const GrantProposalsDetailPage: React.FC = () => {
       {proposal &&
         <Stack spacing={2}>
           <Card>
-            <CardHeader title={recipe ? recipe.description : "Grant Proposal Detail"}
+            <CardHeader title={<TextEdit
+              value={proposal.name ? proposal.name : "Grant Proposal Detail"}
+              onChange={handleNameChange} />}
               subheader={`Generated on : ${createdAtLabel}`}
               action={<Clipboard text={Object.values(proposal.structuredResponse!).join('\n')} />} />
           </Card>

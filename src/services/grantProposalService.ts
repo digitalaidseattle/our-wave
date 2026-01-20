@@ -2,6 +2,8 @@ import type { Identifier, User } from "@digitalaidseattle/core";
 import { FirestoreService } from "@digitalaidseattle/firebase";
 import type { GrantProposal, GrantRecipe } from "../types";
 import { grantAiService } from "../pages/grants/grantAiService";
+import { authService } from "../App";
+import { grantRecipeService } from "./grantRecipeService";
 
 class GrantProposalService extends FirestoreService<GrantProposal> {
   constructor() {
@@ -15,7 +17,10 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
       id: undefined,
       createdAt: now,
       createdBy: "",
+      updatedAt: now,
+      updatedBy: "",
       grantRecipeId: "",
+      name: "",
       rating: null,
       structuredResponse: undefined,
     };
@@ -50,19 +55,27 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
   // Update a proposal
   async update(
     entityId: Identifier,
-    updatedFields: GrantProposal,
+    updatedFields: Partial<GrantProposal>,
     select?: string,
     mapper?: (json: any) => GrantProposal,
     user?: User
   ): Promise<GrantProposal> {
     if (!user?.email) throw new Error("User email is required");
 
+    // Firestore can't store `undefined` (and we don't want to persist id anyway)
+    // so remove it before insert.
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { id, ...entityWithoutId } = updatedFields;
+
     return super.update(
       entityId,
       {
-        ...updatedFields,
+        ...entityWithoutId,
+        createdAt: new Date(),
         createdBy: user.email,
-      },
+        updatedAt: new Date(),
+        updatedBy: user.email,
+      } as GrantProposal,
       select,
       mapper,
       user
@@ -84,6 +97,9 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
       throw new Error("Recipe prompt has not been generated");
     }
 
+    const sessionUser = await authService.getUser();
+    if (!sessionUser) throw new Error("User email is required");
+
     // Ask AI for structured JSON using output field names as keys
     const schemaParams = outputs.map((o) => o.name);
     const structuredResponse = await grantAiService.parameterizedQuery(
@@ -92,12 +108,28 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
       recipe.modelType
     );
 
-    return {
-      ...this.empty(),
-      grantRecipeId: String(recipe.id),
-      structuredResponse,
-      rating: null,
-    };
+    // Persist proposal
+    const saved = await grantProposalService.insert(
+      {
+        ...this.empty(),
+        grantRecipeId: recipe.id,
+        name: `${recipe.description} (${recipe.proposalIds.length + 1})`,
+        structuredResponse,
+        rating: null,
+      },
+      undefined,
+      undefined,
+      sessionUser
+    );
+
+    await grantRecipeService.update(recipe.id, {
+      ...recipe,
+      updatedAt: new Date(),
+      updatedBy: sessionUser.email,
+      proposalIds: [...recipe.proposalIds, saved.id as string]
+    })
+
+    return saved;
   }
 }
 

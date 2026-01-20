@@ -80,6 +80,11 @@ const GrantProposalsListPage: React.FC = () => {
 
   const columns: GridColDef<GrantProposal>[] = [
     {
+      field: "name",
+      headerName: "Name",
+      width: 200,
+    },
+    {
       field: "preview",
       headerName: "Preview",
       flex: 1,
