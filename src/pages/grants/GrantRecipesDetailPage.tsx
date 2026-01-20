@@ -17,13 +17,12 @@ import type { GrantInput, GrantOutput, Timestamp } from "../../types";
 import { GrantRecipe } from "../../types";
 import { GrantInputEditor } from "./GrantInputEditor";
 import { GrantOutputEditor } from "./GrantOutputEditor";
-import { DateUtils } from "../../utils/dateUtils";
-import { generateProposal } from "../../transactions/GenerateProposal";
+import { GrantInfoEditor } from "./GrantInfoEditor";
 
 const HELP_DRAWER_WIDTH = 300;
 const HELP_TITLE = "Our Wave";
 const HELP_DICTIONARY = {
-  "Description": "Change this field for easier tracking in the application.",
+  "Info": "Change the description for easier tracking in the application.  A rating change can aid in selecting better recipes.  Tags can help categorize recipes.",
   "Prompt": "This prompt template is filled with text using the input and output parameters.",
   "Inputs": "Facts to be used in the prompt.",
   "Outputs": "Guidance for output constraints.",
@@ -131,28 +130,21 @@ const GrantRecipesDetailPage: React.FC = () => {
     }
   }
 
-  function updatePrompt(changed: GrantRecipe): Promise<GrantRecipe> {
-    return grantRecipeService.updatePrompt(changed);
-  }
-
   function handleGrantOutputChange(updated: GrantOutput[]): void {
-    updatePrompt({ ...recipe, outputsWithWordCount: updated })
+    grantRecipeService.updatePrompt({ ...recipe, outputsWithWordCount: updated })
       .then(revised => {
         setRecipe(revised);
         setDirty(true);
       })
   }
 
-  function handleDescriptionChange(updated: string): void {
-    setRecipe({
-      ...recipe,
-      description: updated
-    });
+  function handleInfoChange(updated: GrantRecipe): void {
+    setRecipe(updated);
     setDirty(true);
   }
 
   function handlePromptChange(updated: string): void {
-    updatePrompt({ ...recipe, prompt: updated })
+    grantRecipeService.updatePrompt({ ...recipe, prompt: updated })
       .then(revised => {
         setRecipe(revised);
         setDirty(true);
@@ -160,7 +152,7 @@ const GrantRecipesDetailPage: React.FC = () => {
   }
 
   function handleGrantInputChange(inputs: GrantInput[]): void {
-    updatePrompt({ ...recipe, inputParameters: inputs })
+    grantRecipeService.updatePrompt({ ...recipe, inputParameters: inputs })
       .then(revised => {
         setRecipe(revised);
         setDirty(true);
@@ -184,7 +176,7 @@ const GrantRecipesDetailPage: React.FC = () => {
                 subheader={`Last updated: ${lastUpdated}`} />
               <CardContent>
                 <Stack gap={1}>
-                  <TextEditor title="Description" value={recipe.description} onChange={handleDescriptionChange} />
+                  <GrantInfoEditor recipe={recipe} onChange={handleInfoChange} />
                   <TextEditor title="Prompt" value={recipe.prompt} onChange={handlePromptChange} />
                   <GrantInputEditor recipeInputs={recipe.inputParameters} onChange={handleGrantInputChange} />
                   <GrantOutputEditor fields={recipe.outputsWithWordCount} onChange={handleGrantOutputChange} />

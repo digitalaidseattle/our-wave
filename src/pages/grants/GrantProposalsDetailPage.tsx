@@ -115,6 +115,13 @@ const GrantProposalsDetailPage: React.FC = () => {
     return proposal ? DateUtils.formatDateTime(proposal.createdAt) : "";
   }, [proposal?.createdAt]);
 
+  function handleNameChange(text: string): void {
+    if (proposal) {
+      grantProposalService.update(proposal.id as string, { name: text } as GrantProposal)
+        .then(updated => setProposal({ ...proposal, ...updated }))
+    }
+  }
+
   return (
     <>
       <LoadingOverlay />
@@ -127,7 +134,9 @@ const GrantProposalsDetailPage: React.FC = () => {
       {proposal &&
         <Stack spacing={2}>
           <Card>
-            <CardHeader title={recipe ? recipe.description : "Grant Proposal Detail"}
+            <CardHeader title={<TextEdit
+              value={proposal.name ? proposal.name : "Grant Proposal Detail"}
+              onChange={handleNameChange} />}
               subheader={`Generated on : ${createdAtLabel}`}
               action={<Clipboard text={Object.values(proposal.structuredResponse!).join('\n')} />} />
           </Card>
