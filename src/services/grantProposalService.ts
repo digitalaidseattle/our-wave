@@ -60,20 +60,25 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
     mapper?: (json: any) => GrantProposal,
     user?: User
   ): Promise<GrantProposal> {
-    const sessionUser = user ?? await authService.getUser();
-    if (!sessionUser) throw new Error("User email is required");
-    const partial = {
-      ...updatedFields,
-      updatedAt: new Date(),
-      updatedBy: sessionUser.email
-    };
-    try {
-      return super.update(entityId, partial, select, mapper, sessionUser)
-    } catch (e) {
-      console.error("Error updating document: ", e);
-      throw e;
-    }
+    if (!user?.email) throw new Error("User email is required");
+
+    // Firestore can't store `undefined` (and we don't want to persist id anyway)
+    // so remove it before insert.
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { id, ...entityWithoutId } = entity;
+
+    return super.insert(
+      {
+        ...entityWithoutId,
+        createdAt: new Date(),
+        createdBy: user.email,
+      } as GrantProposal,
+      select,
+      mapper,
+      user
+    );
   }
+
 
   // --- real generation (still returns a draft; not persisted) ---
   async generate(recipe: GrantRecipe): Promise<GrantProposal> {

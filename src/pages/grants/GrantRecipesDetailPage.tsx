@@ -19,11 +19,12 @@ import type { GrantInput, GrantOutput } from "../../types";
 import { GrantRecipe } from "../../types";
 import { GrantInputEditor } from "./GrantInputEditor";
 import { GrantOutputEditor } from "./GrantOutputEditor";
+import { GrantInfoEditor } from "./GrantInfoEditor";
 
 const HELP_DRAWER_WIDTH = 300;
 const HELP_TITLE = "Our Wave";
 const HELP_DICTIONARY = {
-  "Description": "Change this field for easier tracking in the application.",
+  "Info": "Change the description for easier tracking in the application.  A rating change can aid in selecting better recipes.  Tags can help categorize recipes.",
   "Prompt": "This prompt template is filled with text using the input and output parameters.",
   "Inputs": "Facts to be used in the prompt.",
   "Outputs": "Guidance for output constraints.",
@@ -133,12 +134,8 @@ const GrantRecipesDetailPage: React.FC = () => {
       })
   }
 
-  function handleDescriptionChange(updated: string): void {
-    // no prompt update here
-    setRecipe({
-      ...recipe,
-      description: updated
-    });
+  function handleInfoChange(updated: GrantRecipe): void {
+    setRecipe(updated);
     setDirty(true);
   }
 
@@ -175,7 +172,7 @@ const GrantRecipesDetailPage: React.FC = () => {
                 subheader={`Last updated: ${lastUpdated}`} />
               <CardContent>
                 <Stack gap={1}>
-                  <TextEditor title="Description" value={recipe.description} onChange={handleDescriptionChange} />
+                  <GrantInfoEditor recipe={recipe} onChange={handleInfoChange} />
                   <TextEditor title="Prompt" value={recipe.prompt} onChange={handlePromptChange} />
                   <GrantInputEditor recipeInputs={recipe.inputParameters} onChange={handleGrantInputChange} />
                   <GrantOutputEditor fields={recipe.outputsWithWordCount} onChange={handleGrantOutputChange} />
