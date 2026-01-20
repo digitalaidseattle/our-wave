@@ -14,7 +14,7 @@ import { useContext, useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { LoadingOverlay } from "../../components/LoadingOverlay";
 import { grantProposalService } from "../../services/grantProposalService";
-import type { GrantProposal, Timestamp } from "../../types";
+import type { GrantProposal } from "../../types";
 import { DateUtils } from "../../utils/dateUtils";
 
 const GrantProposalsListPage: React.FC = () => {
