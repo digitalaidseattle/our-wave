@@ -73,7 +73,7 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
     return super.update(
       entityId,
       {
-        ...updatedFields,
+        ...entityWithoutId,
         updatedAt: new Date(),
         updatedBy: user.email,
       } as GrantProposal,

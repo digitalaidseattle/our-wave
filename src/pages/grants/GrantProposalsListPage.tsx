@@ -101,10 +101,11 @@ const GrantProposalsListPage: React.FC = () => {
       },
     },
     {
-      field: "createdAt",
-      headerName: "Date",
+      field: "updatedAt",
+      headerName: "Last Updated",
       width: 180,
-      valueGetter: (_value, row) => dayjs(new Date((row.createdAt as any).seconds * 1000)).format("MM/DD/YYYY hh:mm a"),
+      // TODO remove showing createdAt. All proposals should have an updatedAt
+      valueGetter: (_value, row) => dayjs(new Date(((row.updatedAt ?? row.createdAt) as any).seconds * 1000)).format("MM/DD/YYYY hh:mm a"),
     }
   ];
 

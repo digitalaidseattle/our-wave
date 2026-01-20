@@ -7,17 +7,16 @@ import { HomeOutlined } from "@ant-design/icons";
 import { Box, Breadcrumbs, Card, CardContent, CardHeader, IconButton, Stack, Tooltip, Typography } from "@mui/material";
 import dayjs from "dayjs";
 import { useContext, useEffect, useMemo, useState } from "react";
-import { Link, NavLink, useParams } from "react-router-dom";
+import { NavLink, useParams } from "react-router-dom";
 
 import { LoadingContext } from "@digitalaidseattle/core";
 import { Clipboard } from "@digitalaidseattle/mui";
 import Markdown from "react-markdown";
 import { LoadingOverlay } from "../../components/LoadingOverlay";
+import { TextEdit } from "../../components/TextEdit";
 import { grantProposalService } from "../../services/grantProposalService";
 import { grantRecipeService } from "../../services/grantRecipeService";
 import type { GrantOutput, GrantProposal, GrantRecipe } from "../../types";
-import Markdown from "react-markdown";
-import { TextEdit } from "../../components/TextEdit";
 
 //Count words in string
 function countWords(text: string): number {
@@ -124,14 +123,6 @@ const GrantProposalsDetailPage: React.FC = () => {
           : []
       : []
   }, [proposal, outputs]);
-
-  const download: string = useMemo(() => {
-    const responses = proposal && proposal.structuredResponse ?
-      (Object.entries(proposal.structuredResponse)
-        .map(([key, value]) => `${key}\n${value}`))
-        .join('\n\n') : '';
-    return `${recipe ? recipe.description : "Grant Proposal Detail"}\n${responses}`;
-  }, [recipe, proposal]);
 
   const createdAtLabel = useMemo(() => {
     return proposal?.createdAt ? formatCreatedAt(proposal.createdAt) : "";
