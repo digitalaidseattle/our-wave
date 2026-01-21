@@ -4,17 +4,17 @@
  *  @copyright 2025 Digital Aid Seattle
  *
  */
-import React, { useContext, useEffect } from 'react';
 import { DeleteOutlined, FileSearchOutlined, InfoCircleOutlined, PlusOutlined } from '@ant-design/icons';
-import { Button, Card, CardContent, CardHeader, IconButton, InputAdornment, MenuItem, OutlinedInput, Select, Stack, Toolbar, Typography } from "@mui/material";
+import { Button, Card, CardContent, CardHeader, IconButton, InputAdornment, OutlinedInput, Stack, Toolbar, Typography } from "@mui/material";
+import React, { useContext, useEffect } from 'react';
 
-import { GrantContext, GrantRecipe } from '../../types';
-import { GoogleDriveService, GoogleFile } from '../../services/googleDriveService';
-import { GoogleDriveFileSearchDialog } from '../../components/GoogleDriveFileSearchDialog';
-import { HelpTopicContext } from '../../components/HelpTopicContext';
 import { useHelp } from '@digitalaidseattle/core';
-import { GrantRecipeContext } from '../../components/GrantRecipeContext';
 import { geminiService } from '../../api/geminiService';
+import { GoogleDriveFileSearchDialog } from '../../components/GoogleDriveFileSearchDialog';
+import { GrantRecipeContext } from '../../components/GrantRecipeContext';
+import { HelpTopicContext } from '../../components/HelpTopicContext';
+import { GoogleDriveService, GoogleFile } from '../../services/googleDriveService';
+import { GrantContext, GrantRecipe } from '../../types';
 
 interface ContextRowProps {
     index: number;
@@ -23,17 +23,26 @@ interface ContextRowProps {
     onDelete: (index: number) => void
 };
 const ContextRow = ({ index, context, onChange, onDelete }: ContextRowProps) => {
+
     const googleDriveService = GoogleDriveService.getInstance();
+    const { recipe } = useContext(GrantRecipeContext);
     const [fileSearchModalOpen, setFileSearchModalOpen] = React.useState(false);
 
     function handleFileSearch(): void {
         setFileSearchModalOpen(true)
     }
 
-    function handleFileSelection(gf: GoogleFile | null): void {
+    async function handleFileSelection(gf: GoogleFile | null): Promise<void> {
         if (gf) {
-            googleDriveService.downloadMarkdown(gf.id)
-                .then(resp => onChange(index, gf ? { ...context, filePath: gf.name, value: resp ?? '' } : context))
+            const content = await googleDriveService.downloadMarkdown(gf.id)
+            const tokenCount = await geminiService.calcTokenCount(recipe.modelType, content);
+            onChange(index, {
+                ...context,
+                tokenCount: tokenCount,
+                name: gf.name,
+                filePath: gf.id,
+                value: content ?? ''
+            });
         }
         setFileSearchModalOpen(false)
     }
@@ -58,19 +67,6 @@ const ContextRow = ({ index, context, onChange, onDelete }: ContextRowProps) => 
                 onClick={() => onDelete(index)}>
                 <DeleteOutlined />
             </Button>
-            (context.type === 'text') &&
-            <OutlinedInput
-                fullWidth={true}
-                placeholder='Enter context information here'
-                value={context.value ?? ''}
-                onChange={handleTextChange}
-            />
-            <Select
-                value={context.type ?? 'text'}
-                onChange={(e) => onChange(index, { ...context, type: (e.target.value === "text") ? "text" : "file" })}>
-                <MenuItem value={'text'}>Text</MenuItem>
-                <MenuItem value={'file'}>File</MenuItem>
-            </Select>
             {(context.type === 'text') &&
                 <OutlinedInput
                     fullWidth={true}
@@ -89,7 +85,7 @@ const ContextRow = ({ index, context, onChange, onDelete }: ContextRowProps) => 
                 <>
                     <OutlinedInput
                         fullWidth={true}
-                        value={context.filePath ?? ''}
+                        value={context.name ?? ''}
                         startAdornment={
                             <InputAdornment position="start" sx={{ mr: -0.5 }}>
                                 <IconButton onClick={() => handleFileSearch()}>
@@ -99,15 +95,12 @@ const ContextRow = ({ index, context, onChange, onDelete }: ContextRowProps) => 
                         }
                         onChange={(e) => onChange(index, { ...context, value: e.target.value })}
                     />
-                    <Typography variant="body2" sx={{ alignSelf: 'center', minWidth: 80 }}>
-                        Tokens: {context.tokenCount}
-                    </Typography>
-                    <GoogleDriveFileSearchDialog open={fileSearchModalOpen} onChange={handleFileSelection} />
                 </>
             }
             <Typography variant="body2" sx={{ alignSelf: 'center', minWidth: 80 }}>
                 Tokens: {context.tokenCount}
             </Typography>
+            <GoogleDriveFileSearchDialog open={fileSearchModalOpen} onChange={handleFileSelection} />
         </Stack >
     )
 }
@@ -123,11 +116,12 @@ export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ onChange
     const [contexts, setContexts] = React.useState<GrantContext[]>([]);
 
     useEffect(() => {
+        console.log(recipe);
+
         setContexts(recipe ? recipe.contexts : []);
     }, [recipe]);
 
     async function addContext(newContext: GrantContext) {
-        newContext.tokenCount = await geminiService.calcTokenCount(recipe.modelType, newContext.value || '')
         const revised = [...contexts, newContext]
         onChange({ ...recipe, contexts: revised });
     }
@@ -150,10 +144,17 @@ export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ onChange
                     <Toolbar disableGutters={true} sx={{ gap: 1 }} >
                         <Button
                             variant="outlined"
-                            onClick={() => addContext({ type: "file", value: "", tokenCount: 0 })}
+                            onClick={() => addContext({ type: "file", value: "", name: "", tokenCount: 0 })}
                             startIcon={<PlusOutlined />}
                             sx={{ alignSelf: 'flex-start' }}>
                             File
+                        </Button>
+                        <Button
+                            variant="outlined"
+                            onClick={() => addContext({ type: "text", value: "", name: "", tokenCount: 0 })}
+                            startIcon={<PlusOutlined />}
+                            sx={{ alignSelf: 'flex-start' }}>
+                            Text
                         </Button>
                     </Toolbar>
                 }

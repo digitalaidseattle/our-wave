@@ -23,6 +23,7 @@ export type GrantOutput = {
 export type GrantContext = {
   type: "text" | "file";
   filePath?: string;
+  name: string | null;
   value: string | null;
   tokenCount: number;
 }

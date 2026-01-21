@@ -19,6 +19,7 @@ import { GrantOutput, GrantRecipe } from "../../types";
 import { GrantInfoEditor } from "./GrantInfoEditor";
 import { GrantOutputEditor } from "./GrantOutputEditor";
 import { GrantContextEditor } from "./GrantContextEditor";
+import { GrantRecipeContext } from "../../components/GrantRecipeContext";
 
 const HELP_DRAWER_WIDTH = 300;
 const HELP_TITLE = "Our Wave";
@@ -41,8 +42,33 @@ export const TextEditor = ({ title, value, onChange }: { title: string, value: s
           onClick={() => { setHelpTopic(title); setShowHelp(true) }}
           color="primary"><InfoCircleOutlined /></IconButton>} />
       <CardContent>
-        <TextField fullWidth={true} value={value ?? ""}
-          onChange={(evt) => onChange(evt.target.value)} />
+        <TextField fullWidth={true}
+          value={value ?? ""}
+          onChange={(evt) => onChange(evt.target.value)}
+          multiline={true}
+          sx={{
+            '& .MuiInputBase-input': {
+              resize: 'vertical',
+              overflow: 'auto',
+            }
+          }} />
+      </CardContent>
+    </Card>
+  )
+}
+
+export const PlainTextCard = ({ title, value }: { title: string, value: string }) => {
+  const { setHelpTopic } = useContext(HelpTopicContext);
+  const { setShowHelp } = useHelp();
+  return (
+    <Card>
+      <CardHeader title={title}
+        slotProps={{ title: { fontWeight: 600, fontSize: 16 } }}
+        avatar={<IconButton
+          onClick={() => { setHelpTopic(title); setShowHelp(true) }}
+          color="primary"><InfoCircleOutlined /></IconButton>} />
+      <CardContent>
+        <Typography>{value}</Typography>
       </CardContent>
     </Card>
   )
@@ -152,39 +178,40 @@ const GrantRecipesDetailPage: React.FC = () => {
     <>
       <LoadingOverlay />
       <HelpTopicContext.Provider value={{ helpTopic, setHelpTopic }} >
-        <Breadcrumbs aria-label="breadcrumbs">
-          <NavLink to="/" ><IconButton size="medium"><HomeOutlined /></IconButton></NavLink>
-          <NavLink to={`/grant-recipes`} >Recipes</NavLink>
-          <Typography color="text.primary">Recipe Detail</Typography>
-        </Breadcrumbs>
-        <Box gap={4}>
-          {recipe &&
-            <Stack sx={{ gap: 2, marginRight: `${showHelp ? HELP_DRAWER_WIDTH : 0}px` }}>
-              <Card>
-                <CardHeader title={recipe.description}
-                  action={`Token count = ${recipe.tokenCount}`}
-                  subheader={`Last updated: ${lastUpdated}`} />
-                <CardContent>
-                  <Stack gap={1}>
-                    <GrantInfoEditor recipe={recipe} onChange={handleInfoChange} />
-                    <TextEditor title="Template" value={recipe.template} onChange={handleTemplateChange} />
-                    <GrantContextEditor onChange={handleGrantContextsChange} />
-                    <GrantOutputEditor fields={recipe.outputsWithWordCount} onChange={handleGrantOutputChange} />
-                    <TextEditor title="Prompt" value={recipe.prompt} onChange={() => { }} />
-                  </Stack>
-                </CardContent>
-                <CardActions>
-                  <Button variant="contained" disabled={loading || !dirty} onClick={() => saveRecipe()}>Save</Button>
-                  <Divider orientation="vertical" />
-                  <Button variant="contained" disabled={loading} onClick={() => handleClone()}>Clone</Button>
-                  <Button variant="contained" disabled={loading} onClick={() => handleGenerate()}>Generate</Button>
-                </CardActions>
-              </Card>
-            </Stack>
-          }
-          <HelpDrawer title={HELP_TITLE} width={HELP_DRAWER_WIDTH} dictionary={HELP_DICTIONARY} />
-        </Box>
-
+        <GrantRecipeContext.Provider value={{ recipe, setRecipe }} >
+          <Breadcrumbs aria-label="breadcrumbs">
+            <NavLink to="/" ><IconButton size="medium"><HomeOutlined /></IconButton></NavLink>
+            <NavLink to={`/grant-recipes`} >Recipes</NavLink>
+            <Typography color="text.primary">Recipe Detail</Typography>
+          </Breadcrumbs>
+          <Box gap={4}>
+            {recipe &&
+              <Stack sx={{ gap: 2, marginRight: `${showHelp ? HELP_DRAWER_WIDTH : 0}px` }}>
+                <Card>
+                  <CardHeader title={recipe.description}
+                    action={`Token count = ${recipe.tokenCount}`}
+                    subheader={`Last updated: ${lastUpdated}`} />
+                  <CardContent>
+                    <Stack gap={1}>
+                      <GrantInfoEditor recipe={recipe} onChange={handleInfoChange} />
+                      <TextEditor title="Template" value={recipe.template} onChange={handleTemplateChange} />
+                      <GrantContextEditor onChange={handleGrantContextsChange} />
+                      <GrantOutputEditor fields={recipe.outputsWithWordCount} onChange={handleGrantOutputChange} />
+                      <PlainTextCard title="Prompt" value={recipe.prompt} />
+                    </Stack>
+                  </CardContent>
+                  <CardActions>
+                    <Button variant="contained" disabled={loading || !dirty} onClick={() => saveRecipe()}>Save</Button>
+                    <Divider orientation="vertical" />
+                    <Button variant="contained" disabled={loading} onClick={() => handleClone()}>Clone</Button>
+                    <Button variant="contained" disabled={loading} onClick={() => handleGenerate()}>Generate</Button>
+                  </CardActions>
+                </Card>
+              </Stack>
+            }
+            <HelpDrawer title={HELP_TITLE} width={HELP_DRAWER_WIDTH} dictionary={HELP_DICTIONARY} />
+          </Box>
+        </GrantRecipeContext.Provider >
       </HelpTopicContext.Provider >
     </>
   );
