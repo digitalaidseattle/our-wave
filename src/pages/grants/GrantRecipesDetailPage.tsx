@@ -86,6 +86,7 @@ const GrantRecipesDetailPage: React.FC = () => {
         .then(saved => {
           setRecipe(saved);
           setDirty(false);
+          notifications.success(`Recipe ${recipe.description} has been saved successfully.`);
         })
         .catch(err => {
           console.error(err)
