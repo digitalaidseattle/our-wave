@@ -128,6 +128,12 @@ const GrantProposalsDetailPage: React.FC = () => {
     return proposal?.createdAt ? formatCreatedAt(proposal.createdAt) : "";
   }, [proposal?.createdAt]);
 
+  const recipeLink = useMemo(() => {
+    return recipe
+      ? <Typography component="span"> from <NavLink to={`/grant-recipes/${recipe.id}`}>{recipe.description}</NavLink> </Typography>
+      : null;
+  }, [recipe]);
+
   function handleNameChange(text: string): void {
     if (proposal) {
       grantProposalService.update(proposal.id as string, { name: text } as GrantProposal)
@@ -150,7 +156,7 @@ const GrantProposalsDetailPage: React.FC = () => {
             <CardHeader title={<TextEdit
               value={proposal.name ? proposal.name : "Grant Proposal Detail"}
               onChange={handleNameChange} />}
-              subheader={`Generated on : ${createdAtLabel}`}
+              subheader={<><Typography component="span">Generated on : {createdAtLabel}</Typography>{recipeLink}</>}
               action={<Clipboard text={Object.values(proposal.structuredResponse!).join('\n')} />} />
           </Card>
           {reponses.map((response) => {
@@ -162,6 +168,7 @@ const GrantProposalsDetailPage: React.FC = () => {
                   action={<Tooltip title="Copies this section of the proposal into clipboard."><Box><Clipboard text={response.value} /></Box></Tooltip>}
                 />
                 <CardContent>
+
                   <Markdown>{response.value}</Markdown>
                 </CardContent>
               </Card>
