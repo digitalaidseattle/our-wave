@@ -92,7 +92,7 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
     }
 
     const sessionUser = await authService.getUser();
-    if (!sessionUser) throw new Error("User email is required");
+    if (!sessionUser) throw new Error("Valid user not found.");
 
     // Ask AI for structured JSON using output field names as keys
     const schemaParams = outputs.map((o) => o.name);
@@ -118,8 +118,6 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
 
     await grantRecipeService.update(recipe.id, {
       ...recipe,
-      updatedAt: new Date(),
-      updatedBy: sessionUser.email,
       proposalIds: [...recipe.proposalIds, saved.id as string]
     })
 

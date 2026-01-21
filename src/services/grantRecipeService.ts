@@ -31,7 +31,7 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
       updatedAt: now,
       updatedBy: "",
       description: "",
-      tags:[],
+      tags: [],
       rating: 0,
       template: "Create a grant proposal",
       prompt: "",
@@ -92,8 +92,8 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
     user?: User
   ): Promise<GrantRecipe> {
     const sessionUser = user ?? this.getUser();
-    if (!sessionUser?.email) {
-      throw new Error("grantRecipeService.update: user.email is required");
+    if (!sessionUser) {
+      throw new Error("No valid user found.");
     }
 
     const prompt = this.generatePromptWithInputs(updatedFields);
@@ -134,7 +134,7 @@ Adjust wording as needed to stay within these limits.
   }
   async updatePrompt(recipe: GrantRecipe): Promise<GrantRecipe> {
     const prompt = this.generatePromptWithInputs(recipe);
-  
+
     // If token counting is needed later, it can live here
     // For now we keep existing tokenCount
     return {
