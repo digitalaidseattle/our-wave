@@ -2,6 +2,8 @@ import type { Identifier, User } from "@digitalaidseattle/core";
 import { FirestoreService } from "@digitalaidseattle/firebase";
 import type { GrantProposal, GrantRecipe } from "../types";
 import { GrantAiService } from "../pages/grants/grantAiService";
+import { authService } from "../App";
+import { grantRecipeService } from "./grantRecipeService";
 
 class GrantProposalService extends FirestoreService<GrantProposal> {
   constructor() {
