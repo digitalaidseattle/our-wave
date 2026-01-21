@@ -46,10 +46,7 @@ import avatar2 from '/src/assets/images/users/avatar-2.png';
 import avatar3 from '/src/assets/images/users/avatar-3.png';
 import avatar4 from '/src/assets/images/users/avatar-4.png';
 import { GoogleDriveService } from '../../services/googleDriveService';
-<<<<<<< HEAD
 import { cloneRecipe } from '../../transactions/CloneRecipe';
-=======
->>>>>>> 77917b0 (Project Context)
 
 // avatar style
 const avatarSX = {
@@ -186,13 +183,6 @@ const DashboardDefault = () => {
     googleDriveService.signIn((token: string) => console.log("Google Drive signed in with token:", token));
   }, [googleDriveService]);
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-
->>>>>>> 77917b0 (Project Context)
-=======
->>>>>>> b1d7968 (dev merge)
   return (<>
     <Breadcrumbs aria-label="breadcrumbs">
       <NavLink to="/" ><IconButton size="medium"><HomeOutlined /></IconButton></NavLink>

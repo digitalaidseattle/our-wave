@@ -39,6 +39,7 @@ describe("grantProposalService.generate", () => {
         { name: "Summary", maxWords: 3, unit: "words" },
         { name: "Notes", maxWords: 10, unit: "characters" },
       ],
+      inputParameters:[],
       tokenCount: 0,
       proposalIds: [],
       modelType: "gemini-2.5-flash",
@@ -82,6 +83,7 @@ describe("grantProposalService.generate", () => {
       contexts: [],
       outputsWithWordCount: [],
       tokenCount: 0,
+      inputParameters: [],
       proposalIds: [],
       modelType: "gemini-2.5-flash",
     };

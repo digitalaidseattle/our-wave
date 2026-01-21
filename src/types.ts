@@ -15,23 +15,16 @@ export type GrantInput = {
 };
 
 export type GrantOutput = {
-    name: string;
-    maxWords: number;
-    unit: 'words' | 'characters';
+  name: string;
+  maxWords: number;
+  unit: 'words' | 'characters';
 }
 
 export type GrantContext = {
-    type: "text" | "file";
-    filePath?: string;
-    value: string | null;
-    tokenCount: number;
-}
-
-export type GrantContext = {
-    type: "text" | "file";
-    filePath?: string;
-    value: string | null;
-    tokenCount: number;
+  type: "text" | "file";
+  filePath?: string;
+  value: string | null;
+  tokenCount: number;
 }
 
 export type GrantRecipe = Entity & {
@@ -44,6 +37,7 @@ export type GrantRecipe = Entity & {
   tags: string[];
   template: string;
   prompt: string;
+  contexts: GrantContext[];
   inputParameters: GrantInput[];
   outputsWithWordCount: GrantOutput[];
   tokenCount: number;

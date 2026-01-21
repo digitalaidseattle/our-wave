@@ -37,6 +37,7 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
       prompt: "",
       contexts: [],
       outputsWithWordCount: [],
+      inputParameters: [],
       tokenCount: 0,
       proposalIds: [],
       modelType: "gemini-2.5-flash",

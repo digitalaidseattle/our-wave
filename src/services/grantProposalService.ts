@@ -33,14 +33,8 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
     mapper?: (json: any) => GrantProposal,
     user?: User
   ): Promise<GrantProposal> {
-    if (!user?.email) throw new Error("User email is required");
-  async insert(
-    entity: GrantProposal,
-    select?: string,
-    mapper?: (json: any) => GrantProposal,
-    user?: User
-  ): Promise<GrantProposal> {
-    if (!user?.email) throw new Error("User email is required");
+    const sessionUser = user ?? await authService.getUser();
+    if (!sessionUser) throw new Error("Valid user not found.");
 
     // Firestore can't store `undefined` (and we don't want to persist id anyway)
     // so remove it before insert.
@@ -51,7 +45,7 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
       {
         ...entityWithoutId,
         createdAt: new Date(),
-        createdBy: user.email,
+        createdBy: sessionUser.email,
       } as GrantProposal,
       select,
       mapper,
@@ -68,12 +62,13 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
     user?: User
   ): Promise<GrantProposal> {
     const sessionUser = user ?? await authService.getUser();
-    if (!sessionUser) throw new Error("User email is required");
+    if (!sessionUser) throw new Error("Valid user not found.");
+
     const partial = {
       ...updatedFields,
       updatedAt: new Date(),
       updatedBy: sessionUser.email
-    };
+    } as GrantProposal;
     try {
       return super.update(entityId, partial, select, mapper, sessionUser)
     } catch (e) {

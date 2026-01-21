@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-=======
 /**
  *  GoogleDriveFileSearchDialog.ts
  *
@@ -8,9 +6,9 @@
  */
 import { FileExcelOutlined, FileMarkdownOutlined, FolderOutlined } from "@ant-design/icons";
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, List, ListItemButton, ListItemIcon, ListItemText } from "@mui/material";
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
-import { LoadingContext, useNotifications } from "@digitalaidseattle/core";
+import { useNotifications } from "@digitalaidseattle/core";
 import { GoogleDriveService, GoogleFile } from "../services/googleDriveService";
 
 const OUR_WAVE_FOLDER = "1VQodPsyhs3KBVCfnYpuIfOZoh7WLaVvn";
@@ -23,7 +21,6 @@ interface GoogleDriveFileSearchDialogProps {
 
 const GoogleDriveFileSearchDialog = ({ title = "File Search", open, onChange }: GoogleDriveFileSearchDialogProps) => {
     const googleDriveService = GoogleDriveService.getInstance();
-    const { setLoading } = useContext(LoadingContext);
     const notifications = useNotifications();
 
     const [folders, setFolders] = useState<GoogleFile[]>([]);
@@ -52,8 +49,7 @@ const GoogleDriveFileSearchDialog = ({ title = "File Search", open, onChange }: 
         if (selectedFile) {
             switch (selectedFile.type) {
                 case 'application/vnd.google-apps.document':
-                    const fileContents = await downloadMarkdown(selectedFile);
-                    onChange({ ...selectedFile, contents: fileContents });
+                    onChange({ ...selectedFile });
                     break;
                 case 'application/vnd.google-apps.folder':
                     if (folders.find(f => f.id === selectedFile.id)) {
@@ -72,13 +68,6 @@ const GoogleDriveFileSearchDialog = ({ title = "File Search", open, onChange }: 
 
     function handleSelection(gf: GoogleFile) {
         setSelectedFile(gf);
-    }
-
-    function downloadMarkdown(file: GoogleFile): Promise<string> {
-        setLoading(true)
-        return googleDriveService.downloadMarkdown(file.id)
-            .then(resp => resp)
-            .finally(() => setLoading(false))
     }
 
     return <Dialog
@@ -136,4 +125,3 @@ const GoogleDriveFileSearchDialog = ({ title = "File Search", open, onChange }: 
 }
 
 export { GoogleDriveFileSearchDialog };
->>>>>>> 77917b0 (Project Context)

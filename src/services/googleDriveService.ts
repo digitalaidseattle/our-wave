@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-=======
 /**
  * GoogleDriveService.tsx
  * 
@@ -131,4 +129,3 @@ class GoogleDriveService {
 }
 
 export { GoogleDriveService };
->>>>>>> 77917b0 (Project Context)
