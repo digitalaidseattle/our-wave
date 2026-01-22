@@ -6,24 +6,25 @@
 import { HomeOutlined, InfoCircleOutlined } from "@ant-design/icons";
 import { LoadingContext, useHelp, useNotifications, UserContext } from "@digitalaidseattle/core";
 import { Box, Breadcrumbs, Button, Card, CardActions, CardContent, CardHeader, Divider, IconButton, Stack, TextField, Typography } from "@mui/material";
-import dayjs from "dayjs";
 import { useContext, useEffect, useState } from "react";
 import { NavLink, useNavigate, useParams } from "react-router-dom";
 import { HelpDrawer } from "../../components/HelpDrawer";
 import { HelpTopicContext } from "../../components/HelpTopicContext";
 import { LoadingOverlay } from "../../components/LoadingOverlay";
-import { grantProposalService } from "../../services/grantProposalService";
 import { grantRecipeService } from "../../services/grantRecipeService";
 import { cloneRecipe } from "../../transactions/CloneRecipe";
-import type { GrantInput, GrantOutput } from "../../types";
+import type { GrantInput, GrantOutput, Timestamp } from "../../types";
 import { GrantRecipe } from "../../types";
 import { GrantInputEditor } from "./GrantInputEditor";
 import { GrantOutputEditor } from "./GrantOutputEditor";
+import { DateUtils } from "../../utils/dateUtils";
+import { generateProposal } from "../../transactions/GenerateProposal";
+import { GrantInfoEditor } from "./GrantInfoEditor";
 
 const HELP_DRAWER_WIDTH = 300;
 const HELP_TITLE = "Our Wave";
 const HELP_DICTIONARY = {
-  "Description": "Change this field for easier tracking in the application.",
+  "Info": "Change the description for easier tracking in the application.  A rating change can aid in selecting better recipes.  Tags can help categorize recipes.",
   "Prompt": "This prompt template is filled with text using the input and output parameters.",
   "Inputs": "Facts to be used in the prompt.",
   "Outputs": "Guidance for output constraints.",
@@ -72,9 +73,8 @@ const GrantRecipesDetailPage: React.FC = () => {
   }, [id])
 
   useEffect(() => {
-    if (recipe && recipe.updatedAt) {
-      const date = ('seconds' in recipe.updatedAt) ? new Date((recipe.updatedAt as any).seconds * 1000) : recipe.updatedAt;
-      setLastUpdated(dayjs(date).format("MM/DD/YYYY hh:mm a"));
+    if (recipe) {
+      setLastUpdated(DateUtils.formatDateTime(recipe.updatedAt as Timestamp));
     }
   }, [recipe]);
 
@@ -111,63 +111,42 @@ const GrantRecipesDetailPage: React.FC = () => {
   }
 
   async function handleGenerate() {
-    if (!recipe || !user) return;
-
-    try {
+    if (recipe) {  // TODO display error ?
       setLoading(true);
-
-      //AI -> returns a draft proposal object (not saved)
-      const draft = await grantProposalService.generate(recipe);
-
-      // Persist proposal
-      const saved = await grantProposalService.insert(
-        {
-          ...draft,
-          // make sure the proposal points back to this recipe
-          grantRecipeId: String(recipe.id),
-        },
-        undefined,
-        undefined,
-        user
-      );
-
-      notifications.success(`Proposal generated for ${recipe.description}.`);
-
-      //Navigate to proposal detail
-      navigate(`/grant-proposals/${saved.id}`);
-    } catch (err: any) {
-      console.error(err);
-      notifications.error(
-        `Could not generate a proposal for this recipe. ${err?.message ?? "Unknown error"
-        }`
-      );
-    } finally {
-      setLoading(false);
+      generateProposal(recipe)
+        .then(proposal => {
+          notifications.success(`Proposal generated for ${recipe.description}.`);
+          //Navigate to proposal detail
+          navigate(`/grant-proposals/${proposal.id}`);
+        })
+        .catch((err: any) => {
+          console.error(err);
+          notifications.error(
+            `Could not generate a proposal for this recipe. ${err?.message ?? "Unknown error"
+            }`
+          )
+        })
+        .finally(() => {
+          setLoading(false);
+        });
     }
   }
 
-  function updatePrompt(changed: GrantRecipe): Promise<GrantRecipe> {
-    return grantRecipeService.updatePrompt(changed);
-  }
-
   function handleGrantOutputChange(updated: GrantOutput[]): void {
-    updatePrompt({ ...recipe, outputsWithWordCount: updated })
+    grantRecipeService.updatePrompt({ ...recipe, outputsWithWordCount: updated })
       .then(revised => {
         setRecipe(revised);
         setDirty(true);
       })
   }
 
-  function handleDescriptionChange(updated: string): void {
-    setRecipe({
-      ...recipe,
-      description: updated
-    });
+  function handleInfoChange(updated: GrantRecipe): void {
+    setRecipe(updated);
     setDirty(true);
   }
 
   function handlePromptChange(updated: string): void {
-    updatePrompt({ ...recipe, prompt: updated })
+    grantRecipeService.updatePrompt({ ...recipe, prompt: updated })
       .then(revised => {
         setRecipe(revised);
         setDirty(true);
@@ -175,7 +154,7 @@ const GrantRecipesDetailPage: React.FC = () => {
   }
 
   function handleGrantInputChange(inputs: GrantInput[]): void {
-    updatePrompt({ ...recipe, inputParameters: inputs })
+    grantRecipeService.updatePrompt({ ...recipe, inputParameters: inputs })
       .then(revised => {
         setRecipe(revised);
         setDirty(true);
@@ -199,7 +178,7 @@ const GrantRecipesDetailPage: React.FC = () => {
                 subheader={`Last updated: ${lastUpdated}`} />
               <CardContent>
                 <Stack gap={1}>
-                  <TextEditor title="Description" value={recipe.description} onChange={handleDescriptionChange} />
+                  <GrantInfoEditor recipe={recipe} onChange={handleInfoChange} />
                   <TextEditor title="Prompt" value={recipe.prompt} onChange={handlePromptChange} />
                   <GrantInputEditor recipeInputs={recipe.inputParameters} onChange={handleGrantInputChange} />
                   <GrantOutputEditor fields={recipe.outputsWithWordCount} onChange={handleGrantOutputChange} />
