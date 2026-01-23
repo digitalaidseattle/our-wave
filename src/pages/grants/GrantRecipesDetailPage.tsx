@@ -5,7 +5,7 @@
 */
 import { HomeOutlined, InfoCircleOutlined } from "@ant-design/icons";
 import { LoadingContext, useHelp, useNotifications } from "@digitalaidseattle/core";
-import { Box, Breadcrumbs, Button, Card, CardActions, CardContent, CardHeader, Divider, IconButton, Stack, TextField, Typography } from "@mui/material";
+import { Box, Breadcrumbs, Button, Card, CardActions, CardContent, CardHeader, Divider, IconButton, Stack, TextField, Tooltip, Typography } from "@mui/material";
 import { useContext, useEffect, useState } from "react";
 import { NavLink, useNavigate, useParams } from "react-router-dom";
 import { HelpDrawer } from "../../components/HelpDrawer";
@@ -193,12 +193,26 @@ const GrantRecipesDetailPage: React.FC = () => {
           </Breadcrumbs>
           <Box gap={4}>
             {recipe &&
-              <Stack sx={{ gap: 2, marginRight: `${showHelp ? HELP_DRAWER_WIDTH : 0}px` }}>
-                <Card>
+              <Stack sx={{
+                height: "calc(100dvh - 112px)",
+                gap: 2,
+                marginRight: `${showHelp ? HELP_DRAWER_WIDTH : 0}px`
+              }}>
+                <Card
+                  sx={{
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                  }}
+                >
                   <CardHeader title={recipe.description}
                     action={`Token count = ${recipe.tokenCount}`}
                     subheader={`Last updated: ${lastUpdated}`} />
-                  <CardContent>
+                  <CardContent
+                    sx={{
+                      flex: 1,
+                      overflowY: "auto",
+                    }}>
                     <Stack gap={1}>
                       <GrantInfoEditor recipe={recipe} onChange={handleInfoChange} />
                       <TextEditor title="Template" value={recipe.template} onChange={handleTemplateChange} />
@@ -207,11 +221,18 @@ const GrantRecipesDetailPage: React.FC = () => {
                       <PlainTextCard title="Prompt" value={recipe.prompt} />
                     </Stack>
                   </CardContent>
-                  <CardActions>
-                    <Button variant="contained" disabled={loading || !dirty} onClick={() => saveRecipe()}>Save</Button>
-                    <Divider orientation="vertical" />
+                  <CardActions
+                    sx={{
+                      borderTop: "1px solid",
+                      borderColor: "divider",
+                      justifyContent: "flex-end",
+                    }}>
+                    <Tooltip title='Click to generate.'>
+                      <Button variant="contained" disabled={loading} onClick={() => handleGenerate()}>Generate</Button>
+                    </Tooltip>
                     <Button variant="contained" disabled={loading} onClick={() => handleClone()}>Clone</Button>
-                    <Button variant="contained" disabled={loading} onClick={() => handleGenerate()}>Generate</Button>
+                    <Divider orientation="vertical" />
+                    <Button variant="contained" disabled={loading || !dirty} onClick={() => saveRecipe()}>Save</Button>
                   </CardActions>
                 </Card>
               </Stack>
