@@ -5,12 +5,12 @@ import { useContext, useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 
 import { LoadingContext, useNotifications } from "@digitalaidseattle/core";
-import dayjs from 'dayjs';
 import { LoadingOverlay } from "../../components/LoadingOverlay";
 import { grantRecipeService } from "../../services/grantRecipeService";
+import { cloneRecipe } from "../../transactions/CloneRecipe";
 import { createRecipe } from "../../transactions/CreateRecipe";
 import type { GrantRecipe, Timestamp } from "../../types";
-import { cloneRecipe } from "../../transactions/CloneRecipe";
+import { DateUtils } from "../../utils/dateUtils";
 
 const GrantRecipesListPage: React.FC = () => {
   const notifications = useNotifications();
@@ -111,12 +111,16 @@ const GrantRecipesListPage: React.FC = () => {
       width: 180,
     },
     {
+      field: "lastSubmitted",
+      headerName: "Last Submitted",
+      width: 150,
+      valueGetter: (_value, row) => DateUtils.formatDateTime(row.lastSubmitted as Timestamp),
+    },
+    {
       field: "updatedAt",
       headerName: "Updated At",
       width: 150,
-      // TODO remove showing createdAt. All proposals should have an updatedAt
-      valueGetter: (_value, row) => dayjs(new Date(((row.updatedAt ?? row.createdAt) as any).seconds * 1000)).format("MM/DD/YYYY hh:mm a"),
-
+      valueGetter: (_value, row) => DateUtils.formatDateTime(row.updatedAt as Timestamp),
     }
   ];
 

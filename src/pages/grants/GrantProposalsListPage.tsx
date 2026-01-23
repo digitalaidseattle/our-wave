@@ -10,12 +10,12 @@ import {
   GridRowParams,
   GridRowSelectionModel
 } from "@mui/x-data-grid";
-import dayjs from "dayjs";
 import { useContext, useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { LoadingOverlay } from "../../components/LoadingOverlay";
 import { grantProposalService } from "../../services/grantProposalService";
-import type { GrantProposal, Timestamp } from "../../types";
+import type { GrantProposal } from "../../types";
+import { DateUtils } from "../../utils/dateUtils";
 
 const GrantProposalsListPage: React.FC = () => {
   const notifications = useNotifications();
@@ -104,8 +104,7 @@ const GrantProposalsListPage: React.FC = () => {
       field: "updatedAt",
       headerName: "Last Updated",
       width: 180,
-      // TODO remove showing createdAt. All proposals should have an updatedAt
-      valueGetter: (_value, row) => dayjs(new Date(((row.updatedAt ?? row.createdAt) as any).seconds * 1000)).format("MM/DD/YYYY hh:mm a"),
+      valueGetter: (_value, row) => DateUtils.formatDateTime(row.createdAt),
     }
   ];
 
