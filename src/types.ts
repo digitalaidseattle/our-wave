@@ -33,6 +33,7 @@ export type GrantRecipe = Entity & {
   createdBy: string;
   updatedAt: Timestamp | Date;
   updatedBy: string;
+  lastSubmitted: Timestamp | Date | null;
   description: string;
   rating: number;
   tags: string[];
