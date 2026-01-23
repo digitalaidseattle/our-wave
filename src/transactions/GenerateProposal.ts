@@ -53,9 +53,10 @@ export async function generateProposal(recipe: GrantRecipe): Promise<GrantPropos
     // Ask AI for structured JSON using output field names as keys
     const schemaParams = outputs.map((o) => o.name);
     const structuredResponse = await grantAiService.parameterizedQuery(
-        schemaParams,
         recipe.prompt,
-        recipe.modelType
+        schemaParams,
+        recipe.modelType,
+        recipe.contexts,
     );
 
     const proposal = {
