@@ -4,7 +4,7 @@
  * @copyright 2026 Digital Aid Seattle
 */
 import { HomeOutlined } from "@ant-design/icons";
-import { Breadcrumbs, Card, CardContent, CardHeader, IconButton, Stack, Typography } from "@mui/material";
+import { Box, Breadcrumbs, Card, CardContent, CardHeader, IconButton, Stack, Tooltip, Typography } from "@mui/material";
 import { useContext, useEffect, useMemo, useState } from "react";
 import { NavLink, useParams } from "react-router-dom";
 
@@ -17,7 +17,6 @@ import { grantProposalService } from "../../services/grantProposalService";
 import { grantRecipeService } from "../../services/grantRecipeService";
 import type { GrantOutput, GrantProposal, GrantRecipe } from "../../types";
 import { DateUtils } from "../../utils/dateUtils";
-import { TextEdit } from "../../components/TextEdit";
 
 //Count words in string
 function countWords(text: string): number {
