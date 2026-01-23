@@ -116,13 +116,11 @@ export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ onChange
     const [contexts, setContexts] = React.useState<GrantContext[]>([]);
 
     useEffect(() => {
-        console.log(recipe);
-
         setContexts(recipe ? recipe.contexts : []);
     }, [recipe]);
 
     async function addContext(newContext: GrantContext) {
-        const revised = [...contexts, newContext]
+        const revised = [...(contexts ?? []), newContext]
         onChange({ ...recipe, contexts: revised });
     }
 
