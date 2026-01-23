@@ -17,8 +17,9 @@
 
 import { GrantContext } from "../../types";
 import { createPartFromText, createUserContent, GoogleGenAI, Part } from "@google/genai";
-
 class GrantAiService {
+
+    static models = ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.5-flash-lite"];
 
     //ai = getAI(firebaseClient, { backend: new GoogleAIBackend() });
     ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
@@ -27,15 +28,14 @@ class GrantAiService {
      * Runs a basic text generation request.
      * This is for prompts where we just want the model to return a text response.
      */
-    async query(prompt: string, modelType?: string, contexts?: GrantContext[]): Promise<string> {
+    async query(prompt: string, modelType?: string, contexts?: GrantContext[]): Promise<any> {
         const parts = contexts ? await this.uploadFiles(contexts) : [];
-        const response = await this.ai.models.generateContent({
-            model: modelType ?? "gemini-2.5-flash",
+        return await this.ai.models.generateContent({
+            model: modelType ?? GrantAiService.models[0],
             contents: createUserContent([
                 prompt, ...parts
             ]),
         });
-        return response.text!;
     }
 
     async uploadFiles(contexts: GrantContext[]): Promise<Part[]> {
@@ -62,18 +62,17 @@ class GrantAiService {
         schemaParams: string[],
         modelType?: string,
         contexts?: GrantContext[],
-    ): Promise<Record<string, string>> {
+    ): Promise<any> {
         const parts = contexts ? await this.uploadFiles(contexts) : [];
         const responseSchema = this.createSchema(schemaParams);
-        const response = await this.ai.models.generateContent({
-            model: modelType ?? "gemini-2.5-flash",
+        return await this.ai.models.generateContent({
+            model: modelType ?? GrantAiService.models[0],
             contents: [prompt, ...parts],
             config: {
                 responseMimeType: "application/json",
                 responseJsonSchema: responseSchema,
             },
         });
-        return JSON.parse(response.text!) as Record<string, string>;
     }
 
 }

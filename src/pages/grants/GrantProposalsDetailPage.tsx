@@ -138,7 +138,10 @@ const GrantProposalsDetailPage: React.FC = () => {
             <CardHeader title={<TextEdit
               value={proposal.name ? proposal.name : "Grant Proposal Detail"}
               onChange={handleNameChange} />}
-              subheader={`Generated on : ${createdAtLabel}`}
+              subheader={<>
+                <Typography component="span">Generated on: {createdAtLabel}</Typography>
+                <Typography component="span">; Total token count: {proposal.totalTokenCount ?? "N/A"}</Typography>
+              </>}
               action={<Clipboard text={Object.values(proposal.structuredResponse!).join('\n')} />} />
           </Card>
           {reponses.map((response) => {
