@@ -27,14 +27,7 @@ const GrantRecipesListPage: React.FC = () => {
     if (grantRecipeService) {
       setLoading(true);
       grantRecipeService.getAll()
-        .then(data => {
-          data.sort((a, b) => {
-            const dateA = new Date((a.updatedAt as Timestamp).seconds * 1000);
-            const dateB = new Date((b.updatedAt as Timestamp).seconds * 1000);
-            return dateB.getTime() - dateA.getTime();
-          })
-          setRecipes(data)
-        })
+        .then(data => setRecipes(data))
         .catch(error => {
           console.error("Error fetching grant recipes:", error);
           notifications.error(`Failed to retrieve grant recipes: ${error instanceof Error ? error.message : "Unknown error"}`);
@@ -186,7 +179,11 @@ const GrantRecipesListPage: React.FC = () => {
               pagination: {
                 paginationModel: { pageSize: 10 },
               },
+              sorting: {
+                sortModel: [{ field: 'updatedAt', sort: 'desc' }],
+              },
             }}
+
             pageSizeOptions={[10, 25, 50]}
             disableRowSelectionOnClick
             sx={{

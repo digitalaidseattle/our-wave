@@ -14,7 +14,7 @@ import { useContext, useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { LoadingOverlay } from "../../components/LoadingOverlay";
 import { grantProposalService } from "../../services/grantProposalService";
-import type { GrantProposal, Timestamp } from "../../types";
+import type { GrantProposal } from "../../types";
 import { DateUtils } from "../../utils/dateUtils";
 
 const GrantProposalsListPage: React.FC = () => {
@@ -33,14 +33,7 @@ const GrantProposalsListPage: React.FC = () => {
   const fetchProposals = async () => {
     try {
       setLoading(true);
-      const sorted = await grantProposalService.getAll()
-        .then(proposals =>
-          proposals.sort((a, b) => {
-            const dateA = new Date((a.createdAt as Timestamp).seconds * 1000);
-            const dateB = new Date((b.createdAt as Timestamp).seconds * 1000);
-            return dateB.getTime() - dateA.getTime();
-          }));
-      setProposals(sorted || []);
+      setProposals(await grantProposalService.getAll())
     } catch (error) {
       console.error("Error fetching grant proposals:", error);
       setProposals([]);
@@ -152,6 +145,9 @@ const GrantProposalsListPage: React.FC = () => {
             initialState={{
               pagination: {
                 paginationModel: { pageSize: 10 },
+              },
+              sorting: {
+                sortModel: [{ field: 'updatedAt', sort: 'desc' }],
               },
             }}
             pageSizeOptions={[10, 25, 50]}
