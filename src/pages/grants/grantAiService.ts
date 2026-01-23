@@ -16,7 +16,7 @@
  */
 
 import { GrantContext } from "../../types";
-import { createUserContent, GoogleGenAI, Part } from "@google/genai";
+import { createPartFromText, createUserContent, GoogleGenAI, Part } from "@google/genai";
 
 class GrantAiService {
 
@@ -38,16 +38,8 @@ class GrantAiService {
         return response.text!;
     }
 
-
-    async uploadFiles(_contexts: GrantContext[]): Promise<Part[]> {
-        return [] as Part[];
-        // createPartFromUri("", "")
-        // (myfile.uri, myfile.mimeType)
-        // const myfile = await this.ai.files.upload({
-        //     file: "path/to/sample.mp3",
-        //     config: { mimeType: "audio/mpeg" },
-
-        // })
+    async uploadFiles(contexts: GrantContext[]): Promise<Part[]> {
+        return contexts.map(gc => createPartFromText(gc.value!));
     }
 
     createSchema(schemaParams: string[]): any {
