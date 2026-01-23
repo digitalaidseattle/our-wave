@@ -1,9 +1,7 @@
 import type { Identifier, User } from "@digitalaidseattle/core";
 import { FirestoreService } from "@digitalaidseattle/firebase";
-import type { GrantProposal, GrantRecipe } from "../types";
-import { grantAiService } from "../pages/grants/grantAiService";
 import { authService } from "../App";
-import { grantRecipeService } from "./grantRecipeService";
+import type { GrantProposal } from "../types";
 
 class GrantProposalService extends FirestoreService<GrantProposal> {
   constructor() {
@@ -75,53 +73,6 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
       console.error("Error updating document: ", e);
       throw e;
     }
-  }
-
-  // --- real generation (still returns a draft; not persisted) ---
-  async generate(recipe: GrantRecipe): Promise<GrantProposal> {
-    if (!recipe.id) throw new Error("Recipe ID is required");
-
-    const outputs = recipe.outputsWithWordCount ?? [];
-    if (outputs.length === 0) {
-      throw new Error("Recipe is missing output fields");
-    }
-
-    // The prompt should already be generated and saved with the recipe
-    if (!recipe.prompt) {
-      throw new Error("Recipe prompt has not been generated");
-    }
-
-    const sessionUser = await authService.getUser();
-    if (!sessionUser) throw new Error("Valid user not found.");
-
-    // Ask AI for structured JSON using output field names as keys
-    const schemaParams = outputs.map((o) => o.name);
-    const structuredResponse = await grantAiService.parameterizedQuery(
-      schemaParams,
-      recipe.prompt,
-      recipe.modelType
-    );
-
-    // Persist proposal
-    const saved = await grantProposalService.insert(
-      {
-        ...this.empty(),
-        grantRecipeId: recipe.id,
-        name: `${recipe.description} (${recipe.proposalIds.length + 1})`,
-        structuredResponse,
-        rating: null,
-      },
-      undefined,
-      undefined,
-      sessionUser
-    );
-
-    await grantRecipeService.update(recipe.id, {
-      ...recipe,
-      proposalIds: [...recipe.proposalIds, saved.id as string]
-    })
-
-    return saved;
   }
 }
 

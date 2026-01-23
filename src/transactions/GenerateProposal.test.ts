@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { GrantRecipe } from "../types";
 
 // Mock AI service
@@ -15,9 +15,9 @@ vi.mock("@digitalaidseattle/firebase", () => ({
 }));
 
 import { grantAiService } from "../pages/grants/grantAiService";
-import { grantProposalService } from "./grantProposalService";
+import { generateProposal } from "./GenerateProposal";
 
-describe("grantProposalService.generate", () => {
+describe("GenerateProposal", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -40,7 +40,7 @@ describe("grantProposalService.generate", () => {
         { name: "Summary", maxWords: 3, unit: "words" },
         { name: "Notes", maxWords: 10, unit: "characters" },
       ],
-      inputParameters:[],
+      inputParameters: [],
       tokenCount: 0,
       proposalIds: [],
       modelType: "gemini-2.5-flash",
@@ -51,7 +51,7 @@ describe("grantProposalService.generate", () => {
       Notes: "abcdefghijklmnop",
     });
 
-    const proposal = await grantProposalService.generate(recipe);
+    const proposal = await generateProposal(recipe);
 
     expect(grantAiService.parameterizedQuery).toHaveBeenCalledTimes(1);
     expect(proposal.grantRecipeId).toBe("recipe-123");
@@ -63,7 +63,7 @@ describe("grantProposalService.generate", () => {
 
   it("throws if recipe has no id", async () => {
     await expect(
-      grantProposalService.generate({
+      generateProposal({
         outputsWithWordCount: [{ name: "Test", maxWords: 3, unit: "words" }],
       } as any)
     ).rejects.toThrow("Recipe ID is required");
@@ -91,7 +91,7 @@ describe("grantProposalService.generate", () => {
     };
 
     await expect(
-      grantProposalService.generate(badRecipe)
+      generateProposal(badRecipe)
     ).rejects.toThrow("Recipe is missing output fields");
   });
 });
