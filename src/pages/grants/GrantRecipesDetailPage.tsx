@@ -13,11 +13,13 @@ import { HelpTopicContext } from "../../components/HelpTopicContext";
 import { LoadingOverlay } from "../../components/LoadingOverlay";
 import { grantRecipeService } from "../../services/grantRecipeService";
 import { cloneRecipe } from "../../transactions/CloneRecipe";
-import { GrantOutput, GrantRecipe } from "../../types";
+import { GrantOutput, GrantRecipe, Timestamp } from "../../types";
 import { GrantInfoEditor } from "./GrantInfoEditor";
 import { GrantOutputEditor } from "./GrantOutputEditor";
 import { GrantContextEditor } from "./GrantContextEditor";
 import { GrantRecipeContext } from "../../components/GrantRecipeContext";
+import { generateProposal } from "../../transactions/GenerateProposal";
+import { DateUtils } from "../../utils/dateUtils";
 
 const HELP_DRAWER_WIDTH = 300;
 const HELP_TITLE = "Our Wave";
