@@ -16,7 +16,7 @@
  */
 
 import { GrantContext } from "../../types";
-import { createPartFromUri, createUserContent, GoogleGenAI, Part } from "@google/genai";
+import { createUserContent, GoogleGenAI, Part } from "@google/genai";
 
 class GrantAiService {
 
@@ -39,7 +39,7 @@ class GrantAiService {
     }
 
 
-    async uploadFiles(contexts: GrantContext[]): Promise<Part[]> {
+    async uploadFiles(_contexts: GrantContext[]): Promise<Part[]> {
         return [] as Part[];
         // createPartFromUri("", "")
         // (myfile.uri, myfile.mimeType)
