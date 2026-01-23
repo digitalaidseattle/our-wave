@@ -28,6 +28,7 @@ class GoogleDriveService {
 
     isReady = false;
     drive: any;
+    token: string | null = null;
 
     constructor() {
         this.init();
@@ -56,6 +57,14 @@ class GoogleDriveService {
             callback: (res: any) => callback(res.access_token)
         });
         client.requestAccessToken({ prompt: '' });
+    }
+
+    checkToken() {
+        if (this.token === null) {
+            this.signIn((token) => this.token = token);
+        } else {
+            setTimeout(this.checkToken, 100);
+        }
     }
 
     downloadBlob(blob: Blob, filename: string) {

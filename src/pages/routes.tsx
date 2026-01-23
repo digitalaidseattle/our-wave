@@ -4,9 +4,10 @@ import {
   Error,
   Login,
   MainLayout,
-  MarkdownPage,
   MinimalLayout
 } from "@digitalaidseattle/mui";
+import { GoogleDriveAutoLogin } from '../components/GoogleDriveAutoLogin';
+import PublicMarkdownPage from '../components/PublicMarkdownPage';
 import GrantProposalsDetailPage from './grants/GrantProposalsDetailPage';
 import GrantProposalsListPage from './grants/GrantProposalsListPage';
 import GrantRecipesDetailPage from './grants/GrantRecipesDetailPage';
@@ -15,7 +16,9 @@ import GrantRecipesListPage from './grants/GrantRecipesListPage';
 const routes = [
   {
     path: "/",
-    element: <MainLayout sx={{ p: 1 }} />,
+    element: <GoogleDriveAutoLogin>
+      <MainLayout sx={{ p: 1 }} />
+    </GoogleDriveAutoLogin>,
     children: [
       {
         path: "",
@@ -36,33 +39,40 @@ const routes = [
       {
         path: "grant-proposals/:id",
         element: <GrantProposalsDetailPage />,
-      },
+      }
+    ]
+  }
+  ,
+  {
+    path: "/",
+    element: <MainLayout sx={{ p: 1 }} />,
+    children: [
       {
         path: "privacy",
-        element: <MarkdownPage filepath='privacy.md' />,
+        element: <PublicMarkdownPage filePath='/privacy.md' />
       }
     ]
   },
-{
-  path: "/",
+  {
+    path: "/",
     element: <MinimalLayout />,
-      children: [
-        {
-          path: 'login',
-          element: <Login />
-        }
-      ]
-},
-{
-  path: "*",
+    children: [
+      {
+        path: 'login',
+        element: <Login />
+      }
+    ]
+  },
+  {
+    path: "*",
     element: <MinimalLayout />,
-      children: [
-        {
-          path: '*',
-          element: <Error />
-        }
-      ]
-}
+    children: [
+      {
+        path: '*',
+        element: <Error />
+      }
+    ]
+  }
 ];
 
 export { routes };
