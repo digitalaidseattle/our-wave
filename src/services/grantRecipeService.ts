@@ -114,24 +114,12 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
   }
 
   generatePromptWithInputs(recipe: GrantRecipe): string {
-    const compiled = Handlebars.compile(recipe.template ?? "");
+    const compiled = Handlebars.compile(recipe.template + `Where {{#each outputs}}{{#unless @first}} and{{/unless}} the output "{{name}}" cannot have more than {{maxWords}} of {{unit}} {{/each}}.`);
 
-    const basePrompt = compiled({
+    return compiled({
       outputs: recipe.outputsWithWordCount,
     });
 
-    const outputConstraints = recipe.outputsWithWordCount
-      .map(o => `- ${o.name}: maximum ${o.maxWords} ${o.unit}`)
-      .join("\n");
-
-    return `
-${basePrompt}
-
-Please follow these output constraints strictly:
-${outputConstraints}
-
-Adjust wording as needed to stay within these limits.
-`;
   }
   async updatePrompt(recipe: GrantRecipe): Promise<GrantRecipe> {
     const prompt = this.generatePromptWithInputs(recipe);
