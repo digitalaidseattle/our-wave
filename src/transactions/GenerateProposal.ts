@@ -67,7 +67,8 @@ export async function generateProposal(recipe: GrantRecipe): Promise<GrantPropos
         grantRecipeId: String(savedRecipe.id),
         structuredResponse: JSON.parse(response.text!),
         rating: null,
-        totalTokenCount: response.usageMetadata ? response.usageMetadata.totalTokenCount : null
+        totalTokenCount: response.usageMetadata ? response.usageMetadata.totalTokenCount : null,
+        model: recipe.modelType
     };
 
     return grantProposalService.insert(proposal,

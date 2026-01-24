@@ -57,4 +57,5 @@ export type GrantProposal = Entity & {
   rating: number | null;
   structuredResponse?: { [key: string]: string };
   totalTokenCount: number | null;
+  model: string;
 };
