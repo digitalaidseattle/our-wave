@@ -20,6 +20,14 @@ import { createPartFromText, createUserContent, GoogleGenAI, Part } from "@googl
 class GrantAiService {
 
     static models = ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.5-flash-lite"];
+    static instance: GrantAiService;
+    
+    static getInstance() {
+        if (!GrantAiService.instance) {
+            GrantAiService.instance = new GrantAiService();
+        }
+        return GrantAiService.instance;
+    }
 
     //ai = getAI(firebaseClient, { backend: new GoogleAIBackend() });
     ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
@@ -77,5 +85,4 @@ class GrantAiService {
 
 }
 
-const grantAiService = new GrantAiService();
-export { grantAiService };
+export { GrantAiService };

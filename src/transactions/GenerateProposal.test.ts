@@ -14,10 +14,12 @@ vi.mock("@digitalaidseattle/firebase", () => ({
   FirestoreService: class { },
 }));
 
-import { grantAiService } from "../pages/grants/grantAiService";
+import { GrantAiService } from "../pages/grants/grantAiService";
 import { generateProposal } from "./GenerateProposal";
 
 describe("GenerateProposal", () => {
+  const grantAiService = GrantAiService.getInstance();
+
   beforeEach(() => {
     vi.clearAllMocks();
   });

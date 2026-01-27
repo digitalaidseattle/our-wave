@@ -20,6 +20,8 @@ import { GrantContextEditor } from "./GrantContextEditor";
 import { GrantRecipeContext } from "../../components/GrantRecipeContext";
 import { generateProposal } from "../../transactions/GenerateProposal";
 import { DateUtils } from "../../utils/dateUtils";
+import { SplitButton } from "../../components/SplitButton";
+import { GrantAiService } from "./grantAiService";
 
 const HELP_DRAWER_WIDTH = 300;
 const HELP_TITLE = "Our Wave";
@@ -132,9 +134,10 @@ const GrantRecipesDetailPage: React.FC = () => {
       .finally(() => setLoading(false))
   }
 
-  async function handleGenerate() {
+  async function handleGenerate(model: string) {
     if (recipe) {  // TODO display error ?
       setLoading(true);
+      recipe.modelType = model;
       generateProposal(recipe)
         .then(proposal => {
           notifications.success(`Proposal generated for ${recipe.description}.`);
@@ -228,7 +231,9 @@ const GrantRecipesDetailPage: React.FC = () => {
                       justifyContent: "flex-end",
                     }}>
                     <Tooltip title='Click to generate.'>
-                      <Button variant="contained" disabled={loading} onClick={() => handleGenerate()}>Generate</Button>
+                      <SplitButton
+                        options={GrantAiService.models}
+                        onClick={(model: string) => handleGenerate(model)} />
                     </Tooltip>
                     <Button variant="contained" disabled={loading} onClick={() => handleClone()}>Clone</Button>
                     <Divider orientation="vertical" />
