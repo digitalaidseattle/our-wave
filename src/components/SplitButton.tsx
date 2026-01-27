@@ -12,7 +12,7 @@ import * as React from 'react';
 export const SplitButton = ({ options, onClick }: { options: string[], onClick: (value: string) => void }) => {
     const [open, setOpen] = React.useState(false);
     const anchorRef = React.useRef<HTMLDivElement>(null);
-    const [selectedIndex, setSelectedIndex] = React.useState(1);
+    const [selectedIndex, setSelectedIndex] = React.useState(0);
 
     const handleClick = () => {
         onClick(options[selectedIndex]);
@@ -82,7 +82,6 @@ export const SplitButton = ({ options, onClick }: { options: string[], onClick: 
                                     {options.map((option, index) => (
                                         <MenuItem
                                             key={option}
-                                            disabled={index === 2}
                                             selected={index === selectedIndex}
                                             onClick={(event) => handleMenuItemClick(event, index)}
                                         >
