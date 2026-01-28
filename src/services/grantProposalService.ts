@@ -35,6 +35,7 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
   ): Promise<GrantProposal> {
     if (!user?.email) throw new Error("User email is required");
 
+    const now = new Date();
     // Firestore can't store `undefined` (and we don't want to persist id anyway)
     // so remove it before insert.
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -43,8 +44,10 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
     return super.insert(
       {
         ...entityWithoutId,
-        createdAt: new Date(),
+        createdAt: now,
         createdBy: user.email,
+        updatedAt: now,
+        updatedBy: user.email,
       } as GrantProposal,
       select,
       mapper,
@@ -71,8 +74,6 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
       entityId,
       {
         ...entityWithoutId,
-        createdAt: new Date(),
-        createdBy: user.email,
         updatedAt: new Date(),
         updatedBy: user.email,
       } as GrantProposal,
