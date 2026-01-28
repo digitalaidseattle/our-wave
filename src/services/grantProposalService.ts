@@ -36,6 +36,7 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
     const sessionUser = user ?? await authService.getUser();
     if (!sessionUser) throw new Error("Valid user not found.");
 
+    const now = new Date();
     // Firestore can't store `undefined` (and we don't want to persist id anyway)
     // so remove it before insert.
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -44,8 +45,10 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
     return super.insert(
       {
         ...entityWithoutId,
-        createdAt: new Date(),
-        createdBy: sessionUser.email,
+        createdAt: now,
+        createdBy: user.email,
+        updatedAt: now,
+        updatedBy: user.email,
       } as GrantProposal,
       select,
       mapper,

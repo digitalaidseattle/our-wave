@@ -184,7 +184,7 @@ const GrantRecipesDetailPage: React.FC = () => {
       })
   }
 
-  return (
+  return (recipe &&
     <>
       <LoadingOverlay />
       <HelpTopicContext.Provider value={{ helpTopic, setHelpTopic }} >

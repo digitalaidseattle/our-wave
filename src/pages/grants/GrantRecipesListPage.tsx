@@ -179,7 +179,11 @@ const GrantRecipesListPage: React.FC = () => {
               pagination: {
                 paginationModel: { pageSize: 10 },
               },
+              sorting: {
+                sortModel: [{ field: 'updatedAt', sort: 'desc' }],
+              },
             }}
+
             pageSizeOptions={[10, 25, 50]}
             disableRowSelectionOnClick
             sx={{
