@@ -118,7 +118,7 @@ const GrantProposalsDetailPage: React.FC = () => {
 
   const recipeLink = useMemo(() => {
     return recipe
-      ? <Typography component="span"> from <NavLink to={`/grant-recipes/${recipe.id}`}>{recipe.description}</NavLink></Typography>
+      ? <Typography component="span">; Recipe: <NavLink to={`/grant-recipes/${recipe.id}`}>{recipe.description}</NavLink></Typography>
       : null;
   }, [recipe]);
 

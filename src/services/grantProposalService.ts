@@ -46,9 +46,9 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
       {
         ...entityWithoutId,
         createdAt: now,
-        createdBy: user.email,
+        createdBy: sessionUser.email,
         updatedAt: now,
-        updatedBy: user.email,
+        updatedBy: sessionUser.email,
       } as GrantProposal,
       select,
       mapper,
