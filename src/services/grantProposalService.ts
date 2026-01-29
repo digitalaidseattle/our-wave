@@ -4,10 +4,11 @@ import type { GrantProposal, GrantRecipe } from "../types";
 import { grantAiService } from "../pages/grants/grantAiService";
 import { authService } from "../App";
 import { grantRecipeService } from "./grantRecipeService";
+import { FIRESTORE_COLLECTIONS } from "../constants/firestoreCollections";
 
 class GrantProposalService extends FirestoreService<GrantProposal> {
   constructor() {
-    super("grant-proposal");
+    super(FIRESTORE_COLLECTIONS.grantProposals);
   }
 
   // Default shape for a new proposal

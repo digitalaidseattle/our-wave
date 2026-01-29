@@ -3,10 +3,11 @@ import { FirestoreService } from "@digitalaidseattle/firebase";
 import type { GrantRecipe } from "../types";
 import Handlebars from "handlebars";
 import { authService } from "../App";
+import { FIRESTORE_COLLECTIONS } from "../constants/firestoreCollections";
 
 class GrantRecipeService extends FirestoreService<GrantRecipe> {
   constructor() {
-    super("grant-recipes");
+    super(FIRESTORE_COLLECTIONS.grantRecipes);
   }
 
   /**
