@@ -23,7 +23,7 @@ jobs:
           echo VITE_GRANT_RECIPES_COLLECTION=grant-recipes-qa >> .env
           echo VITE_GRANT_PROPOSALS_COLLECTION=grant-proposal-qa >> .env
           cat .env
-          npm install && npm run build
+          npm install && npm run build -- --mode qa
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
