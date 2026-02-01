@@ -25,7 +25,8 @@ import {
   Select,
   Stack,
   TextField,
-  Typography
+  Typography,
+  CircularProgress
 } from '@mui/material';
 import { NavLink, useNavigate } from "react-router-dom";
 
@@ -155,17 +156,28 @@ const CloneRecipeCard = () => {
 
 const CreateRecipeCard = () => {
   const navigate = useNavigate();
+  const [creating, setCreating] = useState(false);
 
   function handleClick() {
+    if (creating) return;
+    setCreating(true);
     createRecipe()
       .then(recipe => navigate(`/grant-recipes/${recipe.id}`))
+      .catch(() => setCreating(false));
   }
 
   return (
     <Card>
       <CardHeader title="New Proposal" />
       <CardActions>
-        <Button variant="contained" onClick={handleClick}>Create</Button>
+        <Button
+          variant="contained"
+          onClick={handleClick}
+          disabled={creating}
+          startIcon={creating ? <CircularProgress size={18} /> : undefined}
+        >
+          {creating ? 'Creating...' : 'Create'}
+        </Button>
       </CardActions>
     </Card>
   )
