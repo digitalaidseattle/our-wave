@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 
 // material-ui
 import {
@@ -25,8 +25,7 @@ import {
   Select,
   Stack,
   TextField,
-  Typography,
-  CircularProgress
+  Typography
 } from '@mui/material';
 import { NavLink, useNavigate } from "react-router-dom";
 
@@ -47,6 +46,8 @@ import avatar2 from '/src/assets/images/users/avatar-2.png';
 import avatar3 from '/src/assets/images/users/avatar-3.png';
 import avatar4 from '/src/assets/images/users/avatar-4.png';
 import { cloneRecipe } from '../../transactions/CloneRecipe';
+import { LoadingContext } from '@digitalaidseattle/core';
+import LoadingButton from '../../components/LoadingButton';
 
 // avatar style
 const avatarSX = {
@@ -156,28 +157,28 @@ const CloneRecipeCard = () => {
 
 const CreateRecipeCard = () => {
   const navigate = useNavigate();
-  const [creating, setCreating] = useState(false);
+  const { loading, setLoading } = useContext(LoadingContext);
 
   function handleClick() {
-    if (creating) return;
-    setCreating(true);
+    if (loading) return;
+    setLoading(true);
     createRecipe()
       .then(recipe => navigate(`/grant-recipes/${recipe.id}`))
-      .catch(() => setCreating(false));
+      .finally(() => setLoading(false));
   }
 
   return (
     <Card>
       <CardHeader title="New Proposal" />
       <CardActions>
-        <Button
+        <LoadingButton
           variant="contained"
           onClick={handleClick}
-          disabled={creating}
-          startIcon={creating ? <CircularProgress size={18} /> : undefined}
+          loading={loading}
+          loadingText={'Creating...'}
         >
-          {creating ? 'Creating...' : 'Create'}
-        </Button>
+          Create
+        </LoadingButton>
       </CardActions>
     </Card>
   )
