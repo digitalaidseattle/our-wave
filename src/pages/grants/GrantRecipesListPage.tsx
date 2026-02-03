@@ -81,13 +81,15 @@ const GrantRecipesListPage: React.FC = () => {
     }
   }
 
-
   function handleRowSelection(model: GridRowSelectionModel) {
     if (model) {
       if (model.type === "include") {
         setSelectedIds([...model.ids as unknown as string[]]);
       } else {
-        setSelectedIds(recipes.map(elem => elem.id as string));
+        const selected = recipes
+          .map(elem => elem.id as string)
+          .filter(id => !model.ids.has(id));
+        setSelectedIds(selected);
       }
     }
   }
