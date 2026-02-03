@@ -118,7 +118,7 @@ const GrantProposalsDetailPage: React.FC = () => {
 
   const recipeLink = useMemo(() => {
     return recipe
-      ? <Typography component="span"> from <NavLink to={`/grant-recipes/${recipe.id}`}>{recipe.description}</NavLink> </Typography>
+      ? <Typography component="span">; Recipe: <NavLink to={`/grant-recipes/${recipe.id}`}>{recipe.description}</NavLink></Typography>
       : null;
   }, [recipe]);
 
@@ -144,7 +144,11 @@ const GrantProposalsDetailPage: React.FC = () => {
             <CardHeader title={<TextEdit
               value={proposal.name ? proposal.name : "Grant Proposal Detail"}
               onChange={handleNameChange} />}
-              subheader={<><Typography component="span">Generated on : {createdAtLabel}</Typography>{recipeLink}</>}
+              subheader={<>
+                <Typography component="span">Generated on: {createdAtLabel}</Typography>
+               {recipeLink}
+                <Typography component="span">; Total token count: {proposal.totalTokenCount ?? "N/A"}</Typography>
+              </>}
               action={<Clipboard text={Object.values(proposal.structuredResponse!).join('\n')} />} />
           </Card>
           {reponses.map((response) => {
@@ -156,7 +160,6 @@ const GrantProposalsDetailPage: React.FC = () => {
                   action={<Tooltip title="Copies this section of the proposal into clipboard."><Box><Clipboard text={response.value} /></Box></Tooltip>}
                 />
                 <CardContent>
-
                   <Markdown>{response.value}</Markdown>
                 </CardContent>
               </Card>
