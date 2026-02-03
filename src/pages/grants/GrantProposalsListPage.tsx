@@ -97,7 +97,8 @@ const GrantProposalsListPage: React.FC = () => {
       field: "updatedAt",
       headerName: "Last Updated",
       width: 180,
-      valueGetter: (_value, row) => DateUtils.formatDateTime(row.createdAt),
+      renderCell: (params) => <Typography>{DateUtils.formatDateTime(params.row.createdAt)}</Typography>,
+      valueGetter: (_value, row) => (row.createdAt as any).seconds,
     }
   ];
 
