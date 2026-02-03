@@ -24,11 +24,38 @@ import { GrantInfoEditor } from "./GrantInfoEditor";
 const HELP_DRAWER_WIDTH = 300;
 const HELP_TITLE = "Our Wave";
 const HELP_DICTIONARY = {
-  "Info": "Change the description for easier tracking in the application.  A rating change can aid in selecting better recipes.  Tags can help categorize recipes.",
-  "Prompt": "This prompt template is filled with text using the input and output parameters.",
-  "Inputs": "Facts to be used in the prompt.",
-  "Outputs": "Guidance for output constraints.",
-}
+  "Info": 
+    "**Description:** Give your recipe a clear, unique name so you can easily recognize it later.\n\n" +
+    "**Rating:** Optionally rate your recipe to help with sorting and organization.\n\n" +
+    "**Tags:** Add your own custom tags to group and quickly find recipes. Optional.",
+
+  "Prompt": 
+    "This is the prompt template the AI uses to generate content. You do not need to change this field to create a grant proposal.",
+
+  "Inputs": 
+    "Inputs are key–value pairs that provide facts for the AI to use.\n\n" +
+    "**Example:**\n\n" +
+    "**Key:** Mission Statement\n\n" +
+    "**Value:** At Our Wave, we provide personalized, evidence-based healing support for survivors of trauma.",
+
+  "Outputs": 
+    "Define what you want the AI to produce.\n\n" +
+    "This can include:\n\n" +
+    "• Grant questions you want answered, or\n\n" +
+    "• A template describing the task\n\n" +
+    "**Example:**\n\n" +
+    "Please provide a brief overview of your organization, including your mission. (Max 300 words)",
+    
+  "Template":
+    "Leave as “Create a grant proposal” if you want to generate a full grant proposal.",
+
+  "Project Contexts": 
+    "Add supporting information to help the AI write better responses.\n\n" +
+    "Select **“+ File”** or **“+ Text”** to provide additional context.\n\n" +
+    "Files must be uploaded from Drive. Supported formats: .doc, .docx.\n" +
+    "PDFs and Excel files are not supported."
+};
+
 
 export const TextEditor = ({ title, value, onChange }: { title: string, value: string, onChange: (updated: string) => void }) => {
   const { setHelpTopic } = useContext(HelpTopicContext);
