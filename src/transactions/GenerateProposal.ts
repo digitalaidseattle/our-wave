@@ -5,20 +5,11 @@
  *
  */
 
-import { User } from "@digitalaidseattle/core";
+import { authService } from "../App";
 import { GrantAiService } from "../pages/grants/grantAiService";
 import { grantProposalService } from "../services/grantProposalService";
 import { grantRecipeService } from "../services/grantRecipeService";
 import { GrantProposal, GrantRecipe } from "../types";
-import { authService } from "../App";
-/**
- * Returns the currently authenticated user (if available).
- */
-function getUser(): User | null | undefined {
-    if (authService) {
-        return authService.currentUser;
-    }
-}
 
 export async function generateProposal(recipe: GrantRecipe): Promise<GrantProposal> {
     const grantAiService = GrantAiService.getInstance();
@@ -33,7 +24,7 @@ export async function generateProposal(recipe: GrantRecipe): Promise<GrantPropos
         throw new Error("Recipe prompt has not been generated");
     }
 
-    const user = getUser();
+    const user = await authService.getUser();
     if (!user) {
         throw new Error("generateProposal: user.email is required");
     }
