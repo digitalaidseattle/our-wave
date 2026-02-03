@@ -230,7 +230,7 @@ const GrantRecipesDetailPage: React.FC = () => {
                       }}>
                       <Stack gap={1}>
                         <GrantInfoEditor recipe={recipe} onChange={handleInfoChange} />
-                        <TextEditor title="Template" value={recipe.prompt} onChange={handlePromptChange} />
+                        <TextEditor title="Template" value={recipe.prompt} onChange={handleTemplateChange} />
                         <GrantContextEditor onChange={handleGrantContextsChange} />
                         <GrantOutputEditor fields={recipe.outputsWithWordCount} onChange={handleGrantOutputChange} />
                         <PlainTextCard title="Prompt" value={recipe.prompt} />
