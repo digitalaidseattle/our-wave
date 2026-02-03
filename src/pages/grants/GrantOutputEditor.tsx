@@ -74,6 +74,13 @@ export const GrantOutputEditor = ({ fields, onChange }: { fields: GrantOutput[],
         <Stack spacing={2} sx={{ mt: 2 }}>
           {outputFields.map((field, index) => (
             <Stack direction="row" spacing={2} key={index} alignItems="center">
+              <Button
+                color="error"
+                aria-label="remove output field"
+                onClick={() => handleRemoveOutputField(index)}
+              >
+                <DeleteOutlined />
+              </Button>
               <TextField
                 label="Field"
                 fullWidth={true}
@@ -96,13 +103,7 @@ export const GrantOutputEditor = ({ fields, onChange }: { fields: GrantOutput[],
                   onClick={() => handleOutputUnitToggle(index)}
                 >Characters</Button>
               </ButtonGroup>
-              <Button
-                color="error"
-                onClick={() => handleRemoveOutputField(index)}
-                startIcon={<DeleteOutlined />}
-              >
-                Remove
-              </Button>
+
             </Stack>
           ))}
         </Stack>

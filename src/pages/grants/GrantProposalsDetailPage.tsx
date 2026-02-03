@@ -4,7 +4,7 @@
  * @copyright 2026 Digital Aid Seattle
 */
 import { HomeOutlined } from "@ant-design/icons";
-import { Breadcrumbs, Card, CardContent, CardHeader, IconButton, Stack, Typography } from "@mui/material";
+import { Box, Breadcrumbs, Card, CardContent, CardHeader, IconButton, Stack, Tooltip, Typography } from "@mui/material";
 import { useContext, useEffect, useMemo, useState } from "react";
 import { NavLink, useParams } from "react-router-dom";
 
@@ -12,11 +12,11 @@ import { LoadingContext } from "@digitalaidseattle/core";
 import { Clipboard } from "@digitalaidseattle/mui";
 import Markdown from "react-markdown";
 import { LoadingOverlay } from "../../components/LoadingOverlay";
+import { TextEdit } from "../../components/TextEdit";
 import { grantProposalService } from "../../services/grantProposalService";
 import { grantRecipeService } from "../../services/grantRecipeService";
 import type { GrantOutput, GrantProposal, GrantRecipe } from "../../types";
 import { DateUtils } from "../../utils/dateUtils";
-import { TextEdit } from "../../components/TextEdit";
 
 //Count words in string
 function countWords(text: string): number {
@@ -116,6 +116,12 @@ const GrantProposalsDetailPage: React.FC = () => {
     return proposal ? DateUtils.formatDateTime(proposal.createdAt) : "";
   }, [proposal?.createdAt]);
 
+  const recipeLink = useMemo(() => {
+    return recipe
+      ? <Typography component="span">; Recipe: <NavLink to={`/grant-recipes/${recipe.id}`}>{recipe.description}</NavLink></Typography>
+      : null;
+  }, [recipe]);
+
   function handleNameChange(text: string): void {
     if (proposal) {
       grantProposalService.update(proposal.id as string, { name: text } as GrantProposal)
@@ -138,7 +144,11 @@ const GrantProposalsDetailPage: React.FC = () => {
             <CardHeader title={<TextEdit
               value={proposal.name ? proposal.name : "Grant Proposal Detail"}
               onChange={handleNameChange} />}
-              subheader={`Generated on : ${createdAtLabel}`}
+              subheader={<>
+                <Typography component="span">Generated on: {createdAtLabel}</Typography>
+               {recipeLink}
+                <Typography component="span">; Total token count: {proposal.totalTokenCount ?? "N/A"}</Typography>
+              </>}
               action={<Clipboard text={Object.values(proposal.structuredResponse!).join('\n')} />} />
           </Card>
           {reponses.map((response) => {
@@ -147,7 +157,7 @@ const GrantProposalsDetailPage: React.FC = () => {
                 <CardHeader
                   title={response.name}
                   subheader={response.subheader}
-                  action={<Clipboard text={response.value} />}
+                  action={<Tooltip title="Copies this section of the proposal into clipboard."><Box><Clipboard text={response.value} /></Box></Tooltip>}
                 />
                 <CardContent>
                   <Markdown>{response.value}</Markdown>

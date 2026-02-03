@@ -33,8 +33,7 @@ const GrantProposalsListPage: React.FC = () => {
   const fetchProposals = async () => {
     try {
       setLoading(true);
-      const data = await grantProposalService.getAll();
-      setProposals(data || []);
+      setProposals(await grantProposalService.getAll())
     } catch (error) {
       console.error("Error fetching grant proposals:", error);
       setProposals([]);
@@ -95,10 +94,11 @@ const GrantProposalsListPage: React.FC = () => {
       },
     },
     {
-      field: "createdAt",
-      headerName: "Date",
+      field: "updatedAt",
+      headerName: "Last Updated",
       width: 180,
-      valueGetter: (_value, row) => DateUtils.formatDateTime(row.createdAt),
+      renderCell: (params) => <Typography>{DateUtils.formatDateTime(params.row.createdAt)}</Typography>,
+      valueGetter: (_value, row) => (row.createdAt as any).seconds,
     }
   ];
 
@@ -146,6 +146,9 @@ const GrantProposalsListPage: React.FC = () => {
             initialState={{
               pagination: {
                 paginationModel: { pageSize: 10 },
+              },
+              sorting: {
+                sortModel: [{ field: 'updatedAt', sort: 'desc' }],
               },
             }}
             pageSizeOptions={[10, 25, 50]}

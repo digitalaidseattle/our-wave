@@ -15,81 +15,74 @@
  * </ol>
  */
 
-import { firebaseClient } from "@digitalaidseattle/firebase";
-import { getAI, getGenerativeModel, GoogleAIBackend, Schema } from "firebase/ai";
-
+import { GrantContext } from "../../types";
+import { createPartFromText, createUserContent, GoogleGenAI, Part } from "@google/genai";
 class GrantAiService {
 
-    ai = getAI(firebaseClient, { backend: new GoogleAIBackend() });
+    static models = ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.5-flash-lite"];
+    static instance: GrantAiService;
+    
+    static getInstance() {
+        if (!GrantAiService.instance) {
+            GrantAiService.instance = new GrantAiService();
+        }
+        return GrantAiService.instance;
+    }
 
-    // Default model used for simple text generation
-    model = getGenerativeModel(this.ai, {
-        model: "gemini-2.5-flash"
-    });
+    //ai = getAI(firebaseClient, { backend: new GoogleAIBackend() });
+    ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
 
     /**
      * Runs a basic text generation request.
      * This is for prompts where we just want the model to return a text response.
      */
-    query(prompt: string): Promise<string> {
-        console.log("Querying AI with prompt:", prompt, this.model);
-
-        return this.model.generateContent(prompt)
-            .then(result => result.response.text())
-            .catch(error => {
-                console.error("Error querying AI:", error);
-                throw new Error("Failed to query AI: " + error.message);
-            });
+    async query(prompt: string, modelType?: string, contexts?: GrantContext[]): Promise<any> {
+        const parts = contexts ? await this.uploadFiles(contexts) : [];
+        return await this.ai.models.generateContent({
+            model: modelType ?? GrantAiService.models[0],
+            contents: createUserContent([
+                prompt, ...parts
+            ]),
+        });
     }
 
-  /**
- * Sends a prompt to the AI and tells it which fields to return.
- * 
- * You give it a list of field names (like ["Summary", "Budget"]),
- * and the AI will return a JSON object with those fields filled in.
- */
+    async uploadFiles(contexts: GrantContext[]): Promise<Part[]> {
+        return contexts.map(gc => createPartFromText(gc.value!));
+    }
 
-    parameterizedQuery(
-        schemaParams: string[],
-        prompt: string,
-        modelType: string = "gemini-2.5-flash"
-    ): Promise<Record<string, string>> {
-
-        // Build a schema where each field is expected to be a string.
-        // This tells the model exactly what shape the output should have.
-        const schema = Schema.object({
+    createSchema(schemaParams: string[]): any {
+        return {
+            type: 'object',
             properties: Object.fromEntries(
-                schemaParams.map(field => [field, Schema.string()])
+                schemaParams.map(field => [field, { type: "string" }])
             ),
-        });
-
-        // Create a model instance that will use this schema for responses.
-        const jModel = getGenerativeModel(this.ai, {
-            model: modelType,
-            generationConfig: {
+            required: schemaParams
+        };
+    }
+    /**
+     * Sends a prompt to the AI and tells it which fields to return.
+     * 
+     * You give it a list of field names (like ["Summary", "Budget"]),
+     * and the AI will return a JSON object with those fields filled in.
+     */
+    async parameterizedQuery(
+        prompt: string,
+        schemaParams: string[],
+        modelType?: string,
+        contexts?: GrantContext[],
+    ): Promise<any> {
+        const parts = contexts ? await this.uploadFiles(contexts) : [];
+        const responseSchema = this.createSchema(schemaParams);
+        return await this.ai.models.generateContent({
+            model: modelType ?? GrantAiService.models[0],
+            contents: [prompt, ...parts],
+            config: {
                 responseMimeType: "application/json",
-                responseSchema: schema
+                responseJsonSchema: responseSchema,
             },
         });
-
-        console.log("Querying AI with structured prompt:", prompt, jModel);
-
-        return jModel.generateContent(prompt)
-            .then(result => {
-                const text = result.response.text();
-
-                // We expect the model to return a valid JSON object
-                // matching the schema we provided.
-                const parsed = JSON.parse(text) as Record<string, string>;
-                return parsed;
-            })
-            .catch(error => {
-                console.error("Error querying AI (structured):", error);
-                throw new Error("Failed to query AI: " + error.message);
-            });
     }
 
 }
 
-const grantAiService = new GrantAiService();
-export { grantAiService };
+export { GrantAiService };
