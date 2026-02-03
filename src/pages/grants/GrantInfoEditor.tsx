@@ -104,6 +104,7 @@ export const GrantInfoEditor = ({ recipe, onChange }: { recipe: GrantRecipe, onC
               fullWidth={true}
               value={recipe.description ?? ""}
               placeholder="Name your recipe"
+              autoFocus
               onChange={(evt) => handleDescriptionChange(evt.target.value)} />
           </FormLabel>
           </Grid>

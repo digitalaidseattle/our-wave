@@ -14,7 +14,7 @@ export function createRecipe(): Promise<GrantRecipe> {
     return authService.getUser()
         .then((user => {
             const newRecipe = grantRecipeService.empty();
-            newRecipe.description = `Recipe created ${DateUtils.formatDateTime(new Date())}`;
+            newRecipe.description = "";
             return grantRecipeService.insert(newRecipe, undefined, undefined, user);
         }))
 }
