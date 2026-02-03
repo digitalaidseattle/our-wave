@@ -244,7 +244,6 @@ const GrantRecipesDetailPage: React.FC = () => {
                       }}>
                       <Tooltip title='Click to generate.'>
                         <SplitButton
-                          disabled={ loading || !isValid}
                           options={GrantAiService.models}
                           onClick={(model: string) => handleGenerate(model)} />
                       </Tooltip>
