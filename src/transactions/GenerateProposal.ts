@@ -6,7 +6,7 @@
  */
 
 import { User } from "@digitalaidseattle/core";
-import { grantAiService } from "../pages/grants/grantAiService";
+import { GrantAiService } from "../pages/grants/grantAiService";
 import { grantProposalService } from "../services/grantProposalService";
 import { grantRecipeService } from "../services/grantRecipeService";
 import { GrantProposal, GrantRecipe } from "../types";
@@ -20,8 +20,9 @@ function getUser(): User | null | undefined {
     }
 }
 
-// --- real generation (still returns a draft; not persisted) ---
 export async function generateProposal(recipe: GrantRecipe): Promise<GrantProposal> {
+    const grantAiService = GrantAiService.getInstance();
+
     const outputs = recipe.outputsWithWordCount ?? [];
     if (outputs.length === 0) {
         throw new Error("Recipe is missing output fields");
@@ -52,17 +53,23 @@ export async function generateProposal(recipe: GrantRecipe): Promise<GrantPropos
 
     // Ask AI for structured JSON using output field names as keys
     const schemaParams = outputs.map((o) => o.name);
-    const structuredResponse = await grantAiService.parameterizedQuery(
-        schemaParams,
+    const response = await grantAiService.parameterizedQuery(
         recipe.prompt,
-        recipe.modelType
+        schemaParams,
+        recipe.modelType,
+        recipe.contexts,
     );
+
+    console.log(response);
 
     const proposal = {
         ...grantProposalService.empty(),
+        name: `${savedRecipe.description} (${savedRecipe.proposalIds.length + 1})`,
         grantRecipeId: String(savedRecipe.id),
-        structuredResponse,
+        structuredResponse: JSON.parse(response.text!),
         rating: null,
+        totalTokenCount: response.usageMetadata ? response.usageMetadata.totalTokenCount : null,
+        model: recipe.modelType
     };
 
     return grantProposalService.insert(proposal,

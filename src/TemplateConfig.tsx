@@ -4,13 +4,15 @@
  *  @copyright 2025 Digital Aid Seattle
  *
  */
-import { Box } from "@mui/material";
+import { Link } from 'react-router-dom';
+
 import {
     DashboardOutlined,
     FormOutlined
 } from '@ant-design/icons';
-import logo from "./assets/images/our-wave-logo.jpeg";
 import { HelpButton, MenuItem } from "@digitalaidseattle/mui";
+import { Box } from "@mui/material";
+import logo from "./assets/images/our-wave-logo.jpeg";
 
 export const NAVIGATION_DRAWER_WIDTH = 240;
 export const TemplateConfig = () => {
@@ -38,7 +40,7 @@ export const TemplateConfig = () => {
                 type: 'item',
                 url: '/grant-proposals',
                 icon: <FormOutlined />,
-              } as MenuItem
+            } as MenuItem
 
         ],
     } as MenuItem;
@@ -50,6 +52,14 @@ export const TemplateConfig = () => {
         menuItems: [topLevel],
         toolbarItems: [
             <Box key={1}><HelpButton /></Box >
+        ],
+        profileItems: [
+            <Link
+                style={{ 'textDecoration': 'none' }}
+                color="secondary"
+                to={`/privacy`}>
+                Privacy Policy
+            </Link>
         ],
         version: '0.0.1'
     });
