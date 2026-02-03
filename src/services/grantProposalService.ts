@@ -1,74 +1,83 @@
-import { FirestoreService } from "@digitalaidseattle/firebase";
-import type { GrantProposal, GrantRecipe } from "../types";
 import type { Identifier, User } from "@digitalaidseattle/core";
+import { FirestoreService } from "@digitalaidseattle/firebase";
+import { authService } from "../App";
+import type { GrantProposal } from "../types";
 
-// Firestore service for "grant-proposal" collection
 class GrantProposalService extends FirestoreService<GrantProposal> {
-
   constructor() {
-    super("grant-proposal"); // Firestore collection name
+    super("grant-proposal");
   }
 
-  // Returns a blank proposal with default values with optional fields (textResponse, structuredResponse)
+  // Default shape for a new proposal
   empty(): GrantProposal {
     const now = new Date();
     return {
       id: undefined,
       createdAt: now,
       createdBy: "",
+      updatedAt: now,
+      updatedBy: "",
       grantRecipeId: "",
+      name: "",
       rating: null,
+      structuredResponse: undefined,
+      totalTokenCount: null,
+      model: ""
     };
   }
 
-  // Create: adds createdAt and createdBy before saving
+  // Insert a new proposal with metadata added
   async insert(
     entity: GrantProposal,
     select?: string,
     mapper?: (json: any) => GrantProposal,
-    user?: User): Promise<GrantProposal> {
+    user?: User
+  ): Promise<GrantProposal> {
+    const sessionUser = user ?? await authService.getUser();
+    if (!sessionUser) throw new Error("Valid user not found.");
 
-    if (!user?.email) throw new Error("grantProposalService.insert: user.email is required");
     const now = new Date();
+    // Firestore can't store `undefined` (and we don't want to persist id anyway)
+    // so remove it before insert.
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { id, ...entityWithoutId } = entity;
 
     return super.insert(
       {
-        ...entity,
+        ...entityWithoutId,
         createdAt: now,
-        createdBy: user.email,
-      },
+        createdBy: sessionUser.email,
+        updatedAt: now,
+        updatedBy: sessionUser.email,
+      } as GrantProposal,
       select,
       mapper,
       user
     );
   }
 
-  // Update: refreshes createdBy if needed (optional behavior)
+  // Update a proposal
   async update(
     entityId: Identifier,
-    updatedFields: GrantProposal,
+    updatedFields: Partial<GrantProposal>,
     select?: string,
     mapper?: (json: any) => GrantProposal,
     user?: User
   ): Promise<GrantProposal> {
-    if (!user?.email) throw new Error("grantProposalService.update: user.email is required");
+    const sessionUser = user ?? await authService.getUser();
+    if (!sessionUser) throw new Error("Valid user not found.");
 
-    return super.update(
-      entityId,
-      {
-        ...updatedFields,
-        createdBy: user.email, // reuse same metadata pattern
-      },
-      select,
-      mapper,
-      user
-    );
-  }
-
-  // Consider moving to a service independent of this one.  
-  // That service map depend on multiple services (e.g. validation, entity-management)
-  async generate(_recipe: GrantRecipe): Promise<GrantProposal> {
-    throw new Error("Method not implemented.");
+    const partial = {
+      ...updatedFields,
+      updatedAt: new Date(),
+      updatedBy: sessionUser.email
+    } as GrantProposal;
+    try {
+      return super.update(entityId, partial, select, mapper, sessionUser)
+    } catch (e) {
+      console.error("Error updating document: ", e);
+      throw e;
+    }
   }
 }
 

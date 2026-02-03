@@ -1,48 +1,61 @@
 /**
  * grants/types.ts
-*
-*/
+ */
 
-import { Entity } from "@digitalaidseattle/core";
-
+import { Entity, Identifier } from "@digitalaidseattle/core";
 
 export type Timestamp = {
-    seconds: number;
-    nanoseconds: number;
-}
+  seconds: number;
+  nanoseconds: number;
+};
 
 export type GrantInput = {
-    key: string;
-    value: string;
-}
+  key: string;
+  value: string;
+};
 
 export type GrantOutput = {
-    name: string;
-    maxWords: number;
-    unit: 'word' | 'char';
+  name: string;
+  maxWords: number;
+  unit: 'words' | 'characters';
+}
+
+export type GrantContext = {
+  type: "text" | "file";
+  filePath?: string;
+  name: string | null;
+  value: string | null;
+  tokenCount: number;
 }
 
 export type GrantRecipe = Entity & {
-    createdAt: Timestamp | Date;
-    createdBy: string;
-    updatedAt: Timestamp | Date;
-    updatedBy: string;
-    description: string;
-    prompt: string;  // Instructions for AI
-    inputParameters: GrantInput[]; // AI will be asked to include this information
-    outputsWithWordCount: GrantOutput[]; // AI will be based to output the data with these constraints
-    tokenString: string;  // Store what will be sent to AI
-    tokenCount: number;
-    proposalIds: string[];
-    modelType: string;  // "gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.5-flash-lite";
-}
+  createdAt: Timestamp | Date;
+  createdBy: string;
+  updatedAt: Timestamp | Date;
+  updatedBy: string;
+  lastSubmitted: Timestamp | Date | null;
+  description: string;
+  rating: number;
+  tags: string[];
+  template: string;
+  prompt: string;
+  contexts: GrantContext[];
+  inputParameters: GrantInput[];
+  outputsWithWordCount: GrantOutput[];
+  tokenCount: number;
+  proposalIds: string[];
+  modelType: string; // "gemini-2.5-flash", etc.
+};
 
 export type GrantProposal = Entity & {
-    createdAt: Timestamp | Date;
-    createdBy: string;
-    grantRecipeId: string;
-    rating: number | null;  // Allow User to rate the response
-    textResponse?: string;  // Store AI respons3
-    structuredResponse?: { [key: string]: string }; // Store AI structured response
-}
-
+  createdAt: Timestamp | Date;
+  createdBy: string;
+  updatedAt: Timestamp | Date;
+  updatedBy: string;
+  grantRecipeId: Identifier;
+  name: string;
+  rating: number | null;
+  structuredResponse?: { [key: string]: string };
+  totalTokenCount: number | null;
+  model: string;
+};
