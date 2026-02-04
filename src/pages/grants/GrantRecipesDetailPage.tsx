@@ -230,11 +230,9 @@ const GrantRecipesDetailPage: React.FC = () => {
                       borderColor: "divider",
                       justifyContent: "flex-end",
                     }}>
-                    <Tooltip title='Click to generate.'>
-                      <SplitButton
-                        options={GrantAiService.models}
-                        onClick={(model: string) => handleGenerate(model)} />
-                    </Tooltip>
+                    <SplitButton
+                      options={GrantAiService.models.map(m => ({ label: `Generate with ${m}`, value: m })) }
+                      onClick={(model: string) => handleGenerate(model)} />
                     <Button variant="contained" disabled={loading} onClick={() => handleClone()}>Clone</Button>
                     <Divider orientation="vertical" />
                     <Button variant="contained" disabled={loading || !dirty} onClick={() => saveRecipe()}>Save</Button>

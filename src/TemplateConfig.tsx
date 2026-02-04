@@ -13,6 +13,8 @@ import {
 import { HelpButton, MenuItem } from "@digitalaidseattle/mui";
 import { Box } from "@mui/material";
 import logo from "./assets/images/our-wave-logo.jpeg";
+import { createTheme } from '@mui/material/styles';
+import type {} from "@mui/x-data-grid/themeAugmentation";
 
 export const NAVIGATION_DRAWER_WIDTH = 240;
 export const TemplateConfig = () => {
@@ -45,6 +47,18 @@ export const TemplateConfig = () => {
         ],
     } as MenuItem;
 
+    const theme = createTheme({
+        components: {
+            MuiDataGrid: {
+                styleOverrides: {
+                    columnHeaderTitle: {
+                        fontWeight: 600, // or 700, etc
+                    },
+                },
+            },
+        },
+    });
+
     return ({
         appName: 'Our Wave',
         logoUrl: logo,
@@ -61,6 +75,7 @@ export const TemplateConfig = () => {
                 Privacy Policy
             </Link>
         ],
+        theme: theme,
         version: '0.0.1'
     });
 }
