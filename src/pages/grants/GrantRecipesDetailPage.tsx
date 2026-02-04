@@ -5,23 +5,23 @@
 */
 import { HomeOutlined, InfoCircleOutlined } from "@ant-design/icons";
 import { LoadingContext, useHelp, useNotifications } from "@digitalaidseattle/core";
-import { Box, Breadcrumbs, Button, Card, CardActions, CardContent, CardHeader, Divider, IconButton, Stack, TextField, Tooltip, Typography } from "@mui/material";
+import { Box, Breadcrumbs, Button, Card, CardActions, CardContent, CardHeader, Divider, IconButton, Stack, TextField, Typography } from "@mui/material";
 import { useContext, useEffect, useState } from "react";
 import { NavLink, useNavigate, useParams } from "react-router-dom";
+import { GrantRecipeContext } from "../../components/GrantRecipeContext";
 import { HelpDrawer } from "../../components/HelpDrawer";
 import { HelpTopicContext } from "../../components/HelpTopicContext";
 import { LoadingOverlay } from "../../components/LoadingOverlay";
+import { SplitButton } from "../../components/SplitButton";
 import { grantRecipeService } from "../../services/grantRecipeService";
 import { cloneRecipe } from "../../transactions/CloneRecipe";
+import { generateProposal } from "../../transactions/GenerateProposal";
 import { GrantOutput, GrantRecipe, Timestamp } from "../../types";
+import { DateUtils } from "../../utils/dateUtils";
+import { GrantAiService } from "./grantAiService";
+import { GrantContextEditor } from "./GrantContextEditor";
 import { GrantInfoEditor } from "./GrantInfoEditor";
 import { GrantOutputEditor } from "./GrantOutputEditor";
-import { GrantContextEditor } from "./GrantContextEditor";
-import { GrantRecipeContext } from "../../components/GrantRecipeContext";
-import { generateProposal } from "../../transactions/GenerateProposal";
-import { DateUtils } from "../../utils/dateUtils";
-import { SplitButton } from "../../components/SplitButton";
-import { GrantAiService } from "./grantAiService";
 
 const HELP_DRAWER_WIDTH = 300;
 const HELP_TITLE = "Our Wave";
