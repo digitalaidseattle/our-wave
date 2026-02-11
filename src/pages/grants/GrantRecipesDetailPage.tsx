@@ -88,6 +88,11 @@ const GrantRecipesDetailPage: React.FC = () => {
   const [dirty, setDirty] = useState<boolean>(false);
   const { showHelp } = useHelp();
   const [helpTopic, setHelpTopic] = useState<string | undefined>();
+  const [isValid, setIsValid] = useState<boolean>(false);
+
+  useEffect(() => {
+    setIsValid((recipe?.description ?? "").trim().length > 0);
+  }, [recipe?.description]);
 
   useEffect(() => {
     if (id) {
@@ -106,7 +111,10 @@ const GrantRecipesDetailPage: React.FC = () => {
   }, [recipe]);
 
   function saveRecipe() {
-    setLoading(true);
+    if (!isValid) {
+      notifications.error("Please name your recipe before saving.");
+      return;
+    }
     grantRecipeService.update(recipe.id!, recipe)
       .then(saved => {
         setRecipe(saved);
@@ -121,6 +129,11 @@ const GrantRecipesDetailPage: React.FC = () => {
   }
 
   function handleClone() {
+    if (!isValid) {
+      notifications.error("Please name your recipe before cloning.");
+      return;
+    }
+
     setLoading(true);
     cloneRecipe(recipe)
       .then(cloned => {
@@ -141,7 +154,6 @@ const GrantRecipesDetailPage: React.FC = () => {
       generateProposal(recipe)
         .then(proposal => {
           notifications.success(`Proposal generated for ${recipe.description}.`);
-          //Navigate to proposal detail
           navigate(`/grant-proposals/${proposal.id}`);
         })
         .catch((err: any) => {
@@ -188,64 +200,64 @@ const GrantRecipesDetailPage: React.FC = () => {
     <>
       <LoadingOverlay />
       <HelpTopicContext.Provider value={{ helpTopic, setHelpTopic }} >
-        <GrantRecipeContext.Provider value={{ recipe, setRecipe }} >
-          <Breadcrumbs aria-label="breadcrumbs">
-            <NavLink to="/" ><IconButton size="medium"><HomeOutlined /></IconButton></NavLink>
-            <NavLink to={`/grant-recipes`} >Recipes</NavLink>
-            <Typography color="text.primary">Recipe Detail</Typography>
-          </Breadcrumbs>
-          <Box gap={4}>
-            {recipe &&
-              <Stack sx={{
-                height: "calc(100dvh - 112px)",
-                gap: 2,
-                marginRight: `${showHelp ? HELP_DRAWER_WIDTH : 0}px`
-              }}>
-                <Card
-                  sx={{
-                    height: "100%",
-                    display: "flex",
-                    flexDirection: "column",
-                  }}
-                >
-                  <CardHeader title={recipe.description}
-                    action={`Token count = ${recipe.tokenCount}`}
-                    subheader={`Last updated: ${lastUpdated}`} />
-                  <CardContent
-                    sx={{
-                      flex: 1,
-                      overflowY: "auto",
-                    }}>
-                    <Stack gap={1}>
-                      <GrantInfoEditor recipe={recipe} onChange={handleInfoChange} />
-                      <TextEditor title="Template" value={recipe.template} onChange={handleTemplateChange} />
-                      <GrantContextEditor onChange={handleGrantContextsChange} />
-                      <GrantOutputEditor fields={recipe.outputsWithWordCount} onChange={handleGrantOutputChange} />
-                      <PlainTextCard title="Prompt" value={recipe.prompt} />
-                    </Stack>
-                  </CardContent>
-                  <CardActions
-                    sx={{
-                      borderTop: "1px solid",
-                      borderColor: "divider",
-                      justifyContent: "flex-end",
-                    }}>
-                    <Tooltip title='Click to generate.'>
-                      <SplitButton
-                        options={GrantAiService.models}
-                        onClick={(model: string) => handleGenerate(model)} />
-                    </Tooltip>
-                    <Button variant="contained" disabled={loading} onClick={() => handleClone()}>Clone</Button>
-                    <Divider orientation="vertical" />
-                    <Button variant="contained" disabled={loading || !dirty} onClick={() => saveRecipe()}>Save</Button>
-                  </CardActions>
-                </Card>
-              </Stack>
-            }
-            <HelpDrawer title={HELP_TITLE} width={HELP_DRAWER_WIDTH} dictionary={HELP_DICTIONARY} />
-          </Box>
-        </GrantRecipeContext.Provider >
-      </HelpTopicContext.Provider >
+         <GrantRecipeContext.Provider value={{ recipe, setRecipe }} >
+           <Breadcrumbs aria-label="breadcrumbs">
+              <NavLink to="/" ><IconButton size="medium"><HomeOutlined /></IconButton></NavLink>
+              <NavLink to={`/grant-recipes`} >Recipes</NavLink>
+              <Typography color="text.primary">Recipe Detail</Typography>
+            </Breadcrumbs>
+            <Box gap={4}>
+              {recipe &&
+                  <Stack sx={{
+                    height: "calc(100dvh - 112px)",
+                    gap: 2,
+                    marginRight: `${showHelp ? HELP_DRAWER_WIDTH : 0}px`
+                  }}>
+                  <Card
+                      sx={{
+                        height: "100%",
+                        display: "flex",
+                        flexDirection: "column",
+                      }}
+                    >
+                    <CardHeader title={recipe.description ?? ""}
+                      action={`Token count = ${recipe.tokenCount}`}
+                      subheader={`Last updated: ${lastUpdated}`} />
+                    <CardContent
+                      sx={{
+                        flex: 1,
+                        overflowY: "auto",
+                      }}>
+                      <Stack gap={1}>
+                        <GrantInfoEditor recipe={recipe} onChange={handleInfoChange} />
+                        <TextEditor title="Template" value={recipe.prompt} onChange={handleTemplateChange} />
+                        <GrantContextEditor onChange={handleGrantContextsChange} />
+                        <GrantOutputEditor fields={recipe.outputsWithWordCount} onChange={handleGrantOutputChange} />
+                        <PlainTextCard title="Prompt" value={recipe.prompt} />
+                      </Stack>
+                    </CardContent>
+                    <CardActions
+                      sx={{
+                        borderTop: "1px solid",
+                        borderColor: "divider",
+                        justifyContent: "flex-end",
+                      }}>
+                      <Tooltip title='Click to generate.'>
+                        <SplitButton
+                          options={GrantAiService.models}
+                          onClick={(model: string) => handleGenerate(model)} />
+                      </Tooltip>
+                      <Button variant="contained" disabled={loading || !isValid} onClick={() => handleClone()}>Clone</Button>
+                      <Divider orientation="vertical" />
+                      <Button variant="contained" disabled={loading || !dirty || !isValid} onClick={() => saveRecipe()}>Save</Button>
+                    </CardActions>
+                  </Card>
+                </Stack>
+                }
+              <HelpDrawer title={HELP_TITLE} width={HELP_DRAWER_WIDTH} dictionary={HELP_DICTIONARY} />
+            </Box>
+         </GrantRecipeContext.Provider >
+     </HelpTopicContext.Provider>
     </>
   );
 
