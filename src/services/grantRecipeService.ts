@@ -1,23 +1,13 @@
 import type { Identifier, User } from "@digitalaidseattle/core";
 import { FirestoreService } from "@digitalaidseattle/firebase";
-import type { GrantRecipe } from "../types";
 import Handlebars from "handlebars";
 import { authService } from "../App";
+import type { GrantRecipe } from "../types";
 
 class GrantRecipeService extends FirestoreService<GrantRecipe> {
   constructor() {
     super("grant-recipes");
   }
-
-  /**
-   * Returns the currently authenticated user (if available).
-   */
-  getUser(): User | null | undefined {
-    if (authService) {
-      return authService.currentUser;
-    }
-  }
-
   /**
    * Creates a blank recipe with default values.
    */
@@ -55,7 +45,7 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
     mapper?: (json: any) => GrantRecipe,
     user?: User
   ): Promise<GrantRecipe> {
-    const sessionUser = user ?? this.getUser();
+    const sessionUser = user ?? await authService.getUser();
     if (!sessionUser?.email) {
       throw new Error("grantRecipeService.insert: user.email is required");
     }
@@ -92,7 +82,7 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
     mapper?: (json: any) => GrantRecipe,
     user?: User
   ): Promise<GrantRecipe> {
-    const sessionUser = user ?? this.getUser();
+    const sessionUser = user ?? await authService.getUser();
     if (!sessionUser) {
       throw new Error("No valid user found.");
     }

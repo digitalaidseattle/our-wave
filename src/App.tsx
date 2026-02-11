@@ -15,13 +15,13 @@ import {
   HelpContextProvider,
   UserContextProvider
 } from "@digitalaidseattle/core";
-import { FirebaseAuthService } from "@digitalaidseattle/firebase";
 import { LayoutConfigurationProvider } from "@digitalaidseattle/mui";
 
 import { routes } from './pages/routes';
 import { TemplateConfig } from './TemplateConfig';
 
 import "./App.css";
+import { FirebaseAuthService } from './services/FirebaseAuthService';
 
 // ==============================|| APP - THEME, ROUTER, LOCAL  ||============================== //
 
