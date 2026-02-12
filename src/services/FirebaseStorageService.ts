@@ -12,7 +12,6 @@ import { getStorage, ref, getBytes, getDownloadURL, uploadBytes } from "firebase
 
 export class FirebaseStorageService implements StorageService {
 
-
     storage = getStorage(firebaseClient);
     decoder = new TextDecoder("utf-8");
 
@@ -32,17 +31,16 @@ export class FirebaseStorageService implements StorageService {
         }
     }
 
-    list(filepath?: string): Promise<any[]> {
+    list(_filepath?: string): Promise<any[]> {
         throw new Error("Method not implemented.");
     }
 
-    getUrl(filepath: string): string {
+    getUrl(_filepath: string): string {
         throw new Error("Method not implemented.");
     }
 
     async getDownloadURL(filepath: string): Promise<string> {
-        const storage = getStorage();
-        const fileRef = ref(storage, filepath);
+        const fileRef = ref(this.storage, filepath);
         return await getDownloadURL(fileRef);
     }
 
@@ -59,11 +57,11 @@ export class FirebaseStorageService implements StorageService {
         return downloadUrl;
     }
 
-    downloadBlob(filepath: string): Promise<Blob | null> {
+    downloadBlob(_filepath: string): Promise<Blob | null> {
         throw new Error("Method not implemented.");
     }
 
-    removeFile(fileName: string): Promise<any> {
+    removeFile(_fileName: string): Promise<any> {
         throw new Error("Method not implemented.");
     }
 }
