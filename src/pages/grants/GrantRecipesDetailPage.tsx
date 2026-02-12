@@ -22,6 +22,7 @@ import { generateProposal } from "../../transactions/GenerateProposal";
 import { DateUtils } from "../../utils/dateUtils";
 import { SplitButton } from "../../components/SplitButton";
 import { GrantAiService } from "./grantAiService";
+import { saveRecipe } from "../../transactions/SaveRecipe";
 
 const HELP_DRAWER_WIDTH = 300;
 const HELP_TITLE = "Our Wave";
@@ -110,12 +111,9 @@ const GrantRecipesDetailPage: React.FC = () => {
     }
   }, [recipe]);
 
-  function saveRecipe() {
-    if (!isValid) {
-      notifications.error("Please name your recipe before saving.");
-      return;
-    }
-    grantRecipeService.update(recipe.id!, recipe)
+  function doSave() {
+    setLoading(true);
+    saveRecipe(recipe)
       .then(saved => {
         setRecipe(saved);
         setDirty(false);

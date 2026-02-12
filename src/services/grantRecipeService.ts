@@ -87,13 +87,10 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
       throw new Error("No valid user found.");
     }
 
-    const prompt = this.generatePromptWithInputs(updatedFields);
-
     return super.update(
       entityId,
       {
         ...updatedFields,
-        prompt,
         updatedAt: new Date(),
         updatedBy: sessionUser.email,
       },

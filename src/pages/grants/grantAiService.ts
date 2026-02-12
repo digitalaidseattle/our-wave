@@ -15,13 +15,15 @@
  * </ol>
  */
 
+import { createPartFromText, createPartFromUri, createUserContent, GoogleGenAI, Part } from "@google/genai";
 import { GrantContext } from "../../types";
-import { createPartFromText, createUserContent, GoogleGenAI, Part } from "@google/genai";
+import { fileToBase64 } from "../../utils/fileUtils";
+import { log } from "console";
 class GrantAiService {
 
     static models = ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.5-flash-lite"];
     static instance: GrantAiService;
-    
+
     static getInstance() {
         if (!GrantAiService.instance) {
             GrantAiService.instance = new GrantAiService();
@@ -83,6 +85,38 @@ class GrantAiService {
         });
     }
 
+    async calcTokenCount(model: string, content: string): Promise<number> {
+        return this.ai.models
+            .countTokens({
+                model: model,
+                contents: ["Count tokens for this document", content]
+            })
+            .then(response => response.totalTokens ?? 0);
+    }
+
+    async calcFileTokenCount(model: string, file: File): Promise<number> {
+        // const bytes = await fileToBase64(file);
+        console.log("Calculating token count for file:", file);
+        const uploaded = await this.ai.files.upload({
+            file: file,
+            config: { mimeType: file.type },
+        });
+
+        return this.ai.models
+            .countTokens(
+                {
+                    model: model,
+                    contents: createUserContent([
+                        "Count tokens for this document",
+                        createPartFromUri(uploaded.uri!, uploaded.mimeType!),
+                    ])
+                })
+            .then(response => response.totalTokens ?? 0)
+            .catch(err => {
+                console.error("Error calculating token count for file", err);
+                return 0;
+            })
+    }
 }
 
 export { GrantAiService };
