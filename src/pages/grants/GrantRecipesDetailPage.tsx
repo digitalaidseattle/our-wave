@@ -88,6 +88,11 @@ const GrantRecipesDetailPage: React.FC = () => {
   const [dirty, setDirty] = useState<boolean>(false);
   const { showHelp } = useHelp();
   const [helpTopic, setHelpTopic] = useState<string | undefined>();
+  const [isValid, setIsValid] = useState<boolean>(false);
+
+  useEffect(() => {
+    setIsValid((recipe?.description ?? "").trim().length > 0);
+  }, [recipe?.description]);
 
   useEffect(() => {
     if (id) {
@@ -106,7 +111,10 @@ const GrantRecipesDetailPage: React.FC = () => {
   }, [recipe]);
 
   function saveRecipe() {
-    setLoading(true);
+    if (!isValid) {
+      notifications.error("Please name your recipe before saving.");
+      return;
+    }
     grantRecipeService.update(recipe.id!, recipe)
       .then(saved => {
         setRecipe(saved);
@@ -121,6 +129,11 @@ const GrantRecipesDetailPage: React.FC = () => {
   }
 
   function handleClone() {
+    if (!isValid) {
+      notifications.error("Please name your recipe before cloning.");
+      return;
+    }
+
     setLoading(true);
     cloneRecipe(recipe)
       .then(cloned => {
@@ -141,7 +154,6 @@ const GrantRecipesDetailPage: React.FC = () => {
       generateProposal(recipe)
         .then(proposal => {
           notifications.success(`Proposal generated for ${recipe.description}.`);
-          //Navigate to proposal detail
           navigate(`/grant-proposals/${proposal.id}`);
         })
         .catch((err: any) => {
@@ -233,9 +245,9 @@ const GrantRecipesDetailPage: React.FC = () => {
                     <SplitButton
                       options={GrantAiService.models.map(m => ({ label: `Generate with ${m}`, value: m }))}
                       onClick={(model: string) => handleGenerate(model)} />
-                    <Button variant="contained" disabled={loading} onClick={() => handleClone()}>Clone</Button>
+                    <Button variant="contained" disabled={loading || !isValid} onClick={() => handleClone()}>Clone</Button>
                     <Divider orientation="vertical" />
-                    <Button variant="contained" disabled={loading || !dirty} onClick={() => saveRecipe()}>Save</Button>
+                    <Button variant="contained" disabled={loading || !dirty || !isValid} onClick={() => saveRecipe()}>Save</Button>
                   </CardActions>
                 </Card>
               </Stack>
