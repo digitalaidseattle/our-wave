@@ -247,7 +247,7 @@ const GrantRecipesDetailPage: React.FC = () => {
                       </Tooltip>
                       <Button variant="contained" disabled={loading || !isValid} onClick={() => handleClone()}>Clone</Button>
                       <Divider orientation="vertical" />
-                      <Button variant="contained" disabled={loading || !dirty || !isValid} onClick={() => saveRecipe()}>Save</Button>
+                      <Button variant="contained" disabled={loading || !dirty || !isValid} onClick={() => doSave()}>Save</Button>
                     </CardActions>
                   </Card>
                 </Stack>

@@ -16,9 +16,11 @@
  */
 
 import { createPartFromText, createPartFromUri, createUserContent, GoogleGenAI, Part } from "@google/genai";
+import { storageService } from "../../App";
 import { GrantContext } from "../../types";
-import { fileToBase64 } from "../../utils/fileUtils";
-import { log } from "console";
+
+const GLOUD_FOLDER = import.meta.env.VITE_FIREBASE_STORAGE_FOLDER;
+
 class GrantAiService {
 
     static models = ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.5-flash-lite"];
@@ -39,7 +41,7 @@ class GrantAiService {
      * This is for prompts where we just want the model to return a text response.
      */
     async query(prompt: string, modelType?: string, contexts?: GrantContext[]): Promise<any> {
-        const parts = contexts ? await this.uploadFiles(contexts) : [];
+        const parts = this.createParts(contexts ?? []);
         return await this.ai.models.generateContent({
             model: modelType ?? GrantAiService.models[0],
             contents: createUserContent([
@@ -48,8 +50,17 @@ class GrantAiService {
         });
     }
 
-    async uploadFiles(contexts: GrantContext[]): Promise<Part[]> {
-        return contexts.map(gc => createPartFromText(gc.value!));
+    createParts(contexts: GrantContext[]): Part[] {
+        const parts: Part[] = [];
+        contexts.forEach(async (gc, idx) => {
+            if (gc.type === 'text') {
+                parts.push(createPartFromText(gc.value!));
+            } else {
+                const uri = await storageService.getDownloadURL(`${GLOUD_FOLDER}/${gc.name}`);
+                parts.push(createPartFromUri(uri, contexts[idx].type));
+            }
+        });
+        return parts;
     }
 
     createSchema(schemaParams: string[]): any {
@@ -73,7 +84,8 @@ class GrantAiService {
         modelType?: string,
         contexts?: GrantContext[],
     ): Promise<any> {
-        const parts = contexts ? await this.uploadFiles(contexts) : [];
+        const parts = this.createParts(contexts ?? []);
+        console.log('parameterizedQuery parts:', parts);
         const responseSchema = this.createSchema(schemaParams);
         return await this.ai.models.generateContent({
             model: modelType ?? GrantAiService.models[0],

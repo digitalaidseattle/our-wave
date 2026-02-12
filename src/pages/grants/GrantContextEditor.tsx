@@ -10,11 +10,11 @@ import React, { useContext, useEffect, useState } from 'react';
 
 import { useHelp, useNotifications } from '@digitalaidseattle/core';
 import { geminiService } from '../../api/geminiService';
-import { FileUploadDialog } from '../../components/FileUploadDialog';
 import { GrantRecipeContext } from '../../components/GrantRecipeContext';
 import { HelpTopicContext } from '../../components/HelpTopicContext';
 import { GrantContext, GrantRecipe } from '../../types';
 import { GrantAiService } from './grantAiService';
+import { FileUploadDialog } from '../../components/FileUploadDialog';
 
 const SUPPORTED_FILE_TYPES = [
     "text/plain",
@@ -116,6 +116,7 @@ export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ onChange
 
     async function handleFileUpload(files: File[] | null) {
         if (files) {
+            
             const contexts = files
                 .filter(file => {
                     if (!SUPPORTED_FILE_TYPES.includes(file.type)) {
