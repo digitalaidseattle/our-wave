@@ -5,7 +5,8 @@
 */
 import { HomeOutlined, InfoCircleOutlined } from "@ant-design/icons";
 import { LoadingContext, useHelp, useNotifications } from "@digitalaidseattle/core";
-import { Box, Breadcrumbs, Button, Card, CardActions, CardContent, CardHeader, Divider, IconButton, Stack, TextField, Tooltip, Typography } from "@mui/material";
+import { Box, Breadcrumbs, Button, Card, CardActions, CardContent, CardHeader, Divider, IconButton, Stack, TextField, Tooltip, Typography, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from "@mui/material";
+import DeleteIcon from '@mui/icons-material/Delete';
 import { useContext, useEffect, useState } from "react";
 import { NavLink, useNavigate, useParams } from "react-router-dom";
 import { HelpDrawer } from "../../components/HelpDrawer";
@@ -78,10 +79,8 @@ export const PlainTextCard = ({ title, value }: { title: string, value: string }
 
 const GrantRecipesDetailPage: React.FC = () => {
   const { id } = useParams<string>();
-
   const notifications = useNotifications();
   const navigate = useNavigate();
-
   const { loading, setLoading } = useContext(LoadingContext);
   const [recipe, setRecipe] = useState<GrantRecipe>({ id: 'test', description: 'test' } as GrantRecipe);
   const [lastUpdated, setLastUpdated] = useState<string>("");
@@ -89,6 +88,8 @@ const GrantRecipesDetailPage: React.FC = () => {
   const { showHelp } = useHelp();
   const [helpTopic, setHelpTopic] = useState<string | undefined>();
   const [isValid, setIsValid] = useState<boolean>(false);
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     setIsValid((recipe?.description ?? "").trim().length > 0);
@@ -196,6 +197,31 @@ const GrantRecipesDetailPage: React.FC = () => {
       })
   }
 
+  const handleDeleteClick = () => {
+    setOpenDeleteDialog(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!recipe || !recipe.id) return;
+
+    try {
+      setIsDeleting(true);
+      await grantRecipeService.delete(recipe.id);
+      notifications.success("Recipe deleted successfully");
+      setOpenDeleteDialog(false);
+      navigate('/grant-recipes');
+    } catch (error) {
+      console.error('Failed to delete recipe:', error);
+      notifications.error("Failed to delete recipe. Please try again.");
+      setOpenDeleteDialog(false);
+      setIsDeleting(false);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setOpenDeleteDialog(false);
+  };
+
   return (recipe &&
     <>
       <LoadingOverlay />
@@ -250,7 +276,48 @@ const GrantRecipesDetailPage: React.FC = () => {
                       <Button variant="contained" disabled={loading || !isValid} onClick={() => handleClone()}>Clone</Button>
                       <Divider orientation="vertical" />
                       <Button variant="contained" disabled={loading || !dirty || !isValid} onClick={() => saveRecipe()}>Save</Button>
+                      <Button
+                        variant="outlined"
+                        color="error"
+                        startIcon={<DeleteIcon />}
+                        onClick={handleDeleteClick}
+                        disabled={isDeleting}
+                      >
+                        Delete
+                      </Button>
                     </CardActions>
+
+                    {/* Delete Confirmation Dialog */}
+                    <Dialog
+                      open={openDeleteDialog}
+                      onClose={handleDeleteCancel}
+                      aria-labelledby="alert-dialog-title"
+                      aria-describedby="alert-dialog-description"
+                    >
+                      <DialogTitle id="alert-dialog-title">
+                        Delete Recipe?
+                      </DialogTitle>
+                      <DialogContent>
+                        <DialogContentText id="alert-dialog-description">
+                          Are you sure you want to delete "<strong>{recipe?.description}</strong>"? 
+                          This action cannot be undone. Any proposals generated from this recipe will remain, 
+                          but they won't be able to regenerate.
+                        </DialogContentText>
+                      </DialogContent>
+                      <DialogActions>
+                        <Button onClick={handleDeleteCancel} disabled={isDeleting}>
+                          Cancel
+                        </Button>
+                        <Button
+                          onClick={handleDeleteConfirm}
+                          color="error"
+                          variant="contained"
+                          disabled={isDeleting}
+                        >
+                          {isDeleting ? 'Deleting...' : 'Delete'}
+                        </Button>
+                      </DialogActions>
+                    </Dialog>
                   </Card>
                 </Stack>
                 }
