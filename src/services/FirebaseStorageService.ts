@@ -8,7 +8,12 @@
 
 import { StorageService } from "@digitalaidseattle/core";
 import { firebaseClient } from "@digitalaidseattle/firebase";
-import { getStorage, ref, getBytes, getDownloadURL, uploadBytes } from "firebase/storage";
+import { getStorage, ref, getBytes, getDownloadURL, uploadBytes, listAll, getMetadata } from "firebase/storage";
+
+export type StorageFile = File & {
+    fullPath: string;
+    updated?: string;
+}
 
 export class FirebaseStorageService implements StorageService {
 
@@ -31,8 +36,25 @@ export class FirebaseStorageService implements StorageService {
         }
     }
 
-    list(_filepath?: string): Promise<any[]> {
-        throw new Error("Method not implemented.");
+    async list(filepath?: string): Promise<any[]> {
+        if (!filepath) {
+            return [];
+        }
+
+        const folderRef = ref(this.storage, filepath);
+        const result = await listAll(folderRef);
+        const files = await Promise.all(result.items.map(async (item) => {
+            const metadata = await getMetadata(item);
+            return {
+                name: item.name,
+                fullPath: item.fullPath,
+                type: metadata.contentType,
+                size: metadata.size,
+                updated: metadata.updated
+            };
+        }));
+        console.log(files)
+        return files;
     }
 
     getUrl(_filepath: string): string {
@@ -65,4 +87,3 @@ export class FirebaseStorageService implements StorageService {
         throw new Error("Method not implemented.");
     }
 }
-

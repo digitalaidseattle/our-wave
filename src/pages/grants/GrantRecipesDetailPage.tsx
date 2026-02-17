@@ -23,6 +23,7 @@ import { DateUtils } from "../../utils/dateUtils";
 import { SplitButton } from "../../components/SplitButton";
 import { GrantAiService } from "./grantAiService";
 import { saveRecipe } from "../../transactions/SaveRecipe";
+import { ConfirmationDialog } from "@digitalaidseattle/mui";
 
 const HELP_DRAWER_WIDTH = 300;
 const HELP_TITLE = "Our Wave";
@@ -181,6 +182,7 @@ const GrantRecipesDetailPage: React.FC = () => {
   }
 
   function handleGrantContextsChange(revised: GrantRecipe): void {
+    console.log(revised)
     // prompt not affected by contexts change
     setRecipe(revised);
     setDirty(true);

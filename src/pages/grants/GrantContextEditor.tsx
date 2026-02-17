@@ -15,6 +15,7 @@ import { HelpTopicContext } from '../../components/HelpTopicContext';
 import { GrantContext, GrantRecipe } from '../../types';
 import { GrantAiService } from './grantAiService';
 import { FileUploadDialog } from '../../components/FileUploadDialog';
+import { StorageFile } from '../../services/FirebaseStorageService';
 
 const SUPPORTED_FILE_TYPES = [
     "text/plain",
@@ -109,17 +110,16 @@ export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ onChange
     }
 
     function removeContext(index: number) {
-        // TODO remove file?
         const revised = contexts.filter((_, i) => i !== index);
         onChange({ ...recipe, contexts: revised });
     }
 
-    async function handleFileUpload(files: File[] | null) {
+    async function handleFileSelection(files: (File | StorageFile)[] | null) {
         if (files) {
-            
             const contexts = files
                 .filter(file => {
-                    if (!SUPPORTED_FILE_TYPES.includes(file.type)) {
+                    const fileType = file.type;
+                    if (!fileType || !SUPPORTED_FILE_TYPES.includes(fileType)) {
                         notifications.error(`Unsupported file type: ${file.type}. Supported types are: ${SUPPORTED_FILE_TYPES.join(", ")}`);
                         return false;
                     } else {
@@ -127,11 +127,12 @@ export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ onChange
                     }
                 })
                 .map(async file => {
-                    const tokenCount = await grantAiService.calcFileTokenCount(recipe.modelType, file);
-                    return ({ type: file.type, value: "", name: file.name, tokenCount: tokenCount, file: file })
+                    const tokenCount = file instanceof File
+                        ? await grantAiService.calcFileTokenCount(recipe.modelType, file)
+                        : await grantAiService.calcStorageFileTokenCount(recipe.modelType, file);
+                    return ({ type: file.type!, value: "", name: file.name, tokenCount: tokenCount, file: file });
                 })
             addContexts(await Promise.all(contexts));
-
         }
         setShowUploadDialog(false);
     }
@@ -174,11 +175,9 @@ export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ onChange
                 </Stack>
                 <FileUploadDialog
                     open={showUploadDialog}
-                    onChange={(files) => { handleFileUpload(files) }}
+                    onChange={(files) => { handleFileSelection(files) }}
                 />
             </CardContent>
         </Card>
     );
 };
-
-

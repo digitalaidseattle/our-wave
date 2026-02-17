@@ -8,15 +8,28 @@
 import { authService, storageService } from "../App";
 import { grantRecipeService } from "../services/grantRecipeService";
 import { GrantContext, GrantRecipe } from "../types";
-// import { DateUtils } from "../utils/dateUtils";
 
 const GLOUD_FOLDER = import.meta.env.VITE_FIREBASE_STORAGE_FOLDER;
+
+
+function isNewFile(context: GrantContext): boolean {
+    if (context.type === 'text') {
+        return false;
+    }
+    if (context.fileUrl) {  // previously uploaded
+        return false;
+    }
+    if (context.file!.webkitRelativePath) {  // new file
+        return true;
+    }
+    return false;
+}
 
 async function uploadFiles(contexts: GrantContext[]): Promise<GrantContext[]> {
     return Promise.all(contexts
         .map(async (context) => {
-            if (context.type !== "text" && context.file) {
-                const url = await storageService.upload(`${GLOUD_FOLDER}/${context.file.name}`, context.file);
+            if (isNewFile(context)) {
+                const url = await storageService.upload(`${GLOUD_FOLDER}/${context.file!.name}`, context.file!);
                 const newContext = { ...context, fileUrl: url };
                 delete newContext.file;
                 return newContext;

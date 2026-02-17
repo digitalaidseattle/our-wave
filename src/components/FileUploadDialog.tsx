@@ -4,21 +4,27 @@
  *  @copyright 2026 Digital Aid Seattle
  *
  */
-import { Box, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, List, Typography } from "@mui/material";
-import { useState } from "react";
+import { Box, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, Divider, List, ListItem, ListItemButton, ListItemText, Typography } from "@mui/material";
+import { useEffect, useState } from "react";
 
 import Dropzone from "react-dropzone";
+import { storageService } from "../App";
+import { StorageFile } from "../services/FirebaseStorageService";
+const DEFAULT_FOLDER = import.meta.env.VITE_FIREBASE_STORAGE_FOLDER;
+
 
 
 interface FileUploadDialogProps {
     title?: string;
     open: boolean
-    onChange: (file: File[] | null) => void
+    folderPath?: string;
+    onChange: (files: (File | StorageFile)[] | null) => void
 };
 
-const FileUploadDialog = ({ open, onChange }: FileUploadDialogProps) => {
+const FileUploadDialog = ({ title = "Select or upload files", open, folderPath = DEFAULT_FOLDER, onChange }: FileUploadDialogProps) => {
 
-    const [files, setFiles] = useState<File[]>([]);
+    const [files, setFiles] = useState<(File | StorageFile)[]>([]);
+    const [folderFiles, setFolderFiles] = useState<StorageFile[]>([]);
 
     function handleConfirm(): void {
         onChange(files);
@@ -30,13 +36,62 @@ const FileUploadDialog = ({ open, onChange }: FileUploadDialogProps) => {
         setFiles(newFiles);
     }
 
+    useEffect(() => {
+        if (!open || !folderPath) {
+            return;
+        }
+
+        storageService.list(folderPath)
+            .then(found => setFolderFiles(found as StorageFile[]))
+            .catch(err => {
+                console.error(err);
+                setFolderFiles([]);
+            });
+    }, [open, folderPath]);
+
+    function handleFileList(file: StorageFile): void {
+        setFiles([...files, file]);
+    }
+
     return <Dialog
         fullWidth={true}
         open={open}
         onClose={() => onChange(null)}
         sx={{ minHeight: '600px' }}>
-        <DialogTitle sx={{ fontSize: 16, fontWeight: 600 }}>'Upload Files'</DialogTitle>
+        <DialogTitle sx={{ fontSize: 16, fontWeight: 600 }}>{title}</DialogTitle>
         <DialogContent>
+            {folderPath && <Box
+                sx={{
+                    flex: 1,
+                    overflowY: "auto",
+                    mb: 2
+                }}>
+                <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                    Select files in server folder: {folderPath}
+                </Typography>
+                <List
+                    sx={{
+                        width: '100%',
+                        bgcolor: 'background.paper',
+                        maxHeight: 200,
+                        overflow: 'auto',
+                        border: 1,
+                        borderColor: "divider",
+                        borderRadius: 1,
+                        p: 0
+                    }}>
+                    {folderFiles.length === 0 && <ListItem><ListItemText primary="No files found." /></ListItem>}
+                    {folderFiles.map(sFile =>
+                        <ListItemButton
+                            key={sFile.fullPath}
+                            sx={{ px: 2, py: 1 }}
+                            onClick={() => handleFileList(sFile)}
+                        >
+                            <ListItemText primary={sFile.name} />
+                        </ListItemButton>)}
+                </List>
+            </Box>}
+            {folderPath && <Divider sx={{ mb: 2 }} />}
             <Dropzone onDrop={acceptedFiles => setFiles([...files, ...acceptedFiles])}>
                 {({ getRootProps, getInputProps }) => (
                     <section>

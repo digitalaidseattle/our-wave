@@ -17,6 +17,7 @@
 
 import { createPartFromText, createPartFromUri, createUserContent, GoogleGenAI, Part } from "@google/genai";
 import { storageService } from "../../App";
+import { StorageFile } from "../../services/FirebaseStorageService";
 import { GrantContext } from "../../types";
 
 const GLOUD_FOLDER = import.meta.env.VITE_FIREBASE_STORAGE_FOLDER;
@@ -128,6 +129,24 @@ class GrantAiService {
                 console.error("Error calculating token count for file", err);
                 return 0;
             })
+    }
+
+    async calcStorageFileTokenCount(model: string, file: StorageFile): Promise<number> {
+        try {
+            const uri = await storageService.getDownloadURL(file.fullPath);
+            return this.ai.models
+                .countTokens({
+                    model: model,
+                    contents: createUserContent([
+                        "Count tokens for this document",
+                        createPartFromUri(uri, file.type ?? "application/octet-stream"),
+                    ])
+                })
+                .then(response => response.totalTokens ?? 0);
+        } catch (err) {
+            console.error("Error calculating token count for FirebaseStorageFile", err);
+            return 0;
+        }
     }
 }
 
