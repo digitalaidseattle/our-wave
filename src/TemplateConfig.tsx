@@ -11,7 +11,9 @@ import {
     FormOutlined
 } from '@ant-design/icons';
 import { HelpButton, MenuItem } from "@digitalaidseattle/mui";
-import { Box, createTheme } from "@mui/material";
+import { Box } from "@mui/material";
+import { createTheme } from '@mui/material/styles';
+import type { } from "@mui/x-data-grid/themeAugmentation";
 import logo from "./assets/images/our-wave-logo.jpeg";
 import type { } from "@mui/x-data-grid/themeAugmentation";
 
@@ -47,7 +49,7 @@ export const TemplateConfig = () => {
         ],
     } as MenuItem;
 
-    const theme = createTheme({
+        const theme = createTheme({
         components: {
             MuiDataGrid: {
                 styleOverrides: {
@@ -56,25 +58,8 @@ export const TemplateConfig = () => {
                     },
                 },
             },
-            MuiCardHeader: {
-                styleOverrides: {
-                    root: {
-                        minHeight: 32,          // default is ~64
-                        padding: "8px 8px",    // adjust vertical padding
-                    },
-                   
-                }
-            },
-            MuiCardContent: {
-                styleOverrides: {
-                    root: {
-                        padding: "8px 8px",    // adjust vertical padding
-                    },
-                }
-            }
         },
     });
-
     return ({
         appName: 'Our Wave',
         logoUrl: logo,

@@ -9,13 +9,13 @@ import Paper from '@mui/material/Paper';
 import Popper from '@mui/material/Popper';
 import * as React from 'react';
 
-export const SplitButton = ({ options, onClick }: { options: string[], onClick: (value: string) => void }) => {
+export const SplitButton = ({ options, onClick }: { options: string[] | { label: string, value: string }[], onClick: (value: string) => void }) => {
     const [open, setOpen] = React.useState(false);
     const anchorRef = React.useRef<HTMLDivElement>(null);
     const [selectedIndex, setSelectedIndex] = React.useState(0);
 
     const handleClick = () => {
-        onClick(options[selectedIndex]);
+        onClick(options[selectedIndex].hasOwnProperty('value') ? (options[selectedIndex] as any).value : options[selectedIndex]);
     };
 
     const handleMenuItemClick = (
@@ -40,6 +40,14 @@ export const SplitButton = ({ options, onClick }: { options: string[], onClick: 
 
         setOpen(false);
     };
+    
+    function getOptionLabel(option: string | { label: string, value: string }) {
+        return option.hasOwnProperty('label') ? (option as any).label : option;
+    }
+    
+    function getOptionValue(option: string | { label: string, value: string }) {
+        return option.hasOwnProperty('value') ? (option as any).value : option;
+    }
 
     return (
         <React.Fragment>
@@ -48,7 +56,7 @@ export const SplitButton = ({ options, onClick }: { options: string[], onClick: 
                 ref={anchorRef}
                 aria-label="Button group with a nested menu"
             >
-                <Button onClick={handleClick}>{options[selectedIndex]}</Button>
+                <Button onClick={handleClick}>{getOptionLabel(options[selectedIndex])}</Button>
                 <Button
                     size="small"
                     aria-controls={open ? 'split-button-menu' : undefined}
@@ -81,11 +89,11 @@ export const SplitButton = ({ options, onClick }: { options: string[], onClick: 
                                 <MenuList id="split-button-menu" autoFocusItem>
                                     {options.map((option, index) => (
                                         <MenuItem
-                                            key={option}
+                                            key={getOptionValue(option)}
                                             selected={index === selectedIndex}
                                             onClick={(event) => handleMenuItemClick(event, index)}
                                         >
-                                            {option}
+                                            {getOptionLabel(option)}
                                         </MenuItem>
                                     ))}
                                 </MenuList>
