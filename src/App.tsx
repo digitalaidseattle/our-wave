@@ -23,8 +23,7 @@ import { TemplateConfig } from './TemplateConfig';
 
 import "./App.css";
 import { FirebaseAuthService } from './services/FirebaseAuthService';
-import { FirebaseStorageService } from './services/FirebaseStorageService';
-import { firebaseClient } from '@digitalaidseattle/firebase';
+import { firebaseClient, FirebaseStorageService } from '@digitalaidseattle/firebase';
 
 // ==============================|| APP - THEME, ROUTER, LOCAL  ||============================== //
 
