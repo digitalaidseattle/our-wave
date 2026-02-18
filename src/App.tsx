@@ -24,8 +24,11 @@ import { TemplateConfig } from './TemplateConfig';
 import "./App.css";
 import { FirebaseAuthService } from './services/FirebaseAuthService';
 import { FirebaseStorageService } from './services/FirebaseStorageService';
+import { firebaseClient } from '@digitalaidseattle/firebase';
 
 // ==============================|| APP - THEME, ROUTER, LOCAL  ||============================== //
+
+console.log('APP', firebaseClient);
 
 const router = createBrowserRouter(routes);
 export const authService = new FirebaseAuthService();

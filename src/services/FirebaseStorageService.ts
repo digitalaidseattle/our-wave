@@ -40,7 +40,6 @@ export class FirebaseStorageService implements StorageService {
         if (!filepath) {
             return [];
         }
-
         const folderRef = ref(this.storage, filepath);
         const result = await listAll(folderRef);
         const files = await Promise.all(result.items.map(async (item) => {
@@ -53,7 +52,6 @@ export class FirebaseStorageService implements StorageService {
                 updated: metadata.updated
             };
         }));
-        console.log(files)
         return files;
     }
 
