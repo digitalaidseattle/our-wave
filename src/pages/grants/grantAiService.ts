@@ -17,7 +17,7 @@
 
 import { createPartFromText, createPartFromUri, createUserContent, GoogleGenAI, Part } from "@google/genai";
 import { storageService } from "../../App";
-import { StorageFile } from "../../services/FirebaseStorageService";
+import { StorageFile } from "../../services/OurWaveStorageService";
 import { GrantContext } from "../../types";
 
 const GLOUD_FOLDER = import.meta.env.VITE_FIREBASE_STORAGE_FOLDER;

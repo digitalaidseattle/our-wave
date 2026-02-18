@@ -9,7 +9,7 @@ import { useEffect, useState } from "react";
 
 import Dropzone from "react-dropzone";
 import { storageService } from "../App";
-import { StorageFile } from "../services/FirebaseStorageService";
+import { StorageFile } from "../services/OurWaveStorageService";
 const DEFAULT_FOLDER = import.meta.env.VITE_FIREBASE_STORAGE_FOLDER;
 
 

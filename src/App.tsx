@@ -23,15 +23,13 @@ import { TemplateConfig } from './TemplateConfig';
 
 import "./App.css";
 import { FirebaseAuthService } from './services/FirebaseAuthService';
-import { firebaseClient, FirebaseStorageService } from '@digitalaidseattle/firebase';
+import { OurWaveStorageService } from './services/OurWaveStorageService';
 
 // ==============================|| APP - THEME, ROUTER, LOCAL  ||============================== //
 
-console.log('APP', firebaseClient);
-
 const router = createBrowserRouter(routes);
 export const authService = new FirebaseAuthService();
-export const storageService = new FirebaseStorageService();
+export const storageService = new OurWaveStorageService();
 
 const App: React.FC = () => {
   return (

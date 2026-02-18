@@ -15,7 +15,7 @@ import { HelpTopicContext } from '../../components/HelpTopicContext';
 import { GrantContext, GrantRecipe } from '../../types';
 import { GrantAiService } from './grantAiService';
 import { FileUploadDialog } from '../../components/FileUploadDialog';
-import { StorageFile } from '../../services/FirebaseStorageService';
+import { StorageFile } from '../../services/OurWaveStorageService';
 
 const SUPPORTED_FILE_TYPES = [
     "text/plain",
