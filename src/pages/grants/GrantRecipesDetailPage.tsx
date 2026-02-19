@@ -91,6 +91,23 @@ const GrantRecipesDetailPage: React.FC = () => {
   const [hasValidDescription, setHasValidDescription] = useState<boolean>(false);
   const [hasCompleteOutputFields, setHasCompleteOutputFields] = useState<boolean>(false);
 
+  const isDescriptionMissing = !hasValidDescription;
+  const isOutputFieldsIncomplete = !hasCompleteOutputFields;
+  const isSaveDisabled = loading || !dirty || isDescriptionMissing;
+  const isCloneDisabled = loading || isDescriptionMissing;
+  const isGenerateDisabled = loading || isDescriptionMissing || isOutputFieldsIncomplete;
+
+  const actionMessages: string[] = [];
+  if (isDescriptionMissing) {
+    actionMessages.push("Add Description (*) to enable Save, Clone, and Generate.");
+  }
+  if (isOutputFieldsIncomplete) {
+    actionMessages.push("Complete Output Fields (*) to enable Generate.");
+  }
+  if (!loading && hasValidDescription && !dirty) {
+    actionMessages.push("Make a change to enable Save.");
+  }
+
   useEffect(() => {
     setHasValidDescription((recipe?.description ?? "").trim().length > 0);
   }, [recipe?.description]);
@@ -257,15 +274,24 @@ const GrantRecipesDetailPage: React.FC = () => {
                     sx={{
                       borderTop: "1px solid",
                       borderColor: "divider",
-                      justifyContent: "flex-end",
+                      justifyContent: "space-between",
                     }}>
-                    <SplitButton
-                      options={GrantAiService.models.map(m => ({ label: `Generate with ${m}`, value: m }))}
-                      disabled={loading || !hasValidDescription || !hasCompleteOutputFields}
-                      onClick={(model: string) => handleGenerate(model)} />
-                    <Button variant="contained" disabled={loading || !hasValidDescription} onClick={() => handleClone()}>Clone</Button>
-                    <Divider orientation="vertical" />
-                    <Button variant="contained" disabled={loading || !dirty || !hasValidDescription} onClick={() => saveRecipe()}>Save</Button>
+                    <Box sx={{ px: 1 }}>
+                      {actionMessages.map((message, index) => (
+                        <Typography key={index} variant="body2" color="text.secondary">
+                          {message}
+                        </Typography>
+                      ))}
+                    </Box>
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <SplitButton
+                        options={GrantAiService.models.map(m => ({ label: `Generate with ${m}`, value: m }))}
+                        disabled={isGenerateDisabled}
+                        onClick={(model: string) => handleGenerate(model)} />
+                      <Button variant="contained" disabled={isCloneDisabled} onClick={() => handleClone()}>Clone</Button>
+                      <Divider orientation="vertical" flexItem />
+                      <Button variant="contained" disabled={isSaveDisabled} onClick={() => saveRecipe()}>Save</Button>
+                    </Stack>
                   </CardActions>
                 </Card>
               </Stack>
