@@ -50,7 +50,7 @@ const FileUploadDialog = ({ title = "Select or upload files", open, folderPath =
     }, [open, folderPath]);
 
     function handleFileList(file: StorageFile): void {
-        setFiles([...files, file]);
+        setFiles(prev => [...prev, file]);
     }
 
     return <Dialog
