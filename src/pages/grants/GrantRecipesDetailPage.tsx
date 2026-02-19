@@ -88,11 +88,20 @@ const GrantRecipesDetailPage: React.FC = () => {
   const [dirty, setDirty] = useState<boolean>(false);
   const { showHelp } = useHelp();
   const [helpTopic, setHelpTopic] = useState<string | undefined>();
-  const [isValid, setIsValid] = useState<boolean>(false);
+  const [hasValidDescription, setHasValidDescription] = useState<boolean>(false);
+  const [hasCompleteOutputFields, setHasCompleteOutputFields] = useState<boolean>(false);
 
   useEffect(() => {
-    setIsValid((recipe?.description ?? "").trim().length > 0);
+    setHasValidDescription((recipe?.description ?? "").trim().length > 0);
   }, [recipe?.description]);
+
+  useEffect(() => {
+    const outputs = recipe?.outputsWithWordCount ?? [];
+    const outputFieldsComplete = outputs.length > 0 && outputs.every(output =>
+      (output?.name ?? "").trim().length > 0 && Number(output?.maxWords) > 0
+    );
+    setHasCompleteOutputFields(outputFieldsComplete);
+  }, [recipe?.outputsWithWordCount]);
 
   useEffect(() => {
     if (id) {
@@ -111,7 +120,7 @@ const GrantRecipesDetailPage: React.FC = () => {
   }, [recipe]);
 
   function saveRecipe() {
-    if (!isValid) {
+    if (!hasValidDescription) {
       notifications.error("Please name your recipe before saving.");
       return;
     }
@@ -129,7 +138,7 @@ const GrantRecipesDetailPage: React.FC = () => {
   }
 
   function handleClone() {
-    if (!isValid) {
+    if (!hasValidDescription) {
       notifications.error("Please name your recipe before cloning.");
       return;
     }
@@ -148,6 +157,14 @@ const GrantRecipesDetailPage: React.FC = () => {
   }
 
   async function handleGenerate(model: string) {
+    if (!hasValidDescription) {
+      notifications.error("Please enter a description before generating.");
+      return;
+    }
+    if (!hasCompleteOutputFields) {
+      notifications.error("Please complete output fields before generating.");
+      return;
+    }
     if (recipe) {  // TODO display error ?
       setLoading(true);
       recipe.modelType = model;
@@ -244,10 +261,11 @@ const GrantRecipesDetailPage: React.FC = () => {
                     }}>
                     <SplitButton
                       options={GrantAiService.models.map(m => ({ label: `Generate with ${m}`, value: m }))}
+                      disabled={loading || !hasValidDescription || !hasCompleteOutputFields}
                       onClick={(model: string) => handleGenerate(model)} />
-                    <Button variant="contained" disabled={loading || !isValid} onClick={() => handleClone()}>Clone</Button>
+                    <Button variant="contained" disabled={loading || !hasValidDescription} onClick={() => handleClone()}>Clone</Button>
                     <Divider orientation="vertical" />
-                    <Button variant="contained" disabled={loading || !dirty || !isValid} onClick={() => saveRecipe()}>Save</Button>
+                    <Button variant="contained" disabled={loading || !dirty || !hasValidDescription} onClick={() => saveRecipe()}>Save</Button>
                   </CardActions>
                 </Card>
               </Stack>

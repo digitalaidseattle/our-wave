@@ -98,13 +98,18 @@ export const GrantInfoEditor = ({ recipe, onChange }: { recipe: GrantRecipe, onC
           color="primary"><InfoCircleOutlined /></IconButton>} />
       <CardContent>
         <Grid container spacing={2} alignItems="center">
-          <Grid size={2}><Typography>Description</Typography></Grid>
+          <Grid size={2}>
+            <Typography>
+              Description <Typography component="span" color="error">*</Typography>
+            </Typography>
+          </Grid>
           <Grid size={10}><FormLabel>
             <TextField
               fullWidth={true}
               value={recipe.description ?? ""}
               placeholder="Name your recipe"
               autoFocus
+              required
               onChange={(evt) => handleDescriptionChange(evt.target.value)} />
           </FormLabel>
           </Grid>

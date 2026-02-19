@@ -53,7 +53,9 @@ export const GrantOutputEditor = ({ fields, onChange }: { fields: GrantOutput[],
 
   return (
     <Card>
-      <CardHeader title="Output Fields: (field / max symbol count)"
+      <CardHeader title={<>
+        Output Fields: (field / max symbol count) <span style={{ color: '#d32f2f' }}>*</span>
+      </>}
         slotProps={{ title: { fontWeight: 600, fontSize: 16 } }}
         avatar={<IconButton
           onClick={() => { setHelpTopic('Outputs'); setShowHelp(true) }}
@@ -85,12 +87,14 @@ export const GrantOutputEditor = ({ fields, onChange }: { fields: GrantOutput[],
                 label="Field"
                 fullWidth={true}
                 value={field.name}
+                required
                 onChange={(e) => handleOutputFieldChange(index, 'name', e.target.value)}
               />
               <TextField
                 label={`Max ${field.unit === 'words' ? 'Words' : 'Characters'}`}
                 type="number"
                 value={field.maxWords}
+                required
                 onChange={(e) => handleOutputFieldChange(index, 'maxWords', parseInt(e.target.value) || 0)}
               />
               <ButtonGroup variant="contained" aria-label="Basic button group">
