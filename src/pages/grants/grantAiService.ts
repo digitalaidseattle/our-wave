@@ -20,7 +20,7 @@ import { storageService } from "../../App";
 import { StorageFile } from "../../services/OurWaveStorageService";
 import { GrantContext } from "../../types";
 
-const GLOUD_FOLDER = import.meta.env.VITE_FIREBASE_STORAGE_FOLDER;
+const CLOUD_FOLDER = import.meta.env.VITE_FIREBASE_STORAGE_FOLDER;
 
 class GrantAiService {
 
@@ -57,7 +57,7 @@ class GrantAiService {
             if (gc.type === 'text') {
                 parts.push(createPartFromText(gc.value!));
             } else {
-                const uri = await storageService.getDownloadURL(`${GLOUD_FOLDER}/${gc.name}`);
+                const uri = await storageService.getDownloadURL(`${CLOUD_FOLDER}/${gc.name}`);
                 parts.push(createPartFromUri(uri, contexts[idx].type));
             }
         });
