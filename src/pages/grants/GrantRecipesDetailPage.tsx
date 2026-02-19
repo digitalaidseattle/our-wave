@@ -19,6 +19,7 @@ import { generateProposal } from "../../transactions/GenerateProposal";
 import { GrantOutput, GrantRecipe, Timestamp } from "../../types";
 import { DateUtils } from "../../utils/dateUtils";
 import { GrantAiService } from "./grantAiService";
+import { saveRecipe } from "../../transactions/SaveRecipe";
 import { GrantContextEditor } from "./GrantContextEditor";
 import { GrantInfoEditor } from "./GrantInfoEditor";
 import { GrantOutputEditor } from "./GrantOutputEditor";
@@ -136,12 +137,13 @@ const GrantRecipesDetailPage: React.FC = () => {
     }
   }, [recipe]);
 
-  function saveRecipe() {
+  function handleSave() {
     if (!hasValidDescription) {
       notifications.error("Please name your recipe before saving.");
       return;
     }
-    grantRecipeService.update(recipe.id!, recipe)
+    setLoading(true);
+    saveRecipe(recipe)
       .then(saved => {
         setRecipe(saved);
         setDirty(false);
@@ -217,6 +219,7 @@ const GrantRecipesDetailPage: React.FC = () => {
   }
 
   function handleGrantContextsChange(revised: GrantRecipe): void {
+    console.log(revised)
     // prompt not affected by contexts change
     setRecipe(revised);
     setDirty(true);
@@ -290,7 +293,7 @@ const GrantRecipesDetailPage: React.FC = () => {
                         onClick={(model: string) => handleGenerate(model)} />
                       <Button variant="contained" disabled={isCloneDisabled} onClick={() => handleClone()}>Clone</Button>
                       <Divider orientation="vertical" flexItem />
-                      <Button variant="contained" disabled={isSaveDisabled} onClick={() => saveRecipe()}>Save</Button>
+                      <Button variant="contained" disabled={isSaveDisabled} onClick={() => handleSave()}>Save</Button>
                     </Stack>
                   </CardActions>
                 </Card>

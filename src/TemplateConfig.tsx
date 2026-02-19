@@ -15,8 +15,10 @@ import { Box } from "@mui/material";
 import { createTheme } from '@mui/material/styles';
 import type { } from "@mui/x-data-grid/themeAugmentation";
 import logo from "./assets/images/our-wave-logo.jpeg";
+import type { } from "@mui/x-data-grid/themeAugmentation";
 
 export const NAVIGATION_DRAWER_WIDTH = 240;
+
 export const TemplateConfig = () => {
     const topLevel = {
         id: 'group-dashboard',
