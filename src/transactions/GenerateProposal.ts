@@ -34,6 +34,7 @@ export async function generateProposal(recipe: GrantRecipe): Promise<GrantPropos
         ...recipe,
         lastSubmitted: now
     }
+    console.log(updatedRecipe);
 
     let savedRecipe: GrantRecipe;
     if (recipe.id) {
@@ -51,7 +52,6 @@ export async function generateProposal(recipe: GrantRecipe): Promise<GrantPropos
         recipe.contexts,
     );
 
-    console.log(response);
 
     const proposal = {
         ...grantProposalService.empty(),

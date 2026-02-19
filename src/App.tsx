@@ -13,6 +13,7 @@ import { RouterProvider, createBrowserRouter } from 'react-router-dom';
 import {
   AuthServiceProvider,
   HelpContextProvider,
+  StorageServiceProvider,
   UserContextProvider
 } from "@digitalaidseattle/core";
 import { LayoutConfigurationProvider } from "@digitalaidseattle/mui";
@@ -22,24 +23,28 @@ import { TemplateConfig } from './TemplateConfig';
 
 import "./App.css";
 import { FirebaseAuthService } from './services/FirebaseAuthService';
+import { OurWaveStorageService } from './services/OurWaveStorageService';
 
 // ==============================|| APP - THEME, ROUTER, LOCAL  ||============================== //
 
 const router = createBrowserRouter(routes);
 export const authService = new FirebaseAuthService();
+export const storageService = new OurWaveStorageService();
 
 const App: React.FC = () => {
   return (
     <AuthServiceProvider authService={authService} >
-      <UserContextProvider>
-        <HelpContextProvider>
-          <LayoutConfigurationProvider configuration={TemplateConfig()}>
-            <LocalizationProvider dateAdapter={AdapterDayjs}>
-              <RouterProvider router={router} />
-            </LocalizationProvider>
-          </LayoutConfigurationProvider>
-        </HelpContextProvider>
-      </UserContextProvider>
+      <StorageServiceProvider storageService={storageService} >
+        <UserContextProvider>
+          <HelpContextProvider>
+            <LayoutConfigurationProvider configuration={TemplateConfig()}>
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <RouterProvider router={router} />
+              </LocalizationProvider>
+            </LayoutConfigurationProvider>
+          </HelpContextProvider>
+        </UserContextProvider>
+      </StorageServiceProvider>
     </AuthServiceProvider>
   );
 }

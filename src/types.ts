@@ -21,11 +21,12 @@ export type GrantOutput = {
 }
 
 export type GrantContext = {
-  type: "text" | "file";
-  filePath?: string;
+  type: string;
   name: string | null;
   value: string | null;
   tokenCount: number;
+  file?: File;
+  fileUrl?: string;
 }
 
 export type GrantRecipe = Entity & {
