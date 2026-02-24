@@ -213,12 +213,15 @@ const GrantRecipesDetailPage: React.FC = () => {
       console.error('Failed to delete recipe:', error);
       notifications.error("Failed to delete recipe. Please try again.");
       setOpenDeleteDialog(false);
+    } finally {
       setIsDeleting(false);
     }
   };
 
   const handleDeleteCancel = () => {
-    setOpenDeleteDialog(false);
+    if (!isDeleting) {
+      setOpenDeleteDialog(false);
+    }
   };
 
   return (recipe &&
@@ -280,7 +283,7 @@ const GrantRecipesDetailPage: React.FC = () => {
                       color="error"
                       startIcon={<DeleteIcon />}
                       onClick={handleDeleteClick}
-                      disabled={isDeleting}
+                      disabled={loading || isDeleting}
                     >
                       Delete
                     </Button>
@@ -289,7 +292,11 @@ const GrantRecipesDetailPage: React.FC = () => {
                   {/* Delete Confirmation Dialog */}
                   <Dialog
                     open={openDeleteDialog}
-                    onClose={handleDeleteCancel}
+                    onClose={(event, reason) => {
+                      if (reason === 'backdropClick' && isDeleting) return;
+                      handleDeleteCancel();
+                    }}
+                    disableEscapeKeyDown={isDeleting}
                     aria-labelledby="alert-dialog-title"
                     aria-describedby="alert-dialog-description"
                   >
