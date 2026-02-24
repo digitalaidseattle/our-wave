@@ -292,7 +292,7 @@ const GrantRecipesDetailPage: React.FC = () => {
                   {/* Delete Confirmation Dialog */}
                   <Dialog
                     open={openDeleteDialog}
-                    onClose={(event, reason) => {
+                    onClose={(_event, reason) => {
                       if (reason === 'backdropClick' && isDeleting) return;
                       handleDeleteCancel();
                     }}
