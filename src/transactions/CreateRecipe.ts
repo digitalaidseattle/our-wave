@@ -15,6 +15,9 @@ export function createRecipe(): Promise<GrantRecipe> {
         .then((user => {
             const newRecipe = grantRecipeService.empty();
             newRecipe.description = "";
+            // Initialize with default blank context and output fields
+            newRecipe.contexts = [{ type: 'text', name: null, value: '', tokenCount: 0 }];
+            newRecipe.outputsWithWordCount = [{ name: '', maxWords: 500, unit: 'words' }];
             return grantRecipeService.insert(newRecipe, undefined, undefined, user);
         }))
 }
