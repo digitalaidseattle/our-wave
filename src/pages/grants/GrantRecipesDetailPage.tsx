@@ -9,20 +9,21 @@ import { Box, Breadcrumbs, Button, Card, CardActions, CardContent, CardHeader, D
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useContext, useEffect, useState } from "react";
 import { NavLink, useNavigate, useParams } from "react-router-dom";
+import { GrantRecipeContext } from "../../components/GrantRecipeContext";
 import { HelpDrawer } from "../../components/HelpDrawer";
 import { HelpTopicContext } from "../../components/HelpTopicContext";
 import { LoadingOverlay } from "../../components/LoadingOverlay";
+import { SplitButton } from "../../components/SplitButton";
 import { grantRecipeService } from "../../services/grantRecipeService";
 import { cloneRecipe } from "../../transactions/CloneRecipe";
+import { generateProposal } from "../../transactions/GenerateProposal";
 import { GrantOutput, GrantRecipe, Timestamp } from "../../types";
+import { DateUtils } from "../../utils/dateUtils";
+import { GrantAiService } from "./grantAiService";
+import { saveRecipe } from "../../transactions/SaveRecipe";
+import { GrantContextEditor } from "./GrantContextEditor";
 import { GrantInfoEditor } from "./GrantInfoEditor";
 import { GrantOutputEditor } from "./GrantOutputEditor";
-import { GrantContextEditor } from "./GrantContextEditor";
-import { GrantRecipeContext } from "../../components/GrantRecipeContext";
-import { generateProposal } from "../../transactions/GenerateProposal";
-import { DateUtils } from "../../utils/dateUtils";
-import { SplitButton } from "../../components/SplitButton";
-import { GrantAiService } from "./grantAiService";
 
 const HELP_DRAWER_WIDTH = 300;
 const HELP_TITLE = "Our Wave";
@@ -111,12 +112,9 @@ const GrantRecipesDetailPage: React.FC = () => {
     }
   }, [recipe]);
 
-  function saveRecipe() {
-    if (!isValid) {
-      notifications.error("Please name your recipe before saving.");
-      return;
-    }
-    grantRecipeService.update(recipe.id!, recipe)
+  function handleSave() {
+    setLoading(true);
+    saveRecipe(recipe)
       .then(saved => {
         setRecipe(saved);
         setDirty(false);
@@ -184,6 +182,7 @@ const GrantRecipesDetailPage: React.FC = () => {
   }
 
   function handleGrantContextsChange(revised: GrantRecipe): void {
+    console.log(revised)
     // prompt not affected by contexts change
     setRecipe(revised);
     setDirty(true);
@@ -226,105 +225,105 @@ const GrantRecipesDetailPage: React.FC = () => {
     <>
       <LoadingOverlay />
       <HelpTopicContext.Provider value={{ helpTopic, setHelpTopic }} >
-         <GrantRecipeContext.Provider value={{ recipe, setRecipe }} >
-           <Breadcrumbs aria-label="breadcrumbs">
-              <NavLink to="/" ><IconButton size="medium"><HomeOutlined /></IconButton></NavLink>
-              <NavLink to={`/grant-recipes`} >Recipes</NavLink>
-              <Typography color="text.primary">Recipe Detail</Typography>
-            </Breadcrumbs>
-            <Box gap={4}>
-              {recipe &&
-                  <Stack sx={{
-                    height: "calc(100dvh - 112px)",
-                    gap: 2,
-                    marginRight: `${showHelp ? HELP_DRAWER_WIDTH : 0}px`
-                  }}>
-                  <Card
-                      sx={{
-                        height: "100%",
-                        display: "flex",
-                        flexDirection: "column",
-                      }}
+        <GrantRecipeContext.Provider value={{ recipe, setRecipe }} >
+          <Breadcrumbs aria-label="breadcrumbs">
+            <NavLink to="/" ><IconButton size="medium"><HomeOutlined /></IconButton></NavLink>
+            <NavLink to={`/grant-recipes`} >Recipes</NavLink>
+            <Typography color="text.primary">Recipe Detail</Typography>
+          </Breadcrumbs>
+          <Box gap={4}>
+            {recipe &&
+              <Stack sx={{
+                height: "calc(100dvh - 112px)",
+                gap: 2,
+                marginRight: `${showHelp ? HELP_DRAWER_WIDTH : 0}px`
+              }}>
+                <Card
+                  sx={{
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                  }}
+                >
+                  <CardHeader title={recipe.description ?? ""}
+                    action={`Token count = ${recipe.tokenCount}`}
+                    subheader={`Last updated: ${lastUpdated}`} />
+                  <CardContent
+                    sx={{
+                      flex: 1,
+                      overflowY: "auto",
+                    }}>
+                    <Stack gap={1}>
+                      <GrantInfoEditor recipe={recipe} onChange={handleInfoChange} />
+                      <TextEditor title="Template" value={recipe.template} onChange={handleTemplateChange} />
+                      <GrantContextEditor onChange={handleGrantContextsChange} />
+                      <GrantOutputEditor fields={recipe.outputsWithWordCount} onChange={handleGrantOutputChange} />
+                      <PlainTextCard title="Prompt" value={recipe.prompt} />
+                    </Stack>
+                  </CardContent>
+                  <CardActions
+                    sx={{
+                      borderTop: "1px solid",
+                      borderColor: "divider",
+                      justifyContent: "flex-end",
+                    }}>
+                    <Tooltip title='Click to generate.'>
+                      <SplitButton
+                        options={GrantAiService.models}
+                        onClick={(model: string) => handleGenerate(model)} />
+                    </Tooltip>
+                    <Button variant="contained" disabled={loading || !isValid} onClick={() => handleClone()}>Clone</Button>
+                    <Divider orientation="vertical" />
+                    <Button variant="contained" disabled={loading || !dirty || !isValid} onClick={() => handleSave()}>Save</Button>
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      startIcon={<DeleteIcon />}
+                      onClick={handleDeleteClick}
+                      disabled={isDeleting}
                     >
-                    <CardHeader title={recipe.description ?? ""}
-                      action={`Token count = ${recipe.tokenCount}`}
-                      subheader={`Last updated: ${lastUpdated}`} />
-                    <CardContent
-                      sx={{
-                        flex: 1,
-                        overflowY: "auto",
-                      }}>
-                      <Stack gap={1}>
-                        <GrantInfoEditor recipe={recipe} onChange={handleInfoChange} />
-                        <TextEditor title="Template" value={recipe.prompt} onChange={handleTemplateChange} />
-                        <GrantContextEditor onChange={handleGrantContextsChange} />
-                        <GrantOutputEditor fields={recipe.outputsWithWordCount} onChange={handleGrantOutputChange} />
-                        <PlainTextCard title="Prompt" value={recipe.prompt} />
-                      </Stack>
-                    </CardContent>
-                    <CardActions
-                      sx={{
-                        borderTop: "1px solid",
-                        borderColor: "divider",
-                        justifyContent: "flex-end",
-                      }}>
-                      <Tooltip title='Click to generate.'>
-                        <SplitButton
-                          options={GrantAiService.models}
-                          onClick={(model: string) => handleGenerate(model)} />
-                      </Tooltip>
-                      <Button variant="contained" disabled={loading || !isValid} onClick={() => handleClone()}>Clone</Button>
-                      <Divider orientation="vertical" />
-                      <Button variant="contained" disabled={loading || !dirty || !isValid} onClick={() => saveRecipe()}>Save</Button>
+                      Delete
+                    </Button>
+                  </CardActions>
+
+                  {/* Delete Confirmation Dialog */}
+                  <Dialog
+                    open={openDeleteDialog}
+                    onClose={handleDeleteCancel}
+                    aria-labelledby="alert-dialog-title"
+                    aria-describedby="alert-dialog-description"
+                  >
+                    <DialogTitle id="alert-dialog-title">
+                      Delete Recipe?
+                    </DialogTitle>
+                    <DialogContent>
+                      <DialogContentText id="alert-dialog-description">
+                        Are you sure you want to delete "<strong>{recipe?.description}</strong>"? 
+                        This action cannot be undone. Any proposals generated from this recipe will remain, 
+                        but they won't be able to regenerate.
+                      </DialogContentText>
+                    </DialogContent>
+                    <DialogActions>
+                      <Button onClick={handleDeleteCancel} disabled={isDeleting}>
+                        Cancel
+                      </Button>
                       <Button
-                        variant="outlined"
+                        onClick={handleDeleteConfirm}
                         color="error"
-                        startIcon={<DeleteIcon />}
-                        onClick={handleDeleteClick}
+                        variant="contained"
                         disabled={isDeleting}
                       >
-                        Delete
+                        {isDeleting ? 'Deleting...' : 'Delete'}
                       </Button>
-                    </CardActions>
-
-                    {/* Delete Confirmation Dialog */}
-                    <Dialog
-                      open={openDeleteDialog}
-                      onClose={handleDeleteCancel}
-                      aria-labelledby="alert-dialog-title"
-                      aria-describedby="alert-dialog-description"
-                    >
-                      <DialogTitle id="alert-dialog-title">
-                        Delete Recipe?
-                      </DialogTitle>
-                      <DialogContent>
-                        <DialogContentText id="alert-dialog-description">
-                          Are you sure you want to delete "<strong>{recipe?.description}</strong>"? 
-                          This action cannot be undone. Any proposals generated from this recipe will remain, 
-                          but they won't be able to regenerate.
-                        </DialogContentText>
-                      </DialogContent>
-                      <DialogActions>
-                        <Button onClick={handleDeleteCancel} disabled={isDeleting}>
-                          Cancel
-                        </Button>
-                        <Button
-                          onClick={handleDeleteConfirm}
-                          color="error"
-                          variant="contained"
-                          disabled={isDeleting}
-                        >
-                          {isDeleting ? 'Deleting...' : 'Delete'}
-                        </Button>
-                      </DialogActions>
-                    </Dialog>
-                  </Card>
-                </Stack>
-                }
-              <HelpDrawer title={HELP_TITLE} width={HELP_DRAWER_WIDTH} dictionary={HELP_DICTIONARY} />
-            </Box>
-         </GrantRecipeContext.Provider >
-     </HelpTopicContext.Provider>
+                    </DialogActions>
+                  </Dialog>
+                </Card>
+              </Stack>
+            }
+            <HelpDrawer title={HELP_TITLE} width={HELP_DRAWER_WIDTH} dictionary={HELP_DICTIONARY} />
+          </Box>
+        </GrantRecipeContext.Provider >
+      </HelpTopicContext.Provider >
     </>
   );
 

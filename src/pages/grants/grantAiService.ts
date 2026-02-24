@@ -15,13 +15,18 @@
  * </ol>
  */
 
+import { createPartFromText, createPartFromUri, createUserContent, GoogleGenAI, Part } from "@google/genai";
+import { storageService } from "../../App";
+import { StorageFile } from "../../services/OurWaveStorageService";
 import { GrantContext } from "../../types";
-import { createPartFromText, createUserContent, GoogleGenAI, Part } from "@google/genai";
+
+const CLOUD_FOLDER = import.meta.env.VITE_FIREBASE_STORAGE_FOLDER;
+
 class GrantAiService {
 
     static models = ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.5-flash-lite"];
     static instance: GrantAiService;
-    
+
     static getInstance() {
         if (!GrantAiService.instance) {
             GrantAiService.instance = new GrantAiService();
@@ -37,7 +42,7 @@ class GrantAiService {
      * This is for prompts where we just want the model to return a text response.
      */
     async query(prompt: string, modelType?: string, contexts?: GrantContext[]): Promise<any> {
-        const parts = contexts ? await this.uploadFiles(contexts) : [];
+        const parts = this.createParts(contexts ?? []);
         return await this.ai.models.generateContent({
             model: modelType ?? GrantAiService.models[0],
             contents: createUserContent([
@@ -46,8 +51,17 @@ class GrantAiService {
         });
     }
 
-    async uploadFiles(contexts: GrantContext[]): Promise<Part[]> {
-        return contexts.map(gc => createPartFromText(gc.value!));
+    createParts(contexts: GrantContext[]): Part[] {
+        const parts: Part[] = [];
+        contexts.forEach(async (gc, idx) => {
+            if (gc.type === 'text') {
+                parts.push(createPartFromText(gc.value!));
+            } else {
+                const uri = await storageService.getDownloadURL(`${CLOUD_FOLDER}/${gc.name}`);
+                parts.push(createPartFromUri(uri, contexts[idx].type));
+            }
+        });
+        return parts;
     }
 
     createSchema(schemaParams: string[]): any {
@@ -71,7 +85,8 @@ class GrantAiService {
         modelType?: string,
         contexts?: GrantContext[],
     ): Promise<any> {
-        const parts = contexts ? await this.uploadFiles(contexts) : [];
+        const parts = this.createParts(contexts ?? []);
+        console.log('parameterizedQuery parts:', parts);
         const responseSchema = this.createSchema(schemaParams);
         return await this.ai.models.generateContent({
             model: modelType ?? GrantAiService.models[0],
@@ -83,6 +98,56 @@ class GrantAiService {
         });
     }
 
+    async calcTokenCount(model: string, content: string): Promise<number> {
+        return this.ai.models
+            .countTokens({
+                model: model,
+                contents: ["Count tokens for this document", content]
+            })
+            .then(response => response.totalTokens ?? 0);
+    }
+
+    async calcFileTokenCount(model: string, file: File): Promise<number> {
+        // const bytes = await fileToBase64(file);
+        console.log("Calculating token count for file:", file);
+        const uploaded = await this.ai.files.upload({
+            file: file,
+            config: { mimeType: file.type },
+        });
+
+        return this.ai.models
+            .countTokens(
+                {
+                    model: model,
+                    contents: createUserContent([
+                        "Count tokens for this document",
+                        createPartFromUri(uploaded.uri!, uploaded.mimeType!),
+                    ])
+                })
+            .then(response => response.totalTokens ?? 0)
+            .catch(err => {
+                console.error("Error calculating token count for file", err);
+                return 0;
+            })
+    }
+
+    async calcStorageFileTokenCount(model: string, file: StorageFile): Promise<number> {
+        try {
+            const uri = await storageService.getDownloadURL(file.fullPath);
+            return this.ai.models
+                .countTokens({
+                    model: model,
+                    contents: createUserContent([
+                        "Count tokens for this document",
+                        createPartFromUri(uri, file.type ?? "application/octet-stream"),
+                    ])
+                })
+                .then(response => response.totalTokens ?? 0);
+        } catch (err) {
+            console.error("Error calculating token count for FirebaseStorageFile", err);
+            return 0;
+        }
+    }
 }
 
 export { GrantAiService };
