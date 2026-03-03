@@ -34,12 +34,14 @@ const HELP_DICTIONARY = {
   "Outputs": "Guidance for output constraints.",
 }
 
-export const TextEditor = ({ title, value, onChange }: { title: string, value: string, onChange: (updated: string) => void }) => {
+export const TextEditor = ({ title, value, onChange, required = false }: { title: string, value: string, onChange: (updated: string) => void, required?: boolean }) => {
   const { setHelpTopic } = useContext(HelpTopicContext);
   const { setShowHelp } = useHelp();
   return (
     <Card>
-      <CardHeader title={title}
+      <CardHeader title={<>
+        {title} {required && <span style={{ color: '#d32f2f' }}>*</span>}
+      </>}
         slotProps={{ title: { fontWeight: 600, fontSize: 16 } }}
         avatar={<IconButton
           onClick={() => { setHelpTopic(title); setShowHelp(true) }}
@@ -48,6 +50,7 @@ export const TextEditor = ({ title, value, onChange }: { title: string, value: s
         <TextField fullWidth={true}
           value={value ?? ""}
           onChange={(evt) => onChange(evt.target.value)}
+          required={required}
           multiline={true}
           sx={{
             '& .MuiInputBase-input': {
@@ -91,12 +94,14 @@ const GrantRecipesDetailPage: React.FC = () => {
   const [helpTopic, setHelpTopic] = useState<string | undefined>();
   const [hasValidDescription, setHasValidDescription] = useState<boolean>(false);
   const [hasCompleteOutputFields, setHasCompleteOutputFields] = useState<boolean>(false);
+  const [hasValidTemplate, setHasValidTemplate] = useState<boolean>(false);
 
   const isDescriptionMissing = !hasValidDescription;
   const isOutputFieldsIncomplete = !hasCompleteOutputFields;
+  const isTemplateMissing = !hasValidTemplate;
   const isSaveDisabled = loading || !dirty || isDescriptionMissing;
   const isCloneDisabled = loading || isDescriptionMissing;
-  const isGenerateDisabled = loading || isDescriptionMissing || isOutputFieldsIncomplete;
+  const isGenerateDisabled = loading || isDescriptionMissing || isOutputFieldsIncomplete || isTemplateMissing;
 
   const actionMessages: string[] = [];
   if (isDescriptionMissing) {
@@ -104,6 +109,9 @@ const GrantRecipesDetailPage: React.FC = () => {
   }
   if (isOutputFieldsIncomplete) {
     actionMessages.push("Complete Output Fields (*) to enable Generate.");
+  }
+  if (isTemplateMissing) {
+    actionMessages.push("Add Template (*) to enable Generate.");
   }
   if (!loading && hasValidDescription && !dirty) {
     actionMessages.push("Make a change to enable Save.");
@@ -120,6 +128,10 @@ const GrantRecipesDetailPage: React.FC = () => {
     );
     setHasCompleteOutputFields(outputFieldsComplete);
   }, [recipe?.outputsWithWordCount]);
+
+  useEffect(() => {
+    setHasValidTemplate((recipe?.template ?? "").trim().length > 0);
+  }, [recipe?.template]);
 
   useEffect(() => {
     if (id) {
@@ -182,6 +194,10 @@ const GrantRecipesDetailPage: React.FC = () => {
     }
     if (!hasCompleteOutputFields) {
       notifications.error("Please complete output fields before generating.");
+      return;
+    }
+    if (!hasValidTemplate) {
+      notifications.error("Please enter a template before generating.");
       return;
     }
     if (recipe) {  // TODO display error ?
@@ -267,7 +283,7 @@ const GrantRecipesDetailPage: React.FC = () => {
                     }}>
                     <Stack gap={1}>
                       <GrantInfoEditor recipe={recipe} onChange={handleInfoChange} />
-                      <TextEditor title="Template" value={recipe.template} onChange={handleTemplateChange} />
+                      <TextEditor title="Template" value={recipe.template} onChange={handleTemplateChange} required />
                       <GrantContextEditor onChange={handleGrantContextsChange} />
                       <GrantOutputEditor fields={recipe.outputsWithWordCount} onChange={handleGrantOutputChange} />
                       <PlainTextCard title="Prompt" value={recipe.prompt} />
@@ -281,7 +297,7 @@ const GrantRecipesDetailPage: React.FC = () => {
                     }}>
                     <Box sx={{ px: 1 }}>
                       {actionMessages.map((message, index) => (
-                        <Typography key={index} variant="body2" color="text.secondary">
+                        <Typography key={index} variant="body2" sx={{ color: "error.main" }}>
                           {message}
                         </Typography>
                       ))}
