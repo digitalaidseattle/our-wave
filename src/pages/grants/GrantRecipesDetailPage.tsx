@@ -5,7 +5,8 @@
 */
 import { HomeOutlined, InfoCircleOutlined } from "@ant-design/icons";
 import { LoadingContext, useHelp, useNotifications } from "@digitalaidseattle/core";
-import { Box, Breadcrumbs, Button, Card, CardActions, CardContent, CardHeader, Divider, IconButton, Stack, TextField, Typography } from "@mui/material";
+import { Box, Breadcrumbs, Button, Card, CardActions, CardContent, CardHeader, Divider, IconButton, Stack, TextField, Tooltip, Typography, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from "@mui/material";
+import DeleteIcon from '@mui/icons-material/Delete';
 import { useContext, useEffect, useState } from "react";
 import { NavLink, useNavigate, useParams } from "react-router-dom";
 import { GrantRecipeContext } from "../../components/GrantRecipeContext";
@@ -82,10 +83,8 @@ export const PlainTextCard = ({ title, value }: { title: string, value: string }
 
 const GrantRecipesDetailPage: React.FC = () => {
   const { id } = useParams<string>();
-
   const notifications = useNotifications();
   const navigate = useNavigate();
-
   const { loading, setLoading } = useContext(LoadingContext);
   const [recipe, setRecipe] = useState<GrantRecipe>({ id: 'test', description: 'test' } as GrantRecipe);
   const [lastUpdated, setLastUpdated] = useState<string>("");
@@ -95,6 +94,8 @@ const GrantRecipesDetailPage: React.FC = () => {
   const [hasValidDescription, setHasValidDescription] = useState<boolean>(false);
   const [hasCompleteOutputFields, setHasCompleteOutputFields] = useState<boolean>(false);
   const [hasValidTemplate, setHasValidTemplate] = useState<boolean>(false);
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const isDescriptionMissing = !hasValidDescription;
   const isOutputFieldsIncomplete = !hasCompleteOutputFields;
@@ -208,11 +209,11 @@ const GrantRecipesDetailPage: React.FC = () => {
           notifications.success(`Proposal generated for ${recipe.description}.`);
           navigate(`/grant-proposals/${proposal.id}`);
         })
-        .catch((err: any) => {
+        .catch((err: unknown) => {
           console.error(err);
+          const errorMessage = err instanceof Error ? err.message : "Unknown error";
           notifications.error(
-            `Could not generate a proposal for this recipe. ${err?.message ?? "Unknown error"
-            }`
+            `Could not generate a proposal for this recipe. ${errorMessage}`
           )
         })
         .finally(() => {
@@ -249,6 +250,34 @@ const GrantRecipesDetailPage: React.FC = () => {
       })
   }
 
+  const handleDeleteClick = () => {
+    setOpenDeleteDialog(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!recipe || !recipe.id) return;
+
+    try {
+      setIsDeleting(true);
+      await grantRecipeService.delete(recipe.id);
+      notifications.success("Recipe deleted successfully");
+      setOpenDeleteDialog(false);
+      navigate('/grant-recipes');
+    } catch (error) {
+      console.error('Failed to delete recipe:', error);
+      notifications.error("Failed to delete recipe. Please try again.");
+      setOpenDeleteDialog(false);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    if (!isDeleting) {
+      setOpenDeleteDialog(false);
+    }
+  };
+
   return (recipe &&
     <>
       <LoadingOverlay />
@@ -273,7 +302,7 @@ const GrantRecipesDetailPage: React.FC = () => {
                     flexDirection: "column",
                   }}
                 >
-                  <CardHeader title={recipe.description}
+                  <CardHeader title={recipe.description ?? ""}
                     action={`Token count = ${recipe.tokenCount}`}
                     subheader={`Last updated: ${lastUpdated}`} />
                   <CardContent
@@ -303,15 +332,65 @@ const GrantRecipesDetailPage: React.FC = () => {
                       ))}
                     </Box>
                     <Stack direction="row" spacing={1} alignItems="center">
-                      <SplitButton
-                        options={GrantAiService.models.map(m => ({ label: `Generate with ${m}`, value: m }))}
-                        disabled={isGenerateDisabled}
-                        onClick={(model: string) => handleGenerate(model)} />
+                      <Tooltip title='Click to generate.'>
+                        <Box>
+                          <SplitButton
+                            options={GrantAiService.models.map(m => ({ label: `Generate with ${m}`, value: m }))}
+                            disabled={isGenerateDisabled}
+                            onClick={(model: string) => handleGenerate(model)} />
+                        </Box>
+                      </Tooltip>
                       <Button variant="contained" disabled={isCloneDisabled} onClick={() => handleClone()}>Clone</Button>
                       <Divider orientation="vertical" flexItem />
                       <Button variant="contained" disabled={isSaveDisabled} onClick={() => handleSave()}>Save</Button>
+                      <Divider orientation="vertical" flexItem />
+                      <Button
+                        variant="outlined"
+                        color="error"
+                        startIcon={<DeleteIcon />}
+                        onClick={handleDeleteClick}
+                        disabled={loading || isDeleting}
+                      >
+                        Delete
+                      </Button>
                     </Stack>
                   </CardActions>
+
+                  {/* Delete Confirmation Dialog */}
+                  <Dialog
+                    open={openDeleteDialog}
+                    onClose={(_event, reason) => {
+                      if (reason === 'backdropClick' && isDeleting) return;
+                      handleDeleteCancel();
+                    }}
+                    disableEscapeKeyDown={isDeleting}
+                    aria-labelledby="alert-dialog-title"
+                    aria-describedby="alert-dialog-description"
+                  >
+                    <DialogTitle id="alert-dialog-title">
+                      Delete Recipe?
+                    </DialogTitle>
+                    <DialogContent>
+                      <DialogContentText id="alert-dialog-description">
+                        Are you sure you want to delete "<strong>{recipe?.description}</strong>"? 
+                        This action cannot be undone. Any proposals generated from this recipe will remain, 
+                        but they won't be able to regenerate.
+                      </DialogContentText>
+                    </DialogContent>
+                    <DialogActions>
+                      <Button onClick={handleDeleteCancel} disabled={isDeleting}>
+                        Cancel
+                      </Button>
+                      <Button
+                        onClick={handleDeleteConfirm}
+                        color="error"
+                        variant="contained"
+                        disabled={isDeleting}
+                      >
+                        {isDeleting ? 'Deleting...' : 'Delete'}
+                      </Button>
+                    </DialogActions>
+                  </Dialog>
                 </Card>
               </Stack>
             }
