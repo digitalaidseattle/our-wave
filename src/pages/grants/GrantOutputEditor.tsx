@@ -9,13 +9,12 @@ import {
   Button, ButtonGroup,
   Card, CardContent, CardHeader,
   IconButton,
-  Stack,
-  TextField
+  Stack
 } from "@mui/material";
 import { useContext, useEffect, useState } from "react";
 import { HelpTopicContext } from '../../components/HelpTopicContext';
-import type { GrantOutput } from "../../types";
 import { StableCursorTextField } from '../../components/StableCursorTextfield';
+import type { GrantOutput } from "../../types";
 
 export const GrantOutputEditor = ({ fields, onChange }: { fields: GrantOutput[], onChange: (updated: GrantOutput[]) => void }) => {
 
