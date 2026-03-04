@@ -16,6 +16,7 @@ import { GrantContext, GrantRecipe } from '../../types';
 import { GrantAiService } from './grantAiService';
 import { FileUploadDialog } from '../../components/FileUploadDialog';
 import { StorageFile } from '../../services/OurWaveStorageService';
+import { StableCursorTextField } from '../../components/StableCursorTextfield';
 
 const SUPPORTED_FILE_TYPES = [
     "text/plain",
@@ -53,7 +54,7 @@ const ContextRow = ({ index, context, onChange, onDelete }: ContextRowProps) => 
                 <DeleteOutlined />
             </Button>
             {(context.type === 'text') &&
-                <OutlinedInput
+                <StableCursorTextField
                     fullWidth={true}
                     value={context.value}
                     placeholder='Enter context information here'

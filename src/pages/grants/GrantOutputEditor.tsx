@@ -15,6 +15,7 @@ import {
 import { useContext, useEffect, useState } from "react";
 import { HelpTopicContext } from '../../components/HelpTopicContext';
 import type { GrantOutput } from "../../types";
+import { StableCursorTextField } from '../../components/StableCursorTextfield';
 
 export const GrantOutputEditor = ({ fields, onChange }: { fields: GrantOutput[], onChange: (updated: GrantOutput[]) => void }) => {
 
@@ -81,13 +82,13 @@ export const GrantOutputEditor = ({ fields, onChange }: { fields: GrantOutput[],
               >
                 <DeleteOutlined />
               </Button>
-              <TextField
+              <StableCursorTextField
                 label="Field"
                 fullWidth={true}
                 value={field.name}
                 onChange={(e) => handleOutputFieldChange(index, 'name', e.target.value)}
               />
-              <TextField
+              <StableCursorTextField
                 label={`Max ${field.unit === 'words' ? 'Words' : 'Characters'}`}
                 type="number"
                 value={field.maxWords}
