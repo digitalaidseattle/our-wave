@@ -22,6 +22,8 @@ jobs:
           echo VITE_FIREBASE_MEASUREMENT_ID=${{ secrets.VITE_FIREBASE_MEASUREMENT_ID }} >> .env
           echo VITE_GRANT_RECIPES_COLLECTION=grant-recipes-qa >> .env
           echo VITE_GRANT_PROPOSALS_COLLECTION=grant-proposal-qa >> .env
+          echo VITE_GOOGLE_CLIENT_ID=${{ secrets.VITE_GOOGLE_CLIENT_ID }} >> .env
+          echo VITE_GEMINI_API_KEY=${{ secrets.VITE_GEMINI_API_KEY }} >> .env
           cat .env
           npm install && npm run build -- --mode qa
       - uses: FirebaseExtended/action-hosting-deploy@v0

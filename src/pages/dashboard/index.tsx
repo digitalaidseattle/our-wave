@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 
 // material-ui
 import {
@@ -39,13 +39,15 @@ import SalesColumnChart from './SalesColumnChart';
 import { GiftOutlined, HomeOutlined, MessageOutlined, SettingOutlined } from '@ant-design/icons';
 import { useTheme } from '@mui/material/styles';
 import { grantRecipeService } from '../../services/grantRecipeService';
+import { cloneRecipe } from '../../transactions/CloneRecipe';
 import { createRecipe } from '../../transactions/CreateRecipe';
 import { GrantRecipe } from '../../types';
 import avatar1 from '/src/assets/images/users/avatar-1.png';
 import avatar2 from '/src/assets/images/users/avatar-2.png';
 import avatar3 from '/src/assets/images/users/avatar-3.png';
 import avatar4 from '/src/assets/images/users/avatar-4.png';
-import { cloneRecipe } from '../../transactions/CloneRecipe';
+import { LoadingContext } from '@digitalaidseattle/core';
+import LoadingButton from '../../components/LoadingButton';
 
 // avatar style
 const avatarSX = {
@@ -155,17 +157,28 @@ const CloneRecipeCard = () => {
 
 const CreateRecipeCard = () => {
   const navigate = useNavigate();
+  const { loading, setLoading } = useContext(LoadingContext);
 
   function handleClick() {
+    if (loading) return;
+    setLoading(true);
     createRecipe()
       .then(recipe => navigate(`/grant-recipes/${recipe.id}`))
+      .finally(() => setLoading(false));
   }
 
   return (
     <Card>
       <CardHeader title="New Proposal" />
       <CardActions>
-        <Button variant="contained" onClick={handleClick}>Create</Button>
+        <LoadingButton
+          variant="contained"
+          onClick={handleClick}
+          loading={loading}
+          loadingText={'Creating...'}
+        >
+          Create
+        </LoadingButton>
       </CardActions>
     </Card>
   )
@@ -176,6 +189,7 @@ const DashboardDefault = () => {
   const theme = useTheme();
   const [value, setValue] = useState('today');
   const [slot, setSlot] = useState('week');
+
 
   return (<>
     <Breadcrumbs aria-label="breadcrumbs">

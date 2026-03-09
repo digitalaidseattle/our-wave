@@ -83,9 +83,17 @@ const GrantRecipesListPage: React.FC = () => {
 
   function handleRowSelection(model: GridRowSelectionModel) {
     if (model) {
-      setSelectedIds([...model.ids as unknown as string[]]);
+      if (model.type === "include") {
+        setSelectedIds([...model.ids as unknown as string[]]);
+      } else {
+        const selected = recipes
+          .map(elem => elem.id as string)
+          .filter(id => !model.ids.has(id));
+        setSelectedIds(selected);
+      }
     }
   }
+
   const columns: GridColDef<GrantRecipe>[] = [
     {
       field: "description",

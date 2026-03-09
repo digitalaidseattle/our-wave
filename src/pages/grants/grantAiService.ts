@@ -15,81 +15,139 @@
  * </ol>
  */
 
-import { firebaseClient } from "@digitalaidseattle/firebase";
-import { getAI, getGenerativeModel, GoogleAIBackend, Schema } from "firebase/ai";
+import { createPartFromText, createPartFromUri, createUserContent, GoogleGenAI, Part } from "@google/genai";
+import { storageService } from "../../App";
+import { StorageFile } from "../../services/OurWaveStorageService";
+import { GrantContext } from "../../types";
+
+const CLOUD_FOLDER = import.meta.env.VITE_FIREBASE_STORAGE_FOLDER;
 
 class GrantAiService {
 
-    ai = getAI(firebaseClient, { backend: new GoogleAIBackend() });
+    static models = ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.5-flash-lite"];
+    static instance: GrantAiService;
 
-    // Default model used for simple text generation
-    model = getGenerativeModel(this.ai, {
-        model: "gemini-2.5-flash"
-    });
+    static getInstance() {
+        if (!GrantAiService.instance) {
+            GrantAiService.instance = new GrantAiService();
+        }
+        return GrantAiService.instance;
+    }
+
+    //ai = getAI(firebaseClient, { backend: new GoogleAIBackend() });
+    ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
 
     /**
      * Runs a basic text generation request.
      * This is for prompts where we just want the model to return a text response.
      */
-    query(prompt: string): Promise<string> {
-        console.log("Querying AI with prompt:", prompt, this.model);
-
-        return this.model.generateContent(prompt)
-            .then(result => result.response.text())
-            .catch(error => {
-                console.error("Error querying AI:", error);
-                throw new Error("Failed to query AI: " + error.message);
-            });
+    async query(prompt: string, modelType?: string, contexts?: GrantContext[]): Promise<any> {
+        const parts = this.createParts(contexts ?? []);
+        return await this.ai.models.generateContent({
+            model: modelType ?? GrantAiService.models[0],
+            contents: createUserContent([
+                prompt, ...parts
+            ]),
+        });
     }
 
-  /**
- * Sends a prompt to the AI and tells it which fields to return.
- * 
- * You give it a list of field names (like ["Summary", "Budget"]),
- * and the AI will return a JSON object with those fields filled in.
- */
-
-    parameterizedQuery(
-        schemaParams: string[],
-        prompt: string,
-        modelType: string = "gemini-2.5-flash"
-    ): Promise<Record<string, string>> {
-
-        // Build a schema where each field is expected to be a string.
-        // This tells the model exactly what shape the output should have.
-        const schema = Schema.object({
-            properties: Object.fromEntries(
-                schemaParams.map(field => [field, Schema.string()])
-            ),
+    createParts(contexts: GrantContext[]): Part[] {
+        const parts: Part[] = [];
+        contexts.forEach(async (gc, idx) => {
+            if (gc.type === 'text') {
+                parts.push(createPartFromText(gc.value!));
+            } else {
+                const uri = await storageService.getDownloadURL(`${CLOUD_FOLDER}/${gc.name}`);
+                parts.push(createPartFromUri(uri, contexts[idx].type));
+            }
         });
+        return parts;
+    }
 
-        // Create a model instance that will use this schema for responses.
-        const jModel = getGenerativeModel(this.ai, {
-            model: modelType,
-            generationConfig: {
+    createSchema(schemaParams: string[]): any {
+        return {
+            type: 'object',
+            properties: Object.fromEntries(
+                schemaParams.map(field => [field, { type: "string" }])
+            ),
+            required: schemaParams
+        };
+    }
+    /**
+     * Sends a prompt to the AI and tells it which fields to return.
+     * 
+     * You give it a list of field names (like ["Summary", "Budget"]),
+     * and the AI will return a JSON object with those fields filled in.
+     */
+    async parameterizedQuery(
+        prompt: string,
+        schemaParams: string[],
+        modelType?: string,
+        contexts?: GrantContext[],
+    ): Promise<any> {
+        const parts = this.createParts(contexts ?? []);
+        console.log('parameterizedQuery parts:', parts);
+        const responseSchema = this.createSchema(schemaParams);
+        return await this.ai.models.generateContent({
+            model: modelType ?? GrantAiService.models[0],
+            contents: [prompt, ...parts],
+            config: {
                 responseMimeType: "application/json",
-                responseSchema: schema
+                responseJsonSchema: responseSchema,
             },
         });
-
-        console.log("Querying AI with structured prompt:", prompt, jModel);
-
-        return jModel.generateContent(prompt)
-            .then(result => {
-                const text = result.response.text();
-
-                // We expect the model to return a valid JSON object
-                // matching the schema we provided.
-                const parsed = JSON.parse(text) as Record<string, string>;
-                return parsed;
-            })
-            .catch(error => {
-                console.error("Error querying AI (structured):", error);
-                throw new Error("Failed to query AI: " + error.message);
-            });
     }
 
+    async calcTokenCount(model: string, content: string): Promise<number> {
+        return this.ai.models
+            .countTokens({
+                model: model,
+                contents: ["Count tokens for this document", content]
+            })
+            .then(response => response.totalTokens ?? 0);
+    }
+
+    async calcFileTokenCount(model: string, file: File): Promise<number> {
+        // const bytes = await fileToBase64(file);
+        console.log("Calculating token count for file:", file);
+        const uploaded = await this.ai.files.upload({
+            file: file,
+            config: { mimeType: file.type },
+        });
+
+        return this.ai.models
+            .countTokens(
+                {
+                    model: model,
+                    contents: createUserContent([
+                        "Count tokens for this document",
+                        createPartFromUri(uploaded.uri!, uploaded.mimeType!),
+                    ])
+                })
+            .then(response => response.totalTokens ?? 0)
+            .catch(err => {
+                console.error("Error calculating token count for file", err);
+                return 0;
+            })
+    }
+
+    async calcStorageFileTokenCount(model: string, file: StorageFile): Promise<number> {
+        try {
+            const uri = await storageService.getDownloadURL(file.fullPath);
+            return this.ai.models
+                .countTokens({
+                    model: model,
+                    contents: createUserContent([
+                        "Count tokens for this document",
+                        createPartFromUri(uri, file.type ?? "application/octet-stream"),
+                    ])
+                })
+                .then(response => response.totalTokens ?? 0);
+        } catch (err) {
+            console.error("Error calculating token count for FirebaseStorageFile", err);
+            return 0;
+        }
+    }
 }
 
-const grantAiService = new GrantAiService();
-export { grantAiService };
+export { GrantAiService };

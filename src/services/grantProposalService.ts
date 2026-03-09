@@ -1,10 +1,8 @@
 import type { Identifier, User } from "@digitalaidseattle/core";
 import { FirestoreService } from "@digitalaidseattle/firebase";
-import type { GrantProposal, GrantRecipe } from "../types";
-import { grantAiService } from "../pages/grants/grantAiService";
 import { authService } from "../App";
-import { grantRecipeService } from "./grantRecipeService";
 import { FIRESTORE_COLLECTIONS } from "../constants/firestoreCollections";
+import type { GrantProposal } from "../types";
 
 class GrantProposalService extends FirestoreService<GrantProposal> {
   constructor() {
@@ -24,6 +22,8 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
       name: "",
       rating: null,
       structuredResponse: undefined,
+      totalTokenCount: null,
+      model: ""
     };
   }
 
@@ -34,7 +34,8 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
     mapper?: (json: any) => GrantProposal,
     user?: User
   ): Promise<GrantProposal> {
-    if (!user?.email) throw new Error("User email is required");
+    const sessionUser = user ?? await authService.getUser();
+    if (!sessionUser) throw new Error("Valid user not found.");
 
     const now = new Date();
     // Firestore can't store `undefined` (and we don't want to persist id anyway)
@@ -46,9 +47,9 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
       {
         ...entityWithoutId,
         createdAt: now,
-        createdBy: user.email,
+        createdBy: sessionUser.email,
         updatedAt: now,
-        updatedBy: user.email,
+        updatedBy: sessionUser.email,
       } as GrantProposal,
       select,
       mapper,
@@ -64,74 +65,20 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
     mapper?: (json: any) => GrantProposal,
     user?: User
   ): Promise<GrantProposal> {
-    if (!user?.email) throw new Error("User email is required");
+    const sessionUser = user ?? await authService.getUser();
+    if (!sessionUser) throw new Error("Valid user not found.");
 
-    // Firestore can't store `undefined` (and we don't want to persist id anyway)
-    // so remove it before insert.
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { id, ...entityWithoutId } = updatedFields;
-
-    return super.update(
-      entityId,
-      {
-        ...entityWithoutId,
-        updatedAt: new Date(),
-        updatedBy: user.email,
-      } as GrantProposal,
-      select,
-      mapper,
-      user
-    );
-  }
-
-
-  // --- real generation (still returns a draft; not persisted) ---
-  async generate(recipe: GrantRecipe): Promise<GrantProposal> {
-    if (!recipe.id) throw new Error("Recipe ID is required");
-
-    const outputs = recipe.outputsWithWordCount ?? [];
-    if (outputs.length === 0) {
-      throw new Error("Recipe is missing output fields");
-    }
-
-    // The prompt should already be generated and saved with the recipe
-    if (!recipe.prompt) {
-      throw new Error("Recipe prompt has not been generated");
-    }
-
-    const sessionUser = await authService.getUser();
-    if (!sessionUser) throw new Error("User email is required");
-
-    // Ask AI for structured JSON using output field names as keys
-    const schemaParams = outputs.map((o) => o.name);
-    const structuredResponse = await grantAiService.parameterizedQuery(
-      schemaParams,
-      recipe.prompt,
-      recipe.modelType
-    );
-
-    // Persist proposal
-    const saved = await grantProposalService.insert(
-      {
-        ...this.empty(),
-        grantRecipeId: recipe.id,
-        name: `${recipe.description} (${recipe.proposalIds.length + 1})`,
-        structuredResponse,
-        rating: null,
-      },
-      undefined,
-      undefined,
-      sessionUser
-    );
-
-    await grantRecipeService.update(recipe.id, {
-      ...recipe,
+    const partial = {
+      ...updatedFields,
       updatedAt: new Date(),
-      updatedBy: sessionUser.email,
-      proposalIds: [...recipe.proposalIds, saved.id as string]
-    })
-
-    return saved;
+      updatedBy: sessionUser.email
+    } as GrantProposal;
+    try {
+      return super.update(entityId, partial, select, mapper, sessionUser)
+    } catch (e) {
+      console.error("Error updating document: ", e);
+      throw e;
+    }
   }
 }
 

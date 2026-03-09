@@ -1,24 +1,14 @@
 import type { Identifier, User } from "@digitalaidseattle/core";
 import { FirestoreService } from "@digitalaidseattle/firebase";
-import type { GrantRecipe } from "../types";
 import Handlebars from "handlebars";
 import { authService } from "../App";
 import { FIRESTORE_COLLECTIONS } from "../constants/firestoreCollections";
+import type { GrantRecipe } from "../types";
 
 class GrantRecipeService extends FirestoreService<GrantRecipe> {
   constructor() {
     super(FIRESTORE_COLLECTIONS.grantRecipes);
   }
-
-  /**
-   * Returns the currently authenticated user (if available).
-   */
-  getUser(): User | null | undefined {
-    if (authService) {
-      return authService.currentUser;
-    }
-  }
-
   /**
    * Creates a blank recipe with default values.
    */
@@ -33,12 +23,13 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
       updatedBy: "",
       lastSubmitted: null,
       description: "",
-      tags:[],
+      tags: [],
       rating: 0,
       template: "Create a grant proposal",
       prompt: "",
-      inputParameters: [],
+      contexts: [],
       outputsWithWordCount: [],
+      inputParameters: [],
       tokenCount: 0,
       proposalIds: [],
       modelType: "gemini-2.5-flash",
@@ -55,7 +46,7 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
     mapper?: (json: any) => GrantRecipe,
     user?: User
   ): Promise<GrantRecipe> {
-    const sessionUser = user ?? this.getUser();
+    const sessionUser = user ?? await authService.getUser();
     if (!sessionUser?.email) {
       throw new Error("grantRecipeService.insert: user.email is required");
     }
@@ -92,18 +83,15 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
     mapper?: (json: any) => GrantRecipe,
     user?: User
   ): Promise<GrantRecipe> {
-    const sessionUser = user ?? this.getUser();
-    if (!sessionUser?.email) {
-      throw new Error("grantRecipeService.update: user.email is required");
+    const sessionUser = user ?? await authService.getUser();
+    if (!sessionUser) {
+      throw new Error("No valid user found.");
     }
-
-    const prompt = this.generatePromptWithInputs(updatedFields);
 
     return super.update(
       entityId,
       {
         ...updatedFields,
-        prompt,
         updatedAt: new Date(),
         updatedBy: sessionUser.email,
       },
@@ -114,29 +102,16 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
   }
 
   generatePromptWithInputs(recipe: GrantRecipe): string {
-    const compiled = Handlebars.compile(recipe.template ?? "");
+    const compiled = Handlebars.compile(recipe.template + `Where {{#each outputs}}{{#unless @first}} and{{/unless}} the output "{{name}}" cannot have more than {{maxWords}} of {{unit}} {{/each}}.`);
 
-    const basePrompt = compiled({
-      inputs: recipe.inputParameters,
+    return compiled({
       outputs: recipe.outputsWithWordCount,
     });
 
-    const outputConstraints = recipe.outputsWithWordCount
-      .map(o => `- ${o.name}: maximum ${o.maxWords} ${o.unit}`)
-      .join("\n");
-
-    return `
-${basePrompt}
-
-Please follow these output constraints strictly:
-${outputConstraints}
-
-Adjust wording as needed to stay within these limits.
-`;
   }
   async updatePrompt(recipe: GrantRecipe): Promise<GrantRecipe> {
     const prompt = this.generatePromptWithInputs(recipe);
-  
+
     // If token counting is needed later, it can live here
     // For now we keep existing tokenCount
     return {

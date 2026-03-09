@@ -38,7 +38,10 @@ Nonprofit staff spend hours repeating core narratives and trimming sections to f
    * `VITE_FIREBASE_MESSAGING_SENDER_ID`
    * `VITE_FIREBASE_APP_ID`
    * `VITE_FIREBASE_MEASUREMENT_ID`
-   * `VITE_AUTH_DOMAIN` for auth callbacks when required  
+   * `VITE_AUTH_DOMAIN` for auth callbacks when required
+   * `VITE_GEMINI_API_KEY` for Google Gemini AI (get from [Google Cloud Console](https://console.cloud.google.com/apis/credentials))
+   * `VITE_FIREBASE_STORAGE_FOLDER` for Firebase storage bucket folder
+   
    Ensure the Firebase project has Generative Language API and Firebase AI enabled.
 4. Start the dev server: `npm run dev`.
 5. Open `http://localhost:3000` and sign in with the configured provider to load grant recipes and drafts.

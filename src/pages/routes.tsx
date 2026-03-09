@@ -4,18 +4,19 @@ import {
   Error,
   Login,
   MainLayout,
-  MarkdownPage,
   MinimalLayout
 } from "@digitalaidseattle/mui";
-import GrantRecipesListPage from './grants/GrantRecipesListPage';
-import GrantRecipesDetailPage from './grants/GrantRecipesDetailPage';
-import GrantProposalsListPage from './grants/GrantProposalsListPage';
+import PublicMarkdownPage from '../components/PublicMarkdownPage';
 import GrantProposalsDetailPage from './grants/GrantProposalsDetailPage';
+import GrantProposalsListPage from './grants/GrantProposalsListPage';
+import GrantRecipesDetailPage from './grants/GrantRecipesDetailPage';
+import GrantRecipesListPage from './grants/GrantRecipesListPage';
 
 const routes = [
   {
     path: "/",
-    element: <MainLayout sx={{ p: 1 }} />,
+    element: 
+      <MainLayout sx={{ p: 1 }} />,
     children: [
       {
         path: "",
@@ -36,10 +37,17 @@ const routes = [
       {
         path: "grant-proposals/:id",
         element: <GrantProposalsDetailPage />,
-      },
+      }
+    ]
+  }
+  ,
+  {
+    path: "/",
+    element: <MainLayout sx={{ p: 1 }} />,
+    children: [
       {
         path: "privacy",
-        element: <MarkdownPage filepath='privacy.md' />,
+        element: <PublicMarkdownPage filePath='/privacy.md' />
       }
     ]
   },
