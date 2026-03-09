@@ -5,6 +5,7 @@ name: Deploy to Firebase Hosting on merge
 on:
   push:
     branches:
+      - qa
       - main
 jobs:
   build_and_deploy:
@@ -18,15 +19,25 @@ jobs:
           echo VITE_FIREBASE_APP_ID=${{ secrets.VITE_FIREBASE_APP_ID }} >> .env
           echo VITE_FIREBASE_MESSAGING_SENDER_ID=${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }} >> .env
           echo VITE_FIREBASE_MEASUREMENT_ID=${{ secrets.VITE_FIREBASE_MEASUREMENT_ID }} >> .env
-          echo VITE_GRANT_RECIPES_COLLECTION=grant-recipes >> .env
-          echo VITE_GRANT_PROPOSALS_COLLECTION=grant-proposal >> .env
+          if [ "${GITHUB_REF_NAME}" = "qa" ]; then
+            echo VITE_GRANT_RECIPES_COLLECTION=grant-recipes-qa >> .env
+            echo VITE_GRANT_PROPOSALS_COLLECTION=grant-proposal-qa >> .env
+          else
+            echo VITE_GRANT_RECIPES_COLLECTION=grant-recipes >> .env
+            echo VITE_GRANT_PROPOSALS_COLLECTION=grant-proposal >> .env
+          fi
           echo VITE_GOOGLE_CLIENT_ID=${{ secrets.VITE_GOOGLE_CLIENT_ID }} >> .env
           echo VITE_GEMINI_API_KEY=${{ secrets.VITE_GEMINI_API_KEY }} >> .env
           cat .env
-          npm install && npm run build
+          npm install
+          if [ "${GITHUB_REF_NAME}" = "qa" ]; then
+            npm run build -- --mode qa
+          else
+            npm run build
+          fi
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_OUR_WAVE }}
-          channelId: live
+          channelId: ${{ github.ref_name == 'qa' && 'qa' || 'live' }}
           projectId: our-wave
