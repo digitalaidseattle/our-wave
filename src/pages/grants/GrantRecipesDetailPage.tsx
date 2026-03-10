@@ -5,7 +5,8 @@
 */
 import { HomeOutlined, InfoCircleOutlined } from "@ant-design/icons";
 import { LoadingContext, useHelp, useNotifications } from "@digitalaidseattle/core";
-import { Box, Breadcrumbs, Button, Card, CardActions, CardContent, CardHeader, Divider, IconButton, Stack, TextField, Tooltip, Typography, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from "@mui/material";
+import { ConfirmationDialog } from "@digitalaidseattle/mui";
+import { Box, Breadcrumbs, Button, Card, CardActions, CardContent, CardHeader, Divider, IconButton, Stack, TextField, Tooltip, Typography } from "@mui/material";
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useContext, useEffect, useState } from "react";
 import { NavLink, useNavigate, useParams } from "react-router-dom";
@@ -84,17 +85,7 @@ const GrantRecipesDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const { loading, setLoading } = useContext(LoadingContext);
   
-  // Initialize new recipe with default blank context and output fields
-  const getInitialRecipe = (): GrantRecipe => {
-    return {
-      id: 'test',
-      description: 'test',
-      contexts: [{ type: 'text', name: null, value: '', tokenCount: 0 }],
-      outputsWithWordCount: [{ name: '', maxWords: 500, unit: 'words' }],
-    } as GrantRecipe;
-  };
-
-  const [recipe, setRecipe] = useState<GrantRecipe>(getInitialRecipe());
+  const [recipe, setRecipe] = useState<GrantRecipe>(grantRecipeService.empty());
   const [lastUpdated, setLastUpdated] = useState<string>("");
   const [dirty, setDirty] = useState<boolean>(false);
   const { showHelp } = useHelp();
@@ -116,7 +107,7 @@ const GrantRecipesDetailPage: React.FC = () => {
         });
     } else {
       // Initialize new recipe with default blank fields
-      setRecipe(getInitialRecipe());
+      setRecipe(grantRecipeService.empty());
     }
   }, [id])
 
@@ -315,40 +306,13 @@ const GrantRecipesDetailPage: React.FC = () => {
                   </CardActions>
 
                   {/* Delete Confirmation Dialog */}
-                  <Dialog
+                  <ConfirmationDialog
+                    title="Delete Recipe?"
+                    message={`Are you sure you want to delete "${recipe?.description}"? This action cannot be undone. Any proposals generated from this recipe will remain, but they won't be able to regenerate.`}
                     open={openDeleteDialog}
-                    onClose={(_event, reason) => {
-                      if (reason === 'backdropClick' && isDeleting) return;
-                      handleDeleteCancel();
-                    }}
-                    disableEscapeKeyDown={isDeleting}
-                    aria-labelledby="alert-dialog-title"
-                    aria-describedby="alert-dialog-description"
-                  >
-                    <DialogTitle id="alert-dialog-title">
-                      Delete Recipe?
-                    </DialogTitle>
-                    <DialogContent>
-                      <DialogContentText id="alert-dialog-description">
-                        Are you sure you want to delete "<strong>{recipe?.description}</strong>"? 
-                        This action cannot be undone. Any proposals generated from this recipe will remain, 
-                        but they won't be able to regenerate.
-                      </DialogContentText>
-                    </DialogContent>
-                    <DialogActions>
-                      <Button onClick={handleDeleteCancel} disabled={isDeleting}>
-                        Cancel
-                      </Button>
-                      <Button
-                        onClick={handleDeleteConfirm}
-                        color="error"
-                        variant="contained"
-                        disabled={isDeleting}
-                      >
-                        {isDeleting ? 'Deleting...' : 'Delete'}
-                      </Button>
-                    </DialogActions>
-                  </Dialog>
+                    handleConfirm={handleDeleteConfirm}
+                    handleCancel={handleDeleteCancel}
+                  />
                 </Card>
               </Stack>
             }
