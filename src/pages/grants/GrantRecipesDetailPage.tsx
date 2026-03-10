@@ -5,8 +5,8 @@
 */
 import { HomeOutlined, InfoCircleOutlined } from "@ant-design/icons";
 import { LoadingContext, useHelp, useNotifications } from "@digitalaidseattle/core";
-import { Box, Breadcrumbs, Button, Card, CardActions, CardContent, CardHeader, Divider, IconButton, Stack, TextField, Tooltip, Typography, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from "@mui/material";
 import DeleteIcon from '@mui/icons-material/Delete';
+import { Box, Breadcrumbs, Button, Card, CardActions, CardContent, CardHeader, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Divider, IconButton, Stack, Tooltip, Typography } from "@mui/material";
 import { useContext, useEffect, useState } from "react";
 import { NavLink, useNavigate, useParams } from "react-router-dom";
 import { GrantRecipeContext } from "../../components/GrantRecipeContext";
@@ -14,13 +14,14 @@ import { HelpDrawer } from "../../components/HelpDrawer";
 import { HelpTopicContext } from "../../components/HelpTopicContext";
 import { LoadingOverlay } from "../../components/LoadingOverlay";
 import { SplitButton } from "../../components/SplitButton";
+import { StableCursorTextField } from "../../components/StableCursorTextfield";
 import { grantRecipeService } from "../../services/grantRecipeService";
 import { cloneRecipe } from "../../transactions/CloneRecipe";
 import { generateProposal } from "../../transactions/GenerateProposal";
+import { saveRecipe } from "../../transactions/SaveRecipe";
 import { GrantOutput, GrantRecipe, Timestamp } from "../../types";
 import { DateUtils } from "../../utils/dateUtils";
 import { GrantAiService } from "./grantAiService";
-import { saveRecipe } from "../../transactions/SaveRecipe";
 import { GrantContextEditor } from "./GrantContextEditor";
 import { GrantInfoEditor } from "./GrantInfoEditor";
 import { GrantOutputEditor } from "./GrantOutputEditor";
@@ -46,7 +47,7 @@ export const TextEditor = ({ title, value, onChange }: { title: string, value: s
           onClick={() => { setHelpTopic(title); setShowHelp(true) }}
           color="primary"><InfoCircleOutlined /></IconButton>} />
       <CardContent>
-        <TextField fullWidth={true}
+        <StableCursorTextField fullWidth={true}
           value={value ?? ""}
           onChange={(evt) => onChange(evt.target.value)}
           multiline={true}
@@ -305,8 +306,8 @@ const GrantRecipesDetailPage: React.FC = () => {
                     </DialogTitle>
                     <DialogContent>
                       <DialogContentText id="alert-dialog-description">
-                        Are you sure you want to delete "<strong>{recipe?.description}</strong>"? 
-                        This action cannot be undone. Any proposals generated from this recipe will remain, 
+                        Are you sure you want to delete "<strong>{recipe?.description}</strong>"?
+                        This action cannot be undone. Any proposals generated from this recipe will remain,
                         but they won't be able to regenerate.
                       </DialogContentText>
                     </DialogContent>
