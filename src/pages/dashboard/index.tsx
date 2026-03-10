@@ -28,6 +28,7 @@ import { createRecipe } from '../../transactions/CreateRecipe';
 import { GrantRecipe } from '../../types';
 import { LoadingContext } from '@digitalaidseattle/core';
 import LoadingButton from '../../components/LoadingButton';
+import { DateUtils } from '../../utils/dateUtils';
 
 const RecentRecipesCard = () => {
   const navigate = useNavigate();
@@ -71,7 +72,7 @@ const RecentRecipesCard = () => {
                 <ListItemText
                   primary={recipe.description || 'Untitled Proposal'}
                   primaryTypographyProps={{ variant: 'body2', fontWeight: 500 }}
-                  secondary={recipe.updatedAt ? new Date(recipe.updatedAt as any).toLocaleDateString() : 'Unknown date'}
+                  secondary={recipe.updatedAt ? DateUtils.formatDateTime(recipe.updatedAt) : 'Unknown date'}
                   secondaryTypographyProps={{ variant: 'caption' }}
                 />
               </ListItemButton>
