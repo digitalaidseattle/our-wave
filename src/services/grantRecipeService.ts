@@ -2,11 +2,12 @@ import type { Identifier, User } from "@digitalaidseattle/core";
 import { FirestoreService } from "@digitalaidseattle/firebase";
 import Handlebars from "handlebars";
 import { authService } from "../App";
+import { FIRESTORE_COLLECTIONS } from "../constants/firestoreCollections";
 import type { GrantRecipe } from "../types";
 
 class GrantRecipeService extends FirestoreService<GrantRecipe> {
   constructor() {
-    super("grant-recipes");
+    super(FIRESTORE_COLLECTIONS.grantRecipes);
   }
   /**
    * Creates a blank recipe with default values.
