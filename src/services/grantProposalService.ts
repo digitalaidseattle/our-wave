@@ -1,11 +1,12 @@
 import type { Identifier, User } from "@digitalaidseattle/core";
 import { FirestoreService } from "@digitalaidseattle/firebase";
 import { authService } from "../App";
+import { FIRESTORE_COLLECTIONS } from "../constants/firestoreCollections";
 import type { GrantProposal } from "../types";
 
 class GrantProposalService extends FirestoreService<GrantProposal> {
   constructor() {
-    super("grant-proposal");
+    super(FIRESTORE_COLLECTIONS.grantProposals);
   }
 
   // Default shape for a new proposal

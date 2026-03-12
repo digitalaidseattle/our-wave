@@ -5,7 +5,8 @@
 */
 import { HomeOutlined, InfoCircleOutlined } from "@ant-design/icons";
 import { LoadingContext, useHelp, useNotifications } from "@digitalaidseattle/core";
-import { Box, Breadcrumbs, Button, Card, CardActions, CardContent, CardHeader, Divider, IconButton, Stack, TextField, Tooltip, Typography, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from "@mui/material";
+import { ConfirmationDialog } from "@digitalaidseattle/mui";
+import { Box, Breadcrumbs, Button, Card, CardActions, CardContent, CardHeader, Divider, IconButton, Stack, TextField, Tooltip, Typography } from "@mui/material";
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useContext, useEffect, useState } from "react";
 import { NavLink, useNavigate, useParams } from "react-router-dom";
@@ -86,7 +87,8 @@ const GrantRecipesDetailPage: React.FC = () => {
   const notifications = useNotifications();
   const navigate = useNavigate();
   const { loading, setLoading } = useContext(LoadingContext);
-  const [recipe, setRecipe] = useState<GrantRecipe>({ id: 'test', description: 'test' } as GrantRecipe);
+  
+  const [recipe, setRecipe] = useState<GrantRecipe>(grantRecipeService.empty());
   const [lastUpdated, setLastUpdated] = useState<string>("");
   const [dirty, setDirty] = useState<boolean>(false);
   const { showHelp } = useHelp();
@@ -141,6 +143,9 @@ const GrantRecipesDetailPage: React.FC = () => {
           setRecipe(found);
           setDirty(false);
         });
+    } else {
+      // Initialize new recipe with default blank fields
+      setRecipe(grantRecipeService.empty());
     }
   }, [id])
 
@@ -223,11 +228,22 @@ const GrantRecipesDetailPage: React.FC = () => {
   }
 
   function handleGrantOutputChange(updated: GrantOutput[]): void {
-    grantRecipeService.updatePrompt({ ...recipe, outputsWithWordCount: updated })
-      .then(revised => {
-        setRecipe(revised);
-        setDirty(true);
-      })
+    // For new recipes, just update the local state
+    const updatedRecipe = { ...recipe, outputsWithWordCount: updated };
+    setRecipe(updatedRecipe);
+    setDirty(true);
+    
+    // Only save to database if recipe already has a real ID (not the temp 'test' ID)
+    if (recipe.id !== 'test') {
+      grantRecipeService.updatePrompt(updatedRecipe)
+        .then(revised => {
+          setRecipe(revised);
+        })
+        .catch(err => {
+          console.error('Failed to update prompt:', err);
+          notifications.error('Failed to update output fields');
+        });
+    }
   }
 
   function handleInfoChange(updated: GrantRecipe): void {
@@ -357,40 +373,13 @@ const GrantRecipesDetailPage: React.FC = () => {
                   </CardActions>
 
                   {/* Delete Confirmation Dialog */}
-                  <Dialog
+                  <ConfirmationDialog
+                    title="Delete Recipe?"
+                    message={`Are you sure you want to delete "${recipe?.description}"? This action cannot be undone. Any proposals generated from this recipe will remain, but they won't be able to regenerate.`}
                     open={openDeleteDialog}
-                    onClose={(_event, reason) => {
-                      if (reason === 'backdropClick' && isDeleting) return;
-                      handleDeleteCancel();
-                    }}
-                    disableEscapeKeyDown={isDeleting}
-                    aria-labelledby="alert-dialog-title"
-                    aria-describedby="alert-dialog-description"
-                  >
-                    <DialogTitle id="alert-dialog-title">
-                      Delete Recipe?
-                    </DialogTitle>
-                    <DialogContent>
-                      <DialogContentText id="alert-dialog-description">
-                        Are you sure you want to delete "<strong>{recipe?.description}</strong>"? 
-                        This action cannot be undone. Any proposals generated from this recipe will remain, 
-                        but they won't be able to regenerate.
-                      </DialogContentText>
-                    </DialogContent>
-                    <DialogActions>
-                      <Button onClick={handleDeleteCancel} disabled={isDeleting}>
-                        Cancel
-                      </Button>
-                      <Button
-                        onClick={handleDeleteConfirm}
-                        color="error"
-                        variant="contained"
-                        disabled={isDeleting}
-                      >
-                        {isDeleting ? 'Deleting...' : 'Delete'}
-                      </Button>
-                    </DialogActions>
-                  </Dialog>
+                    handleConfirm={handleDeleteConfirm}
+                    handleCancel={handleDeleteCancel}
+                  />
                 </Card>
               </Stack>
             }
