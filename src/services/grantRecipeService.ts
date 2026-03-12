@@ -5,6 +5,8 @@ import { authService } from "../App";
 import type { GrantRecipe } from "../types";
 
 class GrantRecipeService extends FirestoreService<GrantRecipe> {
+  output_fragment = ` Where {{#each outputs}}{{#unless @first}} and{{/unless}} the output "{{name}}" cannot have more than {{maxWords}} {{unit}} {{/each}}.`;
+
   constructor() {
     super("grant-recipes");
   }
@@ -101,7 +103,7 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
   }
 
   generatePromptWithInputs(recipe: GrantRecipe): string {
-    const compiled = Handlebars.compile(recipe.template + `Where {{#each outputs}}{{#unless @first}} and{{/unless}} the output "{{name}}" cannot have more than {{maxWords}} of {{unit}} {{/each}}.`);
+    const compiled = Handlebars.compile(recipe.template + this.output_fragment);
 
     return compiled({
       outputs: recipe.outputsWithWordCount,
