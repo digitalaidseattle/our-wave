@@ -36,7 +36,23 @@ const HELP_DICTIONARY = {
   "Outputs": "Guidance for output constraints.",
 }
 
-export const TextEditor = ({ title, value, onChange, required = false }: { title: string, value: string, onChange: (updated: string) => void, required?: boolean }) => {
+export const TextEditor = ({
+  title,
+  value,
+  onChange,
+  required = false,
+  error = false,
+  helperText,
+  onBlur
+}: {
+  title: string,
+  value: string,
+  onChange: (updated: string) => void,
+  required?: boolean,
+  error?: boolean,
+  helperText?: string,
+  onBlur?: () => void
+}) => {
   const { setHelpTopic } = useContext(HelpTopicContext);
   const { setShowHelp } = useHelp();
   return (
@@ -53,6 +69,9 @@ export const TextEditor = ({ title, value, onChange, required = false }: { title
           value={value ?? ""}
           onChange={(evt) => onChange(evt.target.value)}
           required={required}
+          error={error}
+          helperText={helperText ?? " "}
+          onBlur={onBlur}
           multiline={true}
           sx={{
             '& .MuiInputBase-input': {
@@ -96,6 +115,9 @@ const GrantRecipesDetailPage: React.FC = () => {
   const [hasValidDescription, setHasValidDescription] = useState<boolean>(false);
   const [hasCompleteOutputFields, setHasCompleteOutputFields] = useState<boolean>(false);
   const [hasValidTemplate, setHasValidTemplate] = useState<boolean>(false);
+  const [descriptionTouched, setDescriptionTouched] = useState<boolean>(false);
+  const [templateTouched, setTemplateTouched] = useState<boolean>(false);
+  const [outputFieldTouched, setOutputFieldTouched] = useState<Record<string, boolean>>({});
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -107,15 +129,6 @@ const GrantRecipesDetailPage: React.FC = () => {
   const isGenerateDisabled = loading || isDescriptionMissing || isOutputFieldsIncomplete || isTemplateMissing;
 
   const actionMessages: string[] = [];
-  if (isDescriptionMissing) {
-    actionMessages.push("Add Description (*) to enable Save, Clone, and Generate.");
-  }
-  if (isOutputFieldsIncomplete) {
-    actionMessages.push("Complete Output Fields (*) to enable Generate.");
-  }
-  if (isTemplateMissing) {
-    actionMessages.push("Add Template (*) to enable Generate.");
-  }
   if (!loading && hasValidDescription && !dirty) {
     actionMessages.push("Make a change to enable Save.");
   }
@@ -142,10 +155,16 @@ const GrantRecipesDetailPage: React.FC = () => {
         .then(found => {
           setRecipe(found);
           setDirty(false);
+          setDescriptionTouched(false);
+          setTemplateTouched(false);
+          setOutputFieldTouched({});
         });
     } else {
       // Initialize new recipe with default blank fields
       setRecipe(grantRecipeService.empty());
+      setDescriptionTouched(false);
+      setTemplateTouched(false);
+      setOutputFieldTouched({});
     }
   }, [id])
 
@@ -157,6 +176,7 @@ const GrantRecipesDetailPage: React.FC = () => {
 
   function handleSave() {
     if (!hasValidDescription) {
+      setDescriptionTouched(true);
       notifications.error("Please name your recipe before saving.");
       return;
     }
@@ -176,6 +196,7 @@ const GrantRecipesDetailPage: React.FC = () => {
 
   function handleClone() {
     if (!hasValidDescription) {
+      setDescriptionTouched(true);
       notifications.error("Please name your recipe before cloning.");
       return;
     }
@@ -195,14 +216,17 @@ const GrantRecipesDetailPage: React.FC = () => {
 
   async function handleGenerate(model: string) {
     if (!hasValidDescription) {
+      setDescriptionTouched(true);
       notifications.error("Please enter a description before generating.");
       return;
     }
     if (!hasCompleteOutputFields) {
+      markInvalidOutputFieldsTouched();
       notifications.error("Please complete output fields before generating.");
       return;
     }
     if (!hasValidTemplate) {
+      setTemplateTouched(true);
       notifications.error("Please enter a template before generating.");
       return;
     }
@@ -244,6 +268,42 @@ const GrantRecipesDetailPage: React.FC = () => {
           notifications.error('Failed to update output fields');
         });
     }
+  }
+
+  function handleOutputFieldBlur(index: number, field: 'name' | 'maxWords'): void {
+    const touchedKey = `${field}-${index}`;
+    const nextTouched = {
+      ...outputFieldTouched,
+      [touchedKey]: true
+    };
+
+    const currentField = recipe.outputsWithWordCount?.[index];
+    const isCurrentFieldInvalid = field === 'name'
+      ? (currentField?.name ?? "").trim().length === 0
+      : Number(currentField?.maxWords) <= 0;
+
+    setOutputFieldTouched(
+      isCurrentFieldInvalid ? getTouchedInvalidOutputFields(nextTouched) : nextTouched
+    );
+  }
+
+  function getTouchedInvalidOutputFields(baseTouched: Record<string, boolean> = {}): Record<string, boolean> {
+    const nextTouched = { ...baseTouched };
+
+    (recipe.outputsWithWordCount ?? []).forEach((output, index) => {
+      if ((output?.name ?? "").trim().length === 0) {
+        nextTouched[`name-${index}`] = true;
+      }
+      if (Number(output?.maxWords) <= 0) {
+        nextTouched[`maxWords-${index}`] = true;
+      }
+    });
+
+    return nextTouched;
+  }
+
+  function markInvalidOutputFieldsTouched(): void {
+    setOutputFieldTouched(prev => getTouchedInvalidOutputFields(prev));
   }
 
   function handleInfoChange(updated: GrantRecipe): void {
@@ -327,10 +387,28 @@ const GrantRecipesDetailPage: React.FC = () => {
                       overflowY: "auto",
                     }}>
                     <Stack gap={1}>
-                      <GrantInfoEditor recipe={recipe} onChange={handleInfoChange} />
-                      <TextEditor title="Template" value={recipe.template} onChange={handleTemplateChange} required />
+                      <GrantInfoEditor
+                        recipe={recipe}
+                        onChange={handleInfoChange}
+                        showDescriptionError={descriptionTouched && isDescriptionMissing}
+                        onDescriptionBlur={() => setDescriptionTouched(true)}
+                      />
+                      <TextEditor
+                        title="Template"
+                        value={recipe.template}
+                        onChange={handleTemplateChange}
+                        required
+                        error={templateTouched && isTemplateMissing}
+                        helperText={templateTouched && isTemplateMissing ? "Template is required to generate." : " "}
+                        onBlur={() => setTemplateTouched(true)}
+                      />
                       <GrantContextEditor onChange={handleGrantContextsChange} />
-                      <GrantOutputEditor fields={recipe.outputsWithWordCount} onChange={handleGrantOutputChange} />
+                      <GrantOutputEditor
+                        fields={recipe.outputsWithWordCount}
+                        onChange={handleGrantOutputChange}
+                        touchedFields={outputFieldTouched}
+                        onFieldBlur={handleOutputFieldBlur}
+                      />
                       <PlainTextCard title="Prompt" value={recipe.prompt} />
                     </Stack>
                   </CardContent>

@@ -16,7 +16,17 @@ import { useContext, useEffect, useState } from "react";
 import { HelpTopicContext } from '../../components/HelpTopicContext';
 import type { GrantOutput } from "../../types";
 
-export const GrantOutputEditor = ({ fields, onChange }: { fields: GrantOutput[], onChange: (updated: GrantOutput[]) => void }) => {
+export const GrantOutputEditor = ({
+  fields,
+  onChange,
+  touchedFields = {},
+  onFieldBlur
+}: {
+  fields: GrantOutput[],
+  onChange: (updated: GrantOutput[]) => void,
+  touchedFields?: Record<string, boolean>,
+  onFieldBlur?: (index: number, field: 'name' | 'maxWords') => void
+}) => {
 
   const [outputFields, setOutputFields] = useState<GrantOutput[]>(fields || []);
   const { setHelpTopic } = useContext(HelpTopicContext);
@@ -86,6 +96,9 @@ export const GrantOutputEditor = ({ fields, onChange }: { fields: GrantOutput[],
                 fullWidth={true}
                 value={field.name}
                 required
+                error={Boolean(touchedFields[`name-${index}`]) && field.name.trim().length === 0}
+                helperText={Boolean(touchedFields[`name-${index}`]) && field.name.trim().length === 0 ? "Field name is required." : " "}
+                onBlur={() => onFieldBlur?.(index, 'name')}
                 onChange={(e) => handleOutputFieldChange(index, 'name', e.target.value)}
               />
               <TextField
@@ -93,6 +106,9 @@ export const GrantOutputEditor = ({ fields, onChange }: { fields: GrantOutput[],
                 type="number"
                 value={field.maxWords}
                 required
+                error={Boolean(touchedFields[`maxWords-${index}`]) && Number(field.maxWords) <= 0}
+                helperText={Boolean(touchedFields[`maxWords-${index}`]) && Number(field.maxWords) <= 0 ? "Enter a value greater than 0." : " "}
+                onBlur={() => onFieldBlur?.(index, 'maxWords')}
                 onChange={(e) => handleOutputFieldChange(index, 'maxWords', parseInt(e.target.value) || 0)}
               />
               <ButtonGroup variant="contained" aria-label="Basic button group">

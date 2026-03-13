@@ -10,7 +10,6 @@ import {
   CardContent,
   CardHeader,
   Chip,
-  FormLabel,
   Grid,
   IconButton,
   Rating,
@@ -61,7 +60,17 @@ const TagButton = ({ onChange }: { onChange: (newValue: string | null) => void }
   )
 }
 
-export const GrantInfoEditor = ({ recipe, onChange }: { recipe: GrantRecipe, onChange: (updated: GrantRecipe) => void }) => {
+export const GrantInfoEditor = ({
+  recipe,
+  onChange,
+  showDescriptionError = false,
+  onDescriptionBlur
+}: {
+  recipe: GrantRecipe,
+  onChange: (updated: GrantRecipe) => void,
+  showDescriptionError?: boolean,
+  onDescriptionBlur?: () => void
+}) => {
 
   const { setHelpTopic } = useContext(HelpTopicContext);
   const { setShowHelp } = useHelp();
@@ -103,15 +112,17 @@ export const GrantInfoEditor = ({ recipe, onChange }: { recipe: GrantRecipe, onC
               Description <Typography component="span" color="error">*</Typography>
             </Typography>
           </Grid>
-          <Grid size={10}><FormLabel>
+          <Grid size={10}>
             <TextField
               fullWidth={true}
               value={recipe.description ?? ""}
               placeholder="Name your recipe"
               autoFocus
               required
+              error={showDescriptionError}
+              helperText={showDescriptionError ? "Description is required." : " "}
+              onBlur={onDescriptionBlur}
               onChange={(evt) => handleDescriptionChange(evt.target.value)} />
-          </FormLabel>
           </Grid>
           <Grid size={2}><Typography>Rating</Typography></Grid>
           <Grid size={10}>
