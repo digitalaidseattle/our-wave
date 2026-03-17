@@ -18,14 +18,12 @@ import type { GrantOutput } from "../../types";
 
 export const GrantOutputEditor = ({ fields, onChange }: { fields: GrantOutput[], onChange: (updated: GrantOutput[]) => void }) => {
 
-  const [outputFields, setOutputFields] = useState<GrantOutput[]>([]);
+  const [outputFields, setOutputFields] = useState<GrantOutput[]>(fields || []);
   const { setHelpTopic } = useContext(HelpTopicContext);
   const { setShowHelp } = useHelp();
 
   useEffect(() => {
-    if (fields) {
-      setOutputFields(fields);
-    }
+    setOutputFields(fields || []);
   }, [fields])
 
   const handleOutputFieldChange = (index: number, field: 'name' | 'maxWords', value: string | number) => {

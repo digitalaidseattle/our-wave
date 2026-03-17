@@ -14,7 +14,6 @@ export function createRecipe(): Promise<GrantRecipe> {
     return authService.getUser()
         .then((user => {
             const newRecipe = grantRecipeService.empty();
-            newRecipe.description = "";
             return grantRecipeService.insert(newRecipe, undefined, undefined, user);
         }))
 }
