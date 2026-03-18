@@ -1,23 +1,14 @@
 import type { Identifier, User } from "@digitalaidseattle/core";
 import { FirestoreService } from "@digitalaidseattle/firebase";
-import type { GrantRecipe } from "../types";
 import Handlebars from "handlebars";
 import { authService } from "../App";
+import { FIRESTORE_COLLECTIONS } from "../constants/firestoreCollections";
+import type { GrantRecipe } from "../types";
 
 class GrantRecipeService extends FirestoreService<GrantRecipe> {
   constructor() {
-    super("grant-recipes");
+    super(FIRESTORE_COLLECTIONS.grantRecipes);
   }
-
-  /**
-   * Returns the currently authenticated user (if available).
-   */
-  getUser(): User | null | undefined {
-    if (authService) {
-      return authService.currentUser;
-    }
-  }
-
   /**
    * Creates a blank recipe with default values.
    */
@@ -36,8 +27,8 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
       rating: 0,
       template: "Create a grant proposal",
       prompt: "",
-      contexts: [],
-      outputsWithWordCount: [],
+      contexts: [{ type: 'text', name: null, value: '', tokenCount: 0 }],
+      outputsWithWordCount: [{ name: '', maxWords: 500, unit: 'words' }],
       inputParameters: [],
       tokenCount: 0,
       proposalIds: [],
@@ -55,7 +46,7 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
     mapper?: (json: any) => GrantRecipe,
     user?: User
   ): Promise<GrantRecipe> {
-    const sessionUser = user ?? this.getUser();
+    const sessionUser = user ?? await authService.getUser();
     if (!sessionUser?.email) {
       throw new Error("grantRecipeService.insert: user.email is required");
     }
@@ -92,18 +83,15 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
     mapper?: (json: any) => GrantRecipe,
     user?: User
   ): Promise<GrantRecipe> {
-    const sessionUser = user ?? this.getUser();
+    const sessionUser = user ?? await authService.getUser();
     if (!sessionUser) {
       throw new Error("No valid user found.");
     }
-
-    const prompt = this.generatePromptWithInputs(updatedFields);
 
     return super.update(
       entityId,
       {
         ...updatedFields,
-        prompt,
         updatedAt: new Date(),
         updatedBy: sessionUser.email,
       },

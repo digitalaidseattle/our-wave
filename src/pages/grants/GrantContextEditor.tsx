@@ -4,17 +4,25 @@
  *  @copyright 2025 Digital Aid Seattle
  *
  */
-import { DeleteOutlined, FileSearchOutlined, InfoCircleOutlined, PlusOutlined } from '@ant-design/icons';
-import { Button, Card, CardContent, CardHeader, IconButton, InputAdornment, OutlinedInput, Stack, Toolbar, Typography } from "@mui/material";
-import React, { useContext, useEffect } from 'react';
+import { DeleteOutlined, InfoCircleOutlined, PlusOutlined } from '@ant-design/icons';
+import { Button, Card, CardContent, CardHeader, FormControl, IconButton, OutlinedInput, Stack, Toolbar, Typography } from "@mui/material";
+import React, { useContext, useEffect, useState } from 'react';
 
-import { useHelp } from '@digitalaidseattle/core';
+import { useHelp, useNotifications } from '@digitalaidseattle/core';
 import { geminiService } from '../../api/geminiService';
-import { GoogleDriveFileSearchDialog } from '../../components/GoogleDriveFileSearchDialog';
 import { GrantRecipeContext } from '../../components/GrantRecipeContext';
 import { HelpTopicContext } from '../../components/HelpTopicContext';
-import { GoogleDriveService, GoogleFile } from '../../services/googleDriveService';
 import { GrantContext, GrantRecipe } from '../../types';
+import { GrantAiService } from './grantAiService';
+import { FileUploadDialog } from '../../components/FileUploadDialog';
+import { StorageFile } from '../../services/OurWaveStorageService';
+
+const SUPPORTED_FILE_TYPES = [
+    "text/plain",
+    "application/pdf",
+    "text/html",
+    "application/json",
+    "text/markdown"];
 
 interface ContextRowProps {
     index: number;
@@ -23,29 +31,6 @@ interface ContextRowProps {
     onDelete: (index: number) => void
 };
 const ContextRow = ({ index, context, onChange, onDelete }: ContextRowProps) => {
-
-    const googleDriveService = GoogleDriveService.getInstance();
-    const { recipe } = useContext(GrantRecipeContext);
-    const [fileSearchModalOpen, setFileSearchModalOpen] = React.useState(false);
-
-    function handleFileSearch(): void {
-        setFileSearchModalOpen(true)
-    }
-
-    async function handleFileSelection(gf: GoogleFile | null): Promise<void> {
-        if (gf) {
-            const content = await googleDriveService.downloadMarkdown(gf.id)
-            const tokenCount = await geminiService.calcTokenCount(recipe.modelType, content);
-            onChange(index, {
-                ...context,
-                tokenCount: tokenCount,
-                name: gf.name,
-                filePath: gf.id,
-                value: content ?? ''
-            });
-        }
-        setFileSearchModalOpen(false)
-    }
 
     function handleTextChange(e: React.ChangeEvent<HTMLInputElement>): void {
         onChange(index, { ...context, value: e.target.value });
@@ -81,26 +66,16 @@ const ContextRow = ({ index, context, onChange, onDelete }: ContextRowProps) => 
                             overflow: 'auto',
                         }
                     }} />}
-            {(context.type === 'file') &&
+            {(SUPPORTED_FILE_TYPES.includes(context.type)) &&
                 <>
-                    <OutlinedInput
-                        fullWidth={true}
-                        value={context.name ?? ''}
-                        startAdornment={
-                            <InputAdornment position="start" sx={{ mr: -0.5 }}>
-                                <IconButton onClick={() => handleFileSearch()}>
-                                    <FileSearchOutlined />
-                                </IconButton>
-                            </InputAdornment>
-                        }
-                        onChange={(e) => onChange(index, { ...context, value: e.target.value })}
-                    />
+                    <FormControl fullWidth={true} sx={{ border: '1px solid', borderBlockColor: 'grey', padding: 2, borderRadius: 1, pr: 1 }}>
+                        <Typography >File: {context.name}</Typography>
+                    </FormControl>
                 </>
             }
             <Typography variant="body2" sx={{ alignSelf: 'center', minWidth: 80 }}>
                 Tokens: {context.tokenCount}
             </Typography>
-            <GoogleDriveFileSearchDialog open={fileSearchModalOpen} onChange={handleFileSelection} />
         </Stack >
     )
 }
@@ -110,17 +85,21 @@ type GrantContextEditorProps = {
 };
 
 export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ onChange }) => {
+    const grantAiService = GrantAiService.getInstance();
+    const notifications = useNotifications();
+
     const { setHelpTopic } = useContext(HelpTopicContext);
     const { setShowHelp } = useHelp();
     const { recipe } = useContext(GrantRecipeContext);
     const [contexts, setContexts] = React.useState<GrantContext[]>([]);
 
+    const [showUploadDialog, setShowUploadDialog] = useState<boolean>(false);
     useEffect(() => {
         setContexts(recipe ? recipe.contexts : []);
     }, [recipe]);
 
-    async function addContext(newContext: GrantContext) {
-        const revised = [...(contexts ?? []), newContext]
+    async function addContexts(newContexts: GrantContext[]) {
+        const revised = [...(contexts ?? []), ...newContexts]
         onChange({ ...recipe, contexts: revised });
     }
 
@@ -135,6 +114,29 @@ export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ onChange
         onChange({ ...recipe, contexts: revised });
     }
 
+    async function handleFileSelection(files: (File | StorageFile)[] | null) {
+        if (files) {
+            const contexts = files
+                .filter(file => {
+                    const fileType = file.type;
+                    if (!fileType || !SUPPORTED_FILE_TYPES.includes(fileType)) {
+                        notifications.error(`Unsupported file type: ${file.type}. Supported types are: ${SUPPORTED_FILE_TYPES.join(", ")}`);
+                        return false;
+                    } else {
+                        return true;
+                    }
+                })
+                .map(async file => {
+                    const tokenCount = file instanceof File
+                        ? await grantAiService.calcFileTokenCount(recipe.modelType, file)
+                        : await grantAiService.calcStorageFileTokenCount(recipe.modelType, file);
+                    return ({ type: file.type!, value: "", name: file.name, tokenCount: tokenCount, file: file });
+                })
+            addContexts(await Promise.all(contexts));
+        }
+        setShowUploadDialog(false);
+    }
+
     return (
         <Card>
             <CardHeader title="Project Contexts"
@@ -142,14 +144,14 @@ export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ onChange
                     <Toolbar disableGutters={true} sx={{ gap: 1 }} >
                         <Button
                             variant="outlined"
-                            onClick={() => addContext({ type: "file", value: "", name: "", tokenCount: 0 })}
+                            onClick={() => setShowUploadDialog(true)}
                             startIcon={<PlusOutlined />}
                             sx={{ alignSelf: 'flex-start' }}>
                             File
                         </Button>
                         <Button
                             variant="outlined"
-                            onClick={() => addContext({ type: "text", value: "", name: "", tokenCount: 0 })}
+                            onClick={() => addContexts([{ type: "text", value: "", name: "", tokenCount: 0 }])}
                             startIcon={<PlusOutlined />}
                             sx={{ alignSelf: 'flex-start' }}>
                             Text
@@ -171,9 +173,11 @@ export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ onChange
                             onDelete={removeContext} />
                     ))}
                 </Stack>
+                <FileUploadDialog
+                    open={showUploadDialog}
+                    onChange={(files) => { handleFileSelection(files) }}
+                />
             </CardContent>
         </Card>
     );
 };
-
-

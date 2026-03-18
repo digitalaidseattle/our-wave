@@ -6,7 +6,6 @@ import {
   MainLayout,
   MinimalLayout
 } from "@digitalaidseattle/mui";
-import { GoogleDriveAutoLogin } from '../components/GoogleDriveAutoLogin';
 import PublicMarkdownPage from '../components/PublicMarkdownPage';
 import GrantProposalsDetailPage from './grants/GrantProposalsDetailPage';
 import GrantProposalsListPage from './grants/GrantProposalsListPage';
@@ -16,9 +15,8 @@ import GrantRecipesListPage from './grants/GrantRecipesListPage';
 const routes = [
   {
     path: "/",
-    element: <GoogleDriveAutoLogin>
-      <MainLayout sx={{ p: 1 }} />
-    </GoogleDriveAutoLogin>,
+    element: 
+      <MainLayout sx={{ p: 1 }} />,
     children: [
       {
         path: "",

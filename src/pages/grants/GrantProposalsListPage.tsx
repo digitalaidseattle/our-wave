@@ -73,7 +73,14 @@ const GrantProposalsListPage: React.FC = () => {
 
   function handleRowSelection(model: GridRowSelectionModel) {
     if (model) {
-      setSelectedIds([...model.ids as unknown as string[]]);
+      if (model.type === "include") {
+        setSelectedIds([...model.ids as unknown as string[]]);
+      } else {
+        const selected = proposals
+          .map(elem => elem.id as string)
+          .filter(id => !model.ids.has(id));
+        setSelectedIds(selected);
+      }
     }
   }
 
