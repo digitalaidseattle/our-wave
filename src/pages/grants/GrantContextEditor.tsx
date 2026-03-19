@@ -5,17 +5,18 @@
  *
  */
 import { DeleteOutlined, InfoCircleOutlined, PlusOutlined } from '@ant-design/icons';
-import { Button, Card, CardContent, CardHeader, FormControl, IconButton, OutlinedInput, Stack, Toolbar, Typography } from "@mui/material";
+import { Button, Card, CardContent, CardHeader, FormControl, IconButton, Stack, Toolbar, Typography } from "@mui/material";
 import React, { useContext, useEffect, useState } from 'react';
 
 import { useHelp, useNotifications } from '@digitalaidseattle/core';
 import { geminiService } from '../../api/geminiService';
+import { FileUploadDialog } from '../../components/FileUploadDialog';
 import { GrantRecipeContext } from '../../components/GrantRecipeContext';
 import { HelpTopicContext } from '../../components/HelpTopicContext';
+import { StableCursorTextField } from '../../components/StableCursorTextfield';
+import { StorageFile } from '../../services/OurWaveStorageService';
 import { GrantContext, GrantRecipe } from '../../types';
 import { GrantAiService } from './grantAiService';
-import { FileUploadDialog } from '../../components/FileUploadDialog';
-import { StorageFile } from '../../services/OurWaveStorageService';
 
 const SUPPORTED_FILE_TYPES = [
     "text/plain",
@@ -53,7 +54,7 @@ const ContextRow = ({ index, context, onChange, onDelete }: ContextRowProps) => 
                 <DeleteOutlined />
             </Button>
             {(context.type === 'text') &&
-                <OutlinedInput
+                <StableCursorTextField
                     fullWidth={true}
                     value={context.value}
                     placeholder='Enter context information here'
