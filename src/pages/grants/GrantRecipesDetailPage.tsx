@@ -7,6 +7,7 @@ import { useContext, useEffect, useState } from "react";
 import { NavLink, useNavigate, useParams } from "react-router-dom";
 
 import { HomeOutlined, InfoCircleOutlined } from "@ant-design/icons";
+import DeleteIcon from "@mui/icons-material/Delete";
 import { Box, Breadcrumbs, Button, Card, CardActions, CardContent, CardHeader, Divider, IconButton, Stack, Tooltip, Typography } from "@mui/material";
 
 import { LoadingContext, useHelp, useNotifications } from "@digitalaidseattle/core";
