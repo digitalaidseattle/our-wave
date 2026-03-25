@@ -1,5 +1,5 @@
 import { CopyOutlined, DeleteOutlined, HomeOutlined, PlusCircleOutlined } from "@ant-design/icons";
-import { Box, Breadcrumbs, Card, CardContent, CardHeader, IconButton, Toolbar, Tooltip, Typography } from "@mui/material";
+import { Box, Breadcrumbs, Card, CardContent, CardHeader, Chip, IconButton, Toolbar, Tooltip, Typography } from "@mui/material";
 import { DataGrid, GridColDef, GridRowParams, GridRowSelectionModel } from "@mui/x-data-grid";
 import { useContext, useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
@@ -98,7 +98,7 @@ const GrantRecipesListPage: React.FC = () => {
     {
       field: "description",
       headerName: "Description",
-      flex: 1,
+      width: 400,
     },
     {
       field: "tokenCount",
@@ -107,9 +107,19 @@ const GrantRecipesListPage: React.FC = () => {
       type: "number",
     },
     {
-      field: "modelType",
-      headerName: "Model Type",
+      field: "tags",
+      headerName: "Tags",
       width: 180,
+      sortable: false,
+      filterable: false,
+      renderCell: (params) => {
+        const tags = params.row.tags ?? [];
+        return (
+          <>
+            {tags.map((tag, idx) => <Chip key={idx} label={tag} />)}
+          </>
+        )
+      }
     },
     {
       field: "lastSubmitted",

@@ -9,11 +9,11 @@ import {
   Button, ButtonGroup,
   Card, CardContent, CardHeader,
   IconButton,
-  Stack,
-  TextField
+  Stack
 } from "@mui/material";
 import { useContext, useEffect, useState } from "react";
 import { HelpTopicContext } from '../../components/HelpTopicContext';
+import { StableCursorTextField } from '../../components/StableCursorTextfield';
 import type { GrantOutput } from "../../types";
 
 export const GrantOutputEditor = ({
@@ -91,7 +91,7 @@ export const GrantOutputEditor = ({
               >
                 <DeleteOutlined />
               </Button>
-              <TextField
+              <StableCursorTextField
                 label="Field"
                 fullWidth={true}
                 value={field.name}
@@ -101,7 +101,7 @@ export const GrantOutputEditor = ({
                 onBlur={() => onFieldBlur?.(index, 'name')}
                 onChange={(e) => handleOutputFieldChange(index, 'name', e.target.value)}
               />
-              <TextField
+              <StableCursorTextField
                 label={`Max ${field.unit === 'words' ? 'Words' : 'Characters'}`}
                 type="number"
                 value={field.maxWords}

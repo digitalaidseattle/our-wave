@@ -3,25 +3,28 @@
  * 
  * @copyright 2025 Digital Aid Seattle
 */
-import { HomeOutlined, InfoCircleOutlined } from "@ant-design/icons";
-import { LoadingContext, useHelp, useNotifications } from "@digitalaidseattle/core";
-import { ConfirmationDialog } from "@digitalaidseattle/mui";
-import { Box, Breadcrumbs, Button, Card, CardActions, CardContent, CardHeader, Divider, IconButton, Stack, TextField, Tooltip, Typography } from "@mui/material";
-import DeleteIcon from '@mui/icons-material/Delete';
 import { useContext, useEffect, useState } from "react";
 import { NavLink, useNavigate, useParams } from "react-router-dom";
+
+import { HomeOutlined, InfoCircleOutlined } from "@ant-design/icons";
+import { Box, Breadcrumbs, Button, Card, CardActions, CardContent, CardHeader, Divider, IconButton, Stack, Tooltip, Typography } from "@mui/material";
+
+import { LoadingContext, useHelp, useNotifications } from "@digitalaidseattle/core";
+import { ConfirmationDialog } from "@digitalaidseattle/mui";
+
 import { GrantRecipeContext } from "../../components/GrantRecipeContext";
 import { HelpDrawer } from "../../components/HelpDrawer";
 import { HelpTopicContext } from "../../components/HelpTopicContext";
 import { LoadingOverlay } from "../../components/LoadingOverlay";
 import { SplitButton } from "../../components/SplitButton";
+import { StableCursorTextField } from "../../components/StableCursorTextfield";
 import { grantRecipeService } from "../../services/grantRecipeService";
 import { cloneRecipe } from "../../transactions/CloneRecipe";
 import { generateProposal } from "../../transactions/GenerateProposal";
+import { saveRecipe } from "../../transactions/SaveRecipe";
 import { GrantOutput, GrantRecipe, Timestamp } from "../../types";
 import { DateUtils } from "../../utils/dateUtils";
 import { GrantAiService } from "./grantAiService";
-import { saveRecipe } from "../../transactions/SaveRecipe";
 import { GrantContextEditor } from "./GrantContextEditor";
 import { GrantInfoEditor } from "./GrantInfoEditor";
 import { GrantOutputEditor } from "./GrantOutputEditor";
@@ -65,7 +68,7 @@ export const TextEditor = ({
           onClick={() => { setHelpTopic(title); setShowHelp(true) }}
           color="primary"><InfoCircleOutlined /></IconButton>} />
       <CardContent>
-        <TextField fullWidth={true}
+        <StableCursorTextField fullWidth={true}
           value={value ?? ""}
           onChange={(evt) => onChange(evt.target.value)}
           required={required}
@@ -106,7 +109,7 @@ const GrantRecipesDetailPage: React.FC = () => {
   const notifications = useNotifications();
   const navigate = useNavigate();
   const { loading, setLoading } = useContext(LoadingContext);
-  
+
   const [recipe, setRecipe] = useState<GrantRecipe>(grantRecipeService.empty());
   const [lastUpdated, setLastUpdated] = useState<string>("");
   const [dirty, setDirty] = useState<boolean>(false);
@@ -256,7 +259,7 @@ const GrantRecipesDetailPage: React.FC = () => {
     const updatedRecipe = { ...recipe, outputsWithWordCount: updated };
     setRecipe(updatedRecipe);
     setDirty(true);
-    
+
     // Only save to database if recipe already has a real ID (not the temp 'test' ID)
     if (recipe.id !== 'test') {
       grantRecipeService.updatePrompt(updatedRecipe)
