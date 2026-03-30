@@ -49,7 +49,7 @@ const RecentRecipesCard = () => {
   return (
     <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <CardHeader 
-        title="Recent Proposals" 
+        title="Recent Recipes" 
         titleTypographyProps={{ variant: 'h6', fontWeight: 600 }}
       />
       <CardContent sx={{ flex: 1, overflow: 'auto', p: 0 }}>
@@ -70,7 +70,7 @@ const RecentRecipesCard = () => {
                 }}
               >
                 <ListItemText
-                  primary={recipe.description || 'Untitled Proposal'}
+                  primary={recipe.description || 'Untitled Recipe'}
                   primaryTypographyProps={{ variant: 'body2', fontWeight: 500 }}
                   secondary={recipe.updatedAt ? DateUtils.formatDateTime(recipe.updatedAt) : 'Unknown date'}
                   secondaryTypographyProps={{ variant: 'caption' }}
@@ -113,9 +113,9 @@ const CloneRecipeCard = () => {
 
   return (
     <Card>
-      <CardHeader title="Clone Proposal" />
+      <CardHeader title="Clone Recipe" />
       <CardContent>
-        <Typography>Select a recent Proposal</Typography>
+        <Typography>Select a recent Recipe</Typography>
         <Select
           fullWidth={true}
           value={selectedRecipe ? selectedRecipe.id : ''}
@@ -144,7 +144,7 @@ const CreateRecipeCard = () => {
 
   return (
     <Card>
-      <CardHeader title="New Proposal" />
+      <CardHeader title="New Recipe" />
       <CardActions>
         <LoadingButton
           variant="contained"
