@@ -42,7 +42,7 @@ async function uploadFiles(contexts: GrantContext[]): Promise<GrantContext[]> {
 export async function saveRecipe(recipe: GrantRecipe): Promise<GrantRecipe> {
     return authService.getUser()
         .then((async user => {
-            const prompt = grantRecipeService.generatePromptWithInputs(recipe);
+            const prompt = await grantRecipeService.generatePromptWithInputs(recipe);
             const contexts = await uploadFiles(recipe.contexts);
 
             const newRecipe = {
