@@ -9,7 +9,7 @@ import {
   collection,
   doc,
   Firestore, getDoc,
-  getFirestore, setDoc
+  getFirestore
 } from "firebase/firestore";
 
 import { FIRESTORE_COLLECTIONS } from "../constants/firestoreCollections";
