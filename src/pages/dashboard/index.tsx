@@ -29,6 +29,7 @@ import { GrantRecipe } from '../../types';
 import { LoadingContext } from '@digitalaidseattle/core';
 import LoadingButton from '../../components/LoadingButton';
 import { DateUtils } from '../../utils/dateUtils';
+import { DASHBOARD_STRINGS } from '../../constants/dashboard';
 
 const RecentRecipesCard = () => {
   const navigate = useNavigate();
@@ -49,7 +50,7 @@ const RecentRecipesCard = () => {
   return (
     <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <CardHeader 
-        title="Recent Recipes" 
+        title={DASHBOARD_STRINGS.recentRecipes} 
         titleTypographyProps={{ variant: 'h6', fontWeight: 600 }}
       />
       <CardContent sx={{ flex: 1, overflow: 'auto', p: 0 }}>
@@ -70,7 +71,7 @@ const RecentRecipesCard = () => {
                 }}
               >
                 <ListItemText
-                  primary={recipe.description || 'Untitled Recipe'}
+                  primary={recipe.description}
                   primaryTypographyProps={{ variant: 'body2', fontWeight: 500 }}
                   secondary={recipe.updatedAt ? DateUtils.formatDateTime(recipe.updatedAt) : 'Unknown date'}
                   secondaryTypographyProps={{ variant: 'caption' }}
@@ -81,7 +82,7 @@ const RecentRecipesCard = () => {
         ) : (
           <Stack alignItems="center" justifyContent="center" sx={{ py: 4, px: 2 }}>
             <Typography color="textSecondary" align="center">
-              No proposals yet
+              {DASHBOARD_STRINGS.noProposals}
             </Typography>
           </Stack>
         )}
@@ -113,9 +114,9 @@ const CloneRecipeCard = () => {
 
   return (
     <Card>
-      <CardHeader title="Clone Recipe" />
+      <CardHeader title={DASHBOARD_STRINGS.cloneRecipe} />
       <CardContent>
-        <Typography>Select a recent Recipe</Typography>
+        <Typography>{DASHBOARD_STRINGS.selectRecentRecipe}</Typography>
         <Select
           fullWidth={true}
           value={selectedRecipe ? selectedRecipe.id : ''}
@@ -144,7 +145,7 @@ const CreateRecipeCard = () => {
 
   return (
     <Card>
-      <CardHeader title="New Recipe" />
+      <CardHeader title={DASHBOARD_STRINGS.newRecipe} />
       <CardActions>
         <LoadingButton
           variant="contained"
