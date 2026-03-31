@@ -77,6 +77,14 @@ service cloud.firestore {
       allow update: if request.auth != null;
       allow delete: if request.auth != null;
     }
+        
+    // Settings Collection
+    match /settings /{id}{
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null;
+      allow delete: if request.auth != null;
+    }
     
     // Default: deny all other access
     match /{document=**} {
