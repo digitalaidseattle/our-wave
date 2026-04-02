@@ -9,14 +9,24 @@ import {
   Button, ButtonGroup,
   Card, CardContent, CardHeader,
   IconButton,
-  Stack,
-  TextField
+  Stack
 } from "@mui/material";
 import { useContext, useEffect, useState } from "react";
 import { HelpTopicContext } from '../../components/HelpTopicContext';
+import { StableCursorTextField } from '../../components/StableCursorTextfield';
 import type { GrantOutput } from "../../types";
 
-export const GrantOutputEditor = ({ fields, onChange }: { fields: GrantOutput[], onChange: (updated: GrantOutput[]) => void }) => {
+export const GrantOutputEditor = ({
+  fields,
+  onChange,
+  touchedFields = {},
+  onFieldBlur
+}: {
+  fields: GrantOutput[],
+  onChange: (updated: GrantOutput[]) => void,
+  touchedFields?: Record<string, boolean>,
+  onFieldBlur?: (index: number, field: 'name' | 'maxWords') => void
+}) => {
 
   const [outputFields, setOutputFields] = useState<GrantOutput[]>(fields || []);
   const { setHelpTopic } = useContext(HelpTopicContext);
@@ -51,7 +61,9 @@ export const GrantOutputEditor = ({ fields, onChange }: { fields: GrantOutput[],
 
   return (
     <Card>
-      <CardHeader title="Output Fields: (field / max symbol count)"
+      <CardHeader title={<>
+        Output Fields: (field / max symbol count) <span style={{ color: '#d32f2f' }}>*</span>
+      </>}
         slotProps={{ title: { fontWeight: 600, fontSize: 16 } }}
         avatar={<IconButton
           onClick={() => { setHelpTopic('Outputs'); setShowHelp(true) }}
@@ -79,16 +91,24 @@ export const GrantOutputEditor = ({ fields, onChange }: { fields: GrantOutput[],
               >
                 <DeleteOutlined />
               </Button>
-              <TextField
+              <StableCursorTextField
                 label="Field"
                 fullWidth={true}
                 value={field.name}
+                required
+                error={Boolean(touchedFields[`name-${index}`]) && field.name.trim().length === 0}
+                helperText={Boolean(touchedFields[`name-${index}`]) && field.name.trim().length === 0 ? "Field name is required." : " "}
+                onBlur={() => onFieldBlur?.(index, 'name')}
                 onChange={(e) => handleOutputFieldChange(index, 'name', e.target.value)}
               />
-              <TextField
+              <StableCursorTextField
                 label={`Max ${field.unit === 'words' ? 'Words' : 'Characters'}`}
                 type="number"
                 value={field.maxWords}
+                required
+                error={Boolean(touchedFields[`maxWords-${index}`]) && Number(field.maxWords) <= 0}
+                helperText={Boolean(touchedFields[`maxWords-${index}`]) && Number(field.maxWords) <= 0 ? "Enter a value greater than 0." : " "}
+                onBlur={() => onFieldBlur?.(index, 'maxWords')}
                 onChange={(e) => handleOutputFieldChange(index, 'maxWords', parseInt(e.target.value) || 0)}
               />
               <ButtonGroup variant="contained" aria-label="Basic button group">

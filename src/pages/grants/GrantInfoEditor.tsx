@@ -10,7 +10,6 @@ import {
   CardContent,
   CardHeader,
   Chip,
-  FormLabel,
   Grid,
   IconButton,
   Rating,
@@ -21,6 +20,7 @@ import {
 import { useContext, useState } from "react";
 import { HelpTopicContext } from '../../components/HelpTopicContext';
 import type { GrantRecipe } from "../../types";
+import { StableCursorTextField } from '../../components/StableCursorTextfield';
 
 const TagButton = ({ onChange }: { onChange: (newValue: string | null) => void }) => {
   const [edit, setEdit] = useState<boolean>(false);
@@ -61,7 +61,17 @@ const TagButton = ({ onChange }: { onChange: (newValue: string | null) => void }
   )
 }
 
-export const GrantInfoEditor = ({ recipe, onChange }: { recipe: GrantRecipe, onChange: (updated: GrantRecipe) => void }) => {
+export const GrantInfoEditor = ({
+  recipe,
+  onChange,
+  showDescriptionError = false,
+  onDescriptionBlur
+}: {
+  recipe: GrantRecipe,
+  onChange: (updated: GrantRecipe) => void,
+  showDescriptionError?: boolean,
+  onDescriptionBlur?: () => void
+}) => {
 
   const { setHelpTopic } = useContext(HelpTopicContext);
   const { setShowHelp } = useHelp();
@@ -98,15 +108,22 @@ export const GrantInfoEditor = ({ recipe, onChange }: { recipe: GrantRecipe, onC
           color="primary"><InfoCircleOutlined /></IconButton>} />
       <CardContent>
         <Grid container spacing={2} alignItems="center">
-          <Grid size={2}><Typography>Description</Typography></Grid>
-          <Grid size={10}><FormLabel>
-            <TextField
+          <Grid size={2}>
+            <Typography>
+              Description <Typography component="span" color="error">*</Typography>
+            </Typography>
+          </Grid>
+          <Grid size={10}>
+            <StableCursorTextField
               fullWidth={true}
               value={recipe.description ?? ""}
               placeholder="Name your recipe"
               autoFocus
+              required
+              error={showDescriptionError}
+              helperText={showDescriptionError ? "Description is required." : " "}
+              onBlur={onDescriptionBlur}
               onChange={(evt) => handleDescriptionChange(evt.target.value)} />
-          </FormLabel>
           </Grid>
           <Grid size={2}><Typography>Rating</Typography></Grid>
           <Grid size={10}>
