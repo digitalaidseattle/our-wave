@@ -9,12 +9,15 @@ import Paper from '@mui/material/Paper';
 import Popper from '@mui/material/Popper';
 import * as React from 'react';
 
-export const SplitButton = ({ options, onClick }: { options: string[] | { label: string, value: string }[], onClick: (value: string) => void }) => {
+export const SplitButton = ({ options, onClick, disabled = false }: { options: string[] | { label: string, value: string }[], onClick: (value: string) => void, disabled?: boolean }) => {
     const [open, setOpen] = React.useState(false);
     const anchorRef = React.useRef<HTMLDivElement>(null);
     const [selectedIndex, setSelectedIndex] = React.useState(0);
 
     const handleClick = () => {
+        if (disabled) {
+            return;
+        }
         onClick(options[selectedIndex].hasOwnProperty('value') ? (options[selectedIndex] as any).value : options[selectedIndex]);
     };
 
@@ -27,6 +30,9 @@ export const SplitButton = ({ options, onClick }: { options: string[] | { label:
     };
 
     const handleToggle = () => {
+        if (disabled) {
+            return;
+        }
         setOpen((prevOpen) => !prevOpen);
     };
 
@@ -55,6 +61,7 @@ export const SplitButton = ({ options, onClick }: { options: string[] | { label:
                 variant="contained"
                 ref={anchorRef}
                 aria-label="Button group with a nested menu"
+                disabled={disabled}
             >
                 <Button onClick={handleClick}>{getOptionLabel(options[selectedIndex])}</Button>
                 <Button

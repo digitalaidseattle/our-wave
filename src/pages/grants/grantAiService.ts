@@ -34,16 +34,31 @@ class GrantAiService {
         return GrantAiService.instance;
     }
 
-    //ai = getAI(firebaseClient, { backend: new GoogleAIBackend() });
-    ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
+    // Lazy initialize so missing key does not crash page render.
+    private ai?: GoogleGenAI;
+
+    constructor() {
+        const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+        if (apiKey) {
+            this.ai = new GoogleGenAI({ apiKey });
+        }
+    }
+
+    private requireAi(): GoogleGenAI {
+        if (!this.ai) {
+            throw new Error("Gemini API key is missing. Set VITE_GEMINI_API_KEY in your environment.");
+        }
+        return this.ai;
+    }
 
     /**
      * Runs a basic text generation request.
      * This is for prompts where we just want the model to return a text response.
      */
     async query(prompt: string, modelType?: string, contexts?: GrantContext[]): Promise<any> {
+        const ai = this.requireAi();
         const parts = this.createParts(contexts ?? []);
-        return await this.ai.models.generateContent({
+        return await ai.models.generateContent({
             model: modelType ?? GrantAiService.models[0],
             contents: createUserContent([
                 prompt, ...parts
@@ -85,10 +100,11 @@ class GrantAiService {
         modelType?: string,
         contexts?: GrantContext[],
     ): Promise<any> {
+        const ai = this.requireAi();
         const parts = this.createParts(contexts ?? []);
         console.log('parameterizedQuery parts:', parts);
         const responseSchema = this.createSchema(schemaParams);
-        return await this.ai.models.generateContent({
+        return await ai.models.generateContent({
             model: modelType ?? GrantAiService.models[0],
             contents: [prompt, ...parts],
             config: {
@@ -99,7 +115,8 @@ class GrantAiService {
     }
 
     async calcTokenCount(model: string, content: string): Promise<number> {
-        return this.ai.models
+        const ai = this.requireAi();
+        return ai.models
             .countTokens({
                 model: model,
                 contents: ["Count tokens for this document", content]
@@ -108,14 +125,15 @@ class GrantAiService {
     }
 
     async calcFileTokenCount(model: string, file: File): Promise<number> {
+        const ai = this.requireAi();
         // const bytes = await fileToBase64(file);
         console.log("Calculating token count for file:", file);
-        const uploaded = await this.ai.files.upload({
+        const uploaded = await ai.files.upload({
             file: file,
             config: { mimeType: file.type },
         });
 
-        return this.ai.models
+        return ai.models
             .countTokens(
                 {
                     model: model,
@@ -133,8 +151,9 @@ class GrantAiService {
 
     async calcStorageFileTokenCount(model: string, file: StorageFile): Promise<number> {
         try {
+            const ai = this.requireAi();
             const uri = await storageService.getDownloadURL(file.fullPath);
-            return this.ai.models
+            return ai.models
                 .countTokens({
                     model: model,
                     contents: createUserContent([
