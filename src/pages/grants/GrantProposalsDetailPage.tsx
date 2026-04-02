@@ -4,17 +4,19 @@
  * @copyright 2026 Digital Aid Seattle
 */
 import { HomeOutlined } from "@ant-design/icons";
-import { Box, Breadcrumbs, Card, CardContent, CardHeader, IconButton, Stack, Tooltip, Typography } from "@mui/material";
+import { LoadingContext, useNotifications } from "@digitalaidseattle/core";
+import { Clipboard, ConfirmationDialog } from "@digitalaidseattle/mui";
+import { Box, Breadcrumbs, Button, Card, CardActions, CardContent, CardHeader, IconButton, Stack, Tooltip, Typography } from "@mui/material";
+import DeleteIcon from "@mui/icons-material/Delete";
 import { useContext, useEffect, useMemo, useState } from "react";
-import { NavLink, useParams } from "react-router-dom";
+import { NavLink, useNavigate, useParams } from "react-router-dom";
 
-import { LoadingContext } from "@digitalaidseattle/core";
-import { Clipboard } from "@digitalaidseattle/mui";
 import Markdown from "react-markdown";
 import { LoadingOverlay } from "../../components/LoadingOverlay";
 import { TextEdit } from "../../components/TextEdit";
 import { grantProposalService } from "../../services/grantProposalService";
 import { grantRecipeService } from "../../services/grantRecipeService";
+import { deleteProposal } from "../../transactions/DeleteProposal";
 import type { GrantOutput, GrantProposal, GrantRecipe } from "../../types";
 import { DateUtils } from "../../utils/dateUtils";
 
@@ -28,12 +30,16 @@ function countCharacters(text: string): number {
 }
 
 const GrantProposalsDetailPage: React.FC = () => {
-  const { setLoading } = useContext(LoadingContext);
+  const notifications = useNotifications();
+  const navigate = useNavigate();
+  const { loading, setLoading } = useContext(LoadingContext);
   const { id } = useParams<{ id: string }>();
 
   const [proposal, setProposal] = useState<GrantProposal | null>(null);
   const [recipe, setRecipe] = useState<GrantRecipe | null>(null);
   const [outputs, setOutputs] = useState<GrantOutput[]>([]);
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -129,6 +135,38 @@ const GrantProposalsDetailPage: React.FC = () => {
     }
   }
 
+  const handleDeleteClick = () => {
+    setOpenDeleteDialog(true);
+  };
+
+  const handleDeleteCancel = () => {
+    if (!isDeleting) {
+      setOpenDeleteDialog(false);
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!proposal?.id) return;
+
+    try {
+      setLoading(true);
+      setIsDeleting(true);
+
+      await deleteProposal(proposal, recipe);
+
+      notifications.success("Proposal deleted successfully");
+      setOpenDeleteDialog(false);
+      navigate("/grant-proposals");
+    } catch (error) {
+      console.error("Failed to delete proposal:", error);
+      notifications.error("Failed to delete proposal. Please try again.");
+      setOpenDeleteDialog(false);
+    } finally {
+      setIsDeleting(false);
+      setLoading(false);
+    }
+  };
+
   return (
     <>
       <LoadingOverlay />
@@ -150,6 +188,22 @@ const GrantProposalsDetailPage: React.FC = () => {
                 <Typography component="span">; Total token count: {proposal.totalTokenCount ?? "N/A"}</Typography>
               </>}
               action={<Clipboard text={Object.values(proposal.structuredResponse!).join('\n')} />} />
+            <CardActions
+              sx={{
+                borderTop: "1px solid",
+                borderColor: "divider",
+                justifyContent: "flex-end",
+              }}>
+              <Button
+                variant="outlined"
+                color="error"
+                startIcon={<DeleteIcon />}
+                onClick={handleDeleteClick}
+                disabled={loading || isDeleting}
+              >
+                Delete
+              </Button>
+            </CardActions>
           </Card>
           {reponses.map((response) => {
             return (
@@ -167,6 +221,13 @@ const GrantProposalsDetailPage: React.FC = () => {
           })}
         </Stack>
       }
+      <ConfirmationDialog
+        title="Delete Proposal?"
+        message={`Are you sure you want to delete "${proposal?.name || "this proposal"}"? This action cannot be undone.`}
+        open={openDeleteDialog}
+        handleConfirm={handleDeleteConfirm}
+        handleCancel={handleDeleteCancel}
+      />
     </>
   );
 };
