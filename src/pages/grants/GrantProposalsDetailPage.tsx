@@ -16,6 +16,7 @@ import { LoadingOverlay } from "../../components/LoadingOverlay";
 import { TextEdit } from "../../components/TextEdit";
 import { grantProposalService } from "../../services/grantProposalService";
 import { grantRecipeService } from "../../services/grantRecipeService";
+import { deleteProposal } from "../../transactions/DeleteProposal";
 import type { GrantOutput, GrantProposal, GrantRecipe } from "../../types";
 import { DateUtils } from "../../utils/dateUtils";
 
@@ -147,30 +148,11 @@ const GrantProposalsDetailPage: React.FC = () => {
   const handleDeleteConfirm = async () => {
     if (!proposal?.id) return;
 
-    const proposalId = String(proposal.id);
-    const recipeId = proposal.grantRecipeId ? String(proposal.grantRecipeId) : "";
-
     try {
       setLoading(true);
       setIsDeleting(true);
 
-      await grantProposalService.delete(proposalId);
-
-      if (recipeId.trim() !== "") {
-        try {
-          const parentRecipe = recipe ?? await grantRecipeService.getById(recipeId);
-          const nextProposalIds = (parentRecipe.proposalIds ?? []).filter((id) => id !== proposalId);
-
-          if (nextProposalIds.length !== (parentRecipe.proposalIds ?? []).length) {
-            await grantRecipeService.update(parentRecipe.id as string, {
-              ...parentRecipe,
-              proposalIds: nextProposalIds,
-            });
-          }
-        } catch (cleanupError) {
-          console.warn("Proposal deleted but recipe reference cleanup failed:", cleanupError);
-        }
-      }
+      await deleteProposal(proposal, recipe);
 
       notifications.success("Proposal deleted successfully");
       setOpenDeleteDialog(false);
