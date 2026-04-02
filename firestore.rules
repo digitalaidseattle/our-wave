@@ -15,9 +15,55 @@ service cloud.firestore {
       // Allow authenticated users to delete recipes (optionally restrict to creator)
       allow delete: if request.auth != null;
     }
+
+    // Grant Recipes Collection (DEV)
+    match /grant-recipes-dev/{recipeId} {
+      // Allow authenticated users to read all recipes
+      allow read: if request.auth != null;
+      
+      // Allow authenticated users to create recipes
+      allow create: if request.auth != null;
+      
+      // Allow authenticated users to update recipes (optionally restrict to creator)
+      allow update: if request.auth != null;
+      
+      // Allow authenticated users to delete recipes (optionally restrict to creator)
+      allow delete: if request.auth != null;
+    }
+
+    // Grant Recipes Collection (QA)
+    match /grant-recipes-qa/{recipeId} {
+      // Allow authenticated users to read all recipes
+      allow read: if request.auth != null;
+      
+      // Allow authenticated users to create recipes
+      allow create: if request.auth != null;
+      
+      // Allow authenticated users to update recipes (optionally restrict to creator)
+      allow update: if request.auth != null;
+      
+      // Allow authenticated users to delete recipes (optionally restrict to creator)
+      allow delete: if request.auth != null;
+    }
     
     // Grant Proposals Collection
     match /grant-proposal/{proposalId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null;
+      allow delete: if request.auth != null;
+    }
+
+    // Grant Proposals Collection (DEV)
+    match /grant-proposal-dev/{proposalId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null;
+      allow delete: if request.auth != null;
+    }
+
+    // Grant Proposals Collection (QA)
+    match /grant-proposal-qa/{proposalId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null;
       allow update: if request.auth != null;
@@ -47,7 +93,19 @@ service cloud.firestore {
 //     match /grant-recipes/{document=**} {
 //       allow read, write: if true;
 //     }
+//     match /grant-recipes-dev/{document=**} {
+//       allow read, write: if true;
+//     }
+//     match /grant-recipes-qa/{document=**} {
+//       allow read, write: if true;
+//     }
 //     match /grant-proposal/{document=**} {
+//       allow read, write: if true;
+//     }
+//     match /grant-proposal-dev/{document=**} {
+//       allow read, write: if true;
+//     }
+//     match /grant-proposal-qa/{document=**} {
 //       allow read, write: if true;
 //     }
 //     match /grant-request/{document=**} {
@@ -55,4 +113,3 @@ service cloud.firestore {
 //     }
 //   }
 // }
-

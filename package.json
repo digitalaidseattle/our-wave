@@ -21,6 +21,7 @@
     "handlebars": "^4.7.8",
     "mammoth": "^1.11.0",
     "react-apexcharts": "^1.4.1",
+    "react-dropzone": "^14.4.1",
     "zod": "^4.1.12"
   },
   "devDependencies": {
