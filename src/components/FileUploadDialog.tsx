@@ -9,8 +9,8 @@ import { useEffect, useState } from "react";
 
 import Dropzone from "react-dropzone";
 import { storageService } from "../App";
+import { FIREBASE_STORAGE_FOLDER } from "../constants/storage";
 import { StorageFile } from "../services/OurWaveStorageService";
-const DEFAULT_FOLDER = import.meta.env.VITE_FIREBASE_STORAGE_FOLDER;
 
 
 
@@ -21,7 +21,7 @@ interface FileUploadDialogProps {
     onChange: (files: (File | StorageFile)[] | null) => void
 };
 
-const FileUploadDialog = ({ title = "Select or upload files", open, folderPath = DEFAULT_FOLDER, onChange }: FileUploadDialogProps) => {
+const FileUploadDialog = ({ title = "Select or upload files", open, folderPath = FIREBASE_STORAGE_FOLDER, onChange }: FileUploadDialogProps) => {
 
     const [files, setFiles] = useState<(File | StorageFile)[]>([]);
     const [folderFiles, setFolderFiles] = useState<StorageFile[]>([]);
