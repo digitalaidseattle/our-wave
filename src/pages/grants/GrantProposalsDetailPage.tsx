@@ -177,8 +177,19 @@ const GrantProposalsDetailPage: React.FC = () => {
       </Breadcrumbs>
       {!proposal && <Typography>No proposal data found.</Typography>}
       {proposal &&
-        <Stack spacing={2}>
-          <Card>
+        <Stack
+          sx={{
+            height: "calc(100dvh - 112px)",
+            gap: 2,
+          }}
+        >
+          <Card
+            sx={{
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
             <CardHeader title={<TextEdit
               value={proposal.name ? proposal.name : "Grant Proposal Detail"}
               onChange={handleNameChange} />}
@@ -188,6 +199,29 @@ const GrantProposalsDetailPage: React.FC = () => {
                 <Typography component="span">; Total token count: {proposal.totalTokenCount ?? "N/A"}</Typography>
               </>}
               action={<Clipboard text={Object.values(proposal.structuredResponse!).join('\n')} />} />
+            <CardContent
+              sx={{
+                flex: 1,
+                overflowY: "auto",
+              }}
+            >
+              <Stack spacing={2}>
+                {reponses.map((response) => {
+                  return (
+                    <Card key={response.name} variant="outlined">
+                      <CardHeader
+                        title={response.name}
+                        subheader={response.subheader}
+                        action={<Tooltip title="Copies this section of the proposal into clipboard."><Box><Clipboard text={response.value} /></Box></Tooltip>}
+                      />
+                      <CardContent>
+                        <Markdown>{response.value}</Markdown>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </Stack>
+            </CardContent>
             <CardActions
               sx={{
                 borderTop: "1px solid",
@@ -205,20 +239,6 @@ const GrantProposalsDetailPage: React.FC = () => {
               </Button>
             </CardActions>
           </Card>
-          {reponses.map((response) => {
-            return (
-              <Card key={response.name} variant="outlined">
-                <CardHeader
-                  title={response.name}
-                  subheader={response.subheader}
-                  action={<Tooltip title="Copies this section of the proposal into clipboard."><Box><Clipboard text={response.value} /></Box></Tooltip>}
-                />
-                <CardContent>
-                  <Markdown>{response.value}</Markdown>
-                </CardContent>
-              </Card>
-            );
-          })}
         </Stack>
       }
       <ConfirmationDialog
