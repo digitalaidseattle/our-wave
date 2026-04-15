@@ -3,8 +3,8 @@
  * 
  * @copyright 2026 Digital Aid Seattle
 */
-import { HomeOutlined } from "@ant-design/icons";
-import { Box, Breadcrumbs, Card, CardContent, CardHeader, IconButton, Stack, Tooltip, Typography } from "@mui/material";
+import { DownloadOutlined, HomeOutlined } from "@ant-design/icons";
+import { Box, Breadcrumbs, Card, CardContent, CardHeader, IconButton, Menu, MenuItem, Stack, Tooltip, Typography } from "@mui/material";
 import { useContext, useEffect, useMemo, useState } from "react";
 import { NavLink, useParams } from "react-router-dom";
 
@@ -17,7 +17,11 @@ import { grantProposalService } from "../../services/grantProposalService";
 import { grantRecipeService } from "../../services/grantRecipeService";
 import type { GrantOutput, GrantProposal, GrantRecipe } from "../../types";
 import { DateUtils } from "../../utils/dateUtils";
+import { SUPPORTED_DOWNLOAD_TYPE } from "../../services/ProposalExporter";
 
+const LABELS = {
+  DOWNLOAD_TOOLTIP: "Download proposal"
+}
 //Count words in string
 function countWords(text: string): number {
   return text.trim() ? text.trim().split(/\s+/).length : 0;
@@ -129,6 +133,17 @@ const GrantProposalsDetailPage: React.FC = () => {
     }
   }
 
+  function handleDownload(type: SUPPORTED_DOWNLOAD_TYPE): void {
+    grantProposalService.download(proposal!, type)
+      .then(() => console.log('Download complete'))
+      .finally(() => {
+        setAnchorEl(null)
+      })
+  }
+
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const open = Boolean(anchorEl);
+
   return (
     <>
       <LoadingOverlay />
@@ -146,10 +161,39 @@ const GrantProposalsDetailPage: React.FC = () => {
               onChange={handleNameChange} />}
               subheader={<>
                 <Typography component="span">Generated on: {createdAtLabel}</Typography>
-               {recipeLink}
+                {recipeLink}
                 <Typography component="span">; Total token count: {proposal.totalTokenCount ?? "N/A"}</Typography>
               </>}
-              action={<Clipboard text={Object.values(proposal.structuredResponse!).join('\n')} />} />
+              action={
+                <>
+                  <Tooltip title={LABELS.DOWNLOAD_TOOLTIP}>
+                    <IconButton color="primary"
+                      id="download-button"
+                      aria-controls={open ? 'basic-menu' : undefined}
+                      aria-haspopup="true"
+                      aria-expanded={open ? 'true' : undefined}
+                      onClick={evt => setAnchorEl(evt.currentTarget)}
+                    >
+                      <DownloadOutlined />
+                    </IconButton>
+                  </Tooltip>
+                  <Menu
+                    id="download-menu"
+                    anchorEl={anchorEl}
+                    open={open}
+                    onClose={() => setAnchorEl(null)}
+                    slotProps={{
+                      list: {
+                        'aria-labelledby': 'basic-button',
+                      },
+                    }}
+                  >
+                    <MenuItem onClick={() => handleDownload('markdown')}>Markdown</MenuItem>
+                    <MenuItem onClick={() => handleDownload('text')}>Text</MenuItem>
+                    <MenuItem onClick={() => handleDownload('json')}>JSON</MenuItem>
+                  </Menu>
+                </>
+              } />
           </Card>
           {reponses.map((response) => {
             return (
