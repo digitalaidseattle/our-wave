@@ -8,7 +8,7 @@ import { NavLink, useNavigate, useParams } from "react-router-dom";
 
 import { HomeOutlined, InfoCircleOutlined } from "@ant-design/icons";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { Box, Breadcrumbs, Button, Card, CardActions, CardContent, CardHeader, Divider, IconButton, Stack, Tooltip, Typography } from "@mui/material";
+import { Box, Breadcrumbs, Button, Card, CardActions, CardContent, CardHeader, Divider, IconButton, Rating, Stack, Tooltip, Typography } from "@mui/material";
 
 import { LoadingContext, useHelp, useNotifications } from "@digitalaidseattle/core";
 import { ConfirmationDialog } from "@digitalaidseattle/mui";
@@ -130,6 +130,7 @@ const GrantRecipesDetailPage: React.FC = () => {
   const [outputFieldTouched, setOutputFieldTouched] = useState<Record<string, boolean>>({});
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [rating, setRating] = useState<number>(0);
 
   const isDescriptionMissing = !hasValidDescription;
   const isOutputFieldsIncomplete = !hasCompleteOutputFields;
@@ -181,6 +182,7 @@ const GrantRecipesDetailPage: React.FC = () => {
   useEffect(() => {
     if (recipe) {
       setLastUpdated(DateUtils.formatDateTime(recipe.updatedAt as Timestamp));
+      setRating(recipe.rating ?? 0);
     }
   }, [recipe]);
 
@@ -364,6 +366,16 @@ const GrantRecipesDetailPage: React.FC = () => {
     }
   };
 
+  function handleRatingChange(newValue: number | null): void {
+    const value = newValue ?? 0;
+    setRating(value);
+    if (recipe.id) {
+      grantRecipeService.update(recipe.id, { ...recipe, rating: value })
+        .then(updated => setRecipe(updated))
+        .catch(err => notifications.error(`Failed to save rating: ${err instanceof Error ? err.message : 'Unknown error'}`));
+    }
+  }
+
   return (recipe &&
     <>
       <LoadingOverlay />
@@ -429,7 +441,12 @@ const GrantRecipesDetailPage: React.FC = () => {
                       borderColor: "divider",
                       justifyContent: "space-between",
                     }}>
-                    <Box sx={{ px: 1 }}>
+                    <Box sx={{ px: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Typography variant="body2" sx={{ whiteSpace: 'nowrap' }}>Rate this Recipe:</Typography>
+                      <Rating
+                        value={rating}
+                        onChange={(_event, newValue) => handleRatingChange(newValue)}
+                      />
                       {actionMessages.map((message, index) => (
                         <Typography key={index} variant="body2" sx={{ color: "error.main" }}>
                           {message}

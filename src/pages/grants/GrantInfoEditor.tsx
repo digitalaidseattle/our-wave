@@ -12,7 +12,6 @@ import {
   Chip,
   Grid,
   IconButton,
-  Rating,
   Stack,
   TextField,
   Typography
@@ -81,10 +80,6 @@ export const GrantInfoEditor = ({
     onChange({ ...recipe, description: newValue });
   };
 
-  function handleRatingChange(newValue: number) {
-    onChange({ ...recipe, rating: newValue });
-  };
-
   function handleDeleteTag(tag: string): void {
     const tags = recipe.tags ?? [];
     const index = tags.indexOf(tag);
@@ -125,16 +120,6 @@ export const GrantInfoEditor = ({
               helperText={showDescriptionError ? "Description is required." : " "}
               onBlur={onDescriptionBlur}
               onChange={(evt) => handleDescriptionChange(evt.target.value)} />
-          </Grid>
-          <Grid size={2}><Typography>Rating</Typography></Grid>
-          <Grid size={10}>
-            <Rating
-              name="simple-controlled"
-              value={recipe.rating ?? 0}
-              onChange={(_event, newValue) => {
-                handleRatingChange(newValue ?? 0);
-              }}
-            />
           </Grid>
           <Grid size={2}><Typography>Tags</Typography></Grid>
           <Grid size={10}>
