@@ -4,4 +4,8 @@ export const DASHBOARD_STRINGS = {
   selectRecentRecipe: "Select a recent Recipe",
   newRecipe: "New Recipe",
   noProposals: "No proposals yet",
+  tokenUsage: "Token Usage by Model",
+  allTimeTokensUsed: "All time tokens used",
+  unspecifiedModel: "Unspecified model",
+  loadingTokenUsage: "Loading...",
 };
