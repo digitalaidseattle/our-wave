@@ -60,13 +60,9 @@ const ContextRow = ({ index, context, onChange, onDelete }: ContextRowProps) => 
                     placeholder='Enter context information here'
                     onChange={handleTextChange}
                     multiline={true}
-                    rows={1}
-                    sx={{
-                        '& .MuiInputBase-input': {
-                            resize: 'vertical',
-                            overflow: 'auto',
-                        }
-                    }} />}
+                    minRows={1}
+                    maxRows={3}
+                />}
             {(SUPPORTED_FILE_TYPES.includes(context.type)) &&
                 <>
                     <FormControl fullWidth={true} sx={{ border: '1px solid', borderBlockColor: 'grey', padding: 2, borderRadius: 1, pr: 1 }}>
