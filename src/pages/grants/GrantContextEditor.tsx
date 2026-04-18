@@ -17,6 +17,7 @@ import { StableCursorTextField } from '../../components/StableCursorTextfield';
 import { StorageFile } from '../../services/OurWaveStorageService';
 import { GrantContext, GrantRecipe } from '../../types';
 import { GrantAiService } from './grantAiService';
+import { RECIPE_STRINGS } from '../../constants/grantRecipe';
 
 const SUPPORTED_FILE_TYPES = [
     "text/plain",
@@ -136,7 +137,8 @@ export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ onChange
 
     return (
         <Card>
-            <CardHeader title="Project Contexts"
+            <CardHeader title={RECIPE_STRINGS.projectContextsTitle}
+                subheader={RECIPE_STRINGS.projectContextsSubtext}
                 action={
                     <Toolbar disableGutters={true} sx={{ gap: 1 }} >
                         <Button

@@ -21,6 +21,7 @@ import { useContext, useState } from "react";
 import { HelpTopicContext } from '../../components/HelpTopicContext';
 import type { GrantRecipe } from "../../types";
 import { StableCursorTextField } from '../../components/StableCursorTextfield';
+import { RECIPE_STRINGS } from '../../constants/grantRecipe';
 
 const TagButton = ({ onChange }: { onChange: (newValue: string | null) => void }) => {
   const [edit, setEdit] = useState<boolean>(false);
@@ -110,7 +111,7 @@ export const GrantInfoEditor = ({
         <Grid container spacing={2} alignItems="center">
           <Grid size={2}>
             <Typography>
-              Description <Typography component="span" color="error">*</Typography>
+              {RECIPE_STRINGS.recipeTitle} <Typography component="span" color="error">*</Typography>
             </Typography>
           </Grid>
           <Grid size={10}>

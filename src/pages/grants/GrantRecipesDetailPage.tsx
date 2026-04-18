@@ -29,6 +29,7 @@ import { GrantAiService } from "./grantAiService";
 import { GrantContextEditor } from "./GrantContextEditor";
 import { GrantInfoEditor } from "./GrantInfoEditor";
 import { GrantOutputEditor } from "./GrantOutputEditor";
+import { RECIPE_STRINGS } from '../../constants/grantRecipe';
 
 const HELP_DRAWER_WIDTH = 300;
 const HELP_TITLE = "Our Wave";
@@ -47,7 +48,9 @@ export const TextEditor = ({
   required = false,
   error = false,
   helperText,
-  onBlur
+  onBlur,
+  subheader,
+  helpTopic,
 }: {
   title: string,
   value: string,
@@ -55,7 +58,9 @@ export const TextEditor = ({
   required?: boolean,
   error?: boolean,
   helperText?: string,
-  onBlur?: () => void
+  onBlur?: () => void,
+  subheader?: string,
+  helpTopic?: string,
 }) => {
   const { setHelpTopic } = useContext(HelpTopicContext);
   const { setShowHelp } = useHelp();
@@ -64,9 +69,10 @@ export const TextEditor = ({
       <CardHeader title={<>
         {title} {required && <span style={{ color: '#d32f2f' }}>*</span>}
       </>}
+        subheader={subheader}
         slotProps={{ title: { fontWeight: 600, fontSize: 16 } }}
         avatar={<IconButton
-          onClick={() => { setHelpTopic(title); setShowHelp(true) }}
+          onClick={() => { setHelpTopic(helpTopic ?? title); setShowHelp(true) }}
           color="primary"><InfoCircleOutlined /></IconButton>} />
       <CardContent>
         <StableCursorTextField fullWidth={true}
@@ -88,7 +94,7 @@ export const TextEditor = ({
   )
 }
 
-export const PlainTextCard = ({ title, value }: { title: string, value: string }) => {
+export const PlainTextCard = ({ title, value, helpTopic }: { title: string, value: string, helpTopic?: string }) => {
   const { setHelpTopic } = useContext(HelpTopicContext);
   const { setShowHelp } = useHelp();
   return (
@@ -96,7 +102,7 @@ export const PlainTextCard = ({ title, value }: { title: string, value: string }
       <CardHeader title={title}
         slotProps={{ title: { fontWeight: 600, fontSize: 16 } }}
         avatar={<IconButton
-          onClick={() => { setHelpTopic(title); setShowHelp(true) }}
+          onClick={() => { setHelpTopic(helpTopic ?? title); setShowHelp(true) }}
           color="primary"><InfoCircleOutlined /></IconButton>} />
       <CardContent>
         <Typography>{value}</Typography>
@@ -398,7 +404,8 @@ const GrantRecipesDetailPage: React.FC = () => {
                         onDescriptionBlur={() => setDescriptionTouched(true)}
                       />
                       <TextEditor
-                        title="Template"
+                        title={RECIPE_STRINGS.templateTitle}
+                        helpTopic="Template"
                         value={recipe.template}
                         onChange={handleTemplateChange}
                         required
@@ -413,7 +420,7 @@ const GrantRecipesDetailPage: React.FC = () => {
                         touchedFields={outputFieldTouched}
                         onFieldBlur={handleOutputFieldBlur}
                       />
-                      <PlainTextCard title="Prompt" value={recipe.prompt} />
+                      <PlainTextCard title={RECIPE_STRINGS.promptTitle} helpTopic="Prompt" value={recipe.prompt} />
                     </Stack>
                   </CardContent>
                   <CardActions
