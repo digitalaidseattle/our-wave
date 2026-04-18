@@ -62,26 +62,7 @@ const ContextRow = ({ index, context, onChange, onDelete }: ContextRowProps) => 
                     multiline={true}
                     minRows={1}
                     maxRows={3}
-                    sx={{
-                        '& .MuiInputBase-inputMultiline': {
-                            overflowY: 'scroll !important',
-                            scrollbarWidth: 'thin',
-                            scrollbarColor: 'rgba(180,180,180,0.8) #ffffff',
-                            '&::-webkit-scrollbar': {
-                                width: '4px',
-                                display: 'block',
-                                backgroundColor: '#ffffff',
-                            },
-                            '&::-webkit-scrollbar-track': {
-                                backgroundColor: '#ffffff',
-                                borderRadius: '4px',
-                            },
-                            '&::-webkit-scrollbar-thumb': {
-                                backgroundColor: 'rgba(163, 162, 162, 0.8)',
-                                borderRadius: '4px',
-                            },
-                        }
-                    }} />}
+                />}
             {(SUPPORTED_FILE_TYPES.includes(context.type)) &&
                 <>
                     <FormControl fullWidth={true} sx={{ border: '1px solid', borderBlockColor: 'grey', padding: 2, borderRadius: 1, pr: 1 }}>
