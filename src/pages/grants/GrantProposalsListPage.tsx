@@ -2,7 +2,7 @@ import { DeleteOutlined, DownloadOutlined, HomeOutlined } from "@ant-design/icon
 import { LoadingContext, useNotifications } from "@digitalaidseattle/core";
 import {
   Box, Breadcrumbs, Button, Card, CardContent, CardHeader,
-  IconButton, Toolbar, Tooltip, Typography
+  IconButton, Rating, Toolbar, Tooltip, Typography
 } from "@mui/material";
 import {
   DataGrid,
@@ -120,6 +120,16 @@ const GrantProposalsListPage: React.FC = () => {
       field: "name",
       headerName: "Name",
       width: 200,
+    },
+    {
+      field: "rating",
+      headerName: "Rating",
+      width: 150,
+      type: "number",
+      valueGetter: (_value, row) => row.rating ?? 0,
+      renderCell: (params) => (
+        <Rating value={params.value} readOnly size="small" />
+      ),
     },
     {
       field: "preview",

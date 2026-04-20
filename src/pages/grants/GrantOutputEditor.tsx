@@ -15,6 +15,7 @@ import { useContext, useEffect, useState } from "react";
 import { HelpTopicContext } from '../../components/HelpTopicContext';
 import { StableCursorTextField } from '../../components/StableCursorTextfield';
 import type { GrantOutput } from "../../types";
+import { RECIPE_STRINGS } from '../../constants/grantRecipe';
 
 export const GrantOutputEditor = ({
   fields,
@@ -62,8 +63,9 @@ export const GrantOutputEditor = ({
   return (
     <Card>
       <CardHeader title={<>
-        Output Fields: (field / max symbol count) <span style={{ color: '#d32f2f' }}>*</span>
+        {RECIPE_STRINGS.outputFieldsTitle} <span style={{ color: '#d32f2f' }}>*</span>
       </>}
+        subheader={RECIPE_STRINGS.outputFieldsSubtext}
         slotProps={{ title: { fontWeight: 600, fontSize: 16 } }}
         avatar={<IconButton
           onClick={() => { setHelpTopic('Outputs'); setShowHelp(true) }}
