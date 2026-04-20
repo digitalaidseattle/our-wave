@@ -8,12 +8,12 @@ import { NavLink, useNavigate, useParams } from "react-router-dom";
 
 import { DownloadOutlined, EditOutlined, HomeOutlined } from "@ant-design/icons";
 import DeleteIcon from "@mui/icons-material/Delete";
+import Markdown from "react-markdown";
 
-import { Box, Breadcrumbs, Button, Card, CardContent, CardHeader, IconButton, Menu, MenuItem, Stack, Tooltip, Typography } from "@mui/material";
+import { Box, Breadcrumbs, Button, Card, CardContent, CardHeader, IconButton, Menu, MenuItem, Rating, Stack, Tooltip, Typography } from "@mui/material";
 
 import { LoadingContext, useNotifications } from "@digitalaidseattle/core";
 import { Clipboard } from "@digitalaidseattle/mui";
-import Markdown from "react-markdown";
 import { LoadingOverlay } from "../../components/LoadingOverlay";
 import { TextEdit } from "../../components/TextEdit";
 import { grantProposalService } from "../../services/grantProposalService";
@@ -241,50 +241,50 @@ const GrantProposalsDetailPage: React.FC = () => {
               </Card>
             );
           })}
-        <>
-          <Box
-            sx={{
-              position: 'sticky',
-              bottom: 0,
-              zIndex: 10,
-              backgroundColor: 'background.paper',
-              borderTop: '1px solid',
-              borderColor: 'divider',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              px: 2,
-              py: 1,
-            }}
-          >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Typography variant="body2">Rate this Proposal:</Typography>
-              <Rating
-                value={rating}
-                onChange={(_event, newValue) => handleRatingChange(newValue)}
-              />
-            </Box>
-            <Stack direction="row" spacing={1}>
-              {recipe && (
+          <>
+            <Box
+              sx={{
+                position: 'sticky',
+                bottom: 0,
+                zIndex: 10,
+                backgroundColor: 'background.paper',
+                borderTop: '1px solid',
+                borderColor: 'divider',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                px: 2,
+                py: 1,
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography variant="body2">Rate this Proposal:</Typography>
+                <Rating
+                  value={rating}
+                  onChange={(_event, newValue) => handleRatingChange(newValue)}
+                />
+              </Box>
+              <Stack direction="row" spacing={1}>
+                {recipe && (
+                  <Button
+                    variant="contained"
+                    startIcon={<EditOutlined />}
+                    onClick={() => navigate(`/grant-recipes/${recipe.id}`)}
+                  >
+                    Edit Recipe
+                  </Button>
+                )}
                 <Button
-                  variant="contained"
-                  startIcon={<EditOutlined />}
-                  onClick={() => navigate(`/grant-recipes/${recipe.id}`)}
+                  variant="outlined"
+                  color="error"
+                  startIcon={<DeleteIcon />}
+                  onClick={handleDeleteProposal}
                 >
-                  Edit Recipe
+                  Delete
                 </Button>
-              )}
-              <Button
-                variant="outlined"
-                color="error"
-                startIcon={<DeleteIcon />}
-                onClick={handleDeleteProposal}
-              >
-                Delete
-              </Button>
-            </Stack>
-          </Box>
-        </>
+              </Stack>
+            </Box>
+          </>
         </Stack>
       }
     </>
