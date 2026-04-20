@@ -1,14 +1,16 @@
 import { DeleteOutlined, HomeOutlined } from "@ant-design/icons";
 import { LoadingContext, useNotifications } from "@digitalaidseattle/core";
 import {
-  Box, Breadcrumbs, Card, CardContent, CardHeader,
-  IconButton, Toolbar, Tooltip, Typography
+  Box, Breadcrumbs, Button, Card, CardContent, CardHeader,
+  IconButton, Rating, Toolbar, Tooltip, Typography
 } from "@mui/material";
 import {
   DataGrid,
   GridColDef,
   GridRowParams,
-  GridRowSelectionModel
+  GridRowSelectionModel,
+  gridPaginatedVisibleSortedGridRowIdsSelector,
+  useGridApiRef,
 } from "@mui/x-data-grid";
 import { useContext, useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
@@ -23,8 +25,10 @@ const GrantProposalsListPage: React.FC = () => {
   const navigate = useNavigate();
   const { loading, setLoading } = useContext(LoadingContext);
 
+  const apiRef = useGridApiRef();
   const [proposals, setProposals] = useState<GrantProposal[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 10 });
 
   useEffect(() => {
     fetchProposals();
@@ -72,16 +76,31 @@ const GrantProposalsListPage: React.FC = () => {
   };
 
   function handleRowSelection(model: GridRowSelectionModel) {
-    if (model) {
-      if (model.type === "include") {
-        setSelectedIds([...model.ids as unknown as string[]]);
-      } else {
-        const selected = proposals
-          .map(elem => elem.id as string)
-          .filter(id => !model.ids.has(id));
-        setSelectedIds(selected);
-      }
+    if (!model) return;
+
+    if (model.type === "include") {
+      // Individual row toggles — MUI owns the checkbox state, just sync our copy
+      setSelectedIds([...model.ids as unknown as string[]]);
+    } else {
+      // Header "select all" checkbox fired — restrict to current page only
+      const currentPageIds = gridPaginatedVisibleSortedGridRowIdsSelector(apiRef) as string[];
+      const pageOnlyIds = currentPageIds.filter(id => !model.ids.has(id));
+
+      // If all page rows were already selected, the user clicked the header to DESELECT
+      const allPageAlreadySelected =
+        currentPageIds.length > 0 &&
+        currentPageIds.every(id => selectedIds.includes(id));
+      const finalIds = allPageAlreadySelected ? [] : pageOnlyIds;
+
+      setSelectedIds(finalIds);
+      apiRef.current?.setRowSelectionModel({ type: "include", ids: new Set(finalIds) });
     }
+  }
+
+  function handleSelectAllRecords() {
+    const allIds = proposals.map(p => p.id as string);
+    setSelectedIds(allIds);
+    apiRef.current?.setRowSelectionModel({ type: "include", ids: new Set(allIds) });
   }
 
   const columns: GridColDef<GrantProposal>[] = [
@@ -89,6 +108,16 @@ const GrantProposalsListPage: React.FC = () => {
       field: "name",
       headerName: "Name",
       width: 200,
+    },
+    {
+      field: "rating",
+      headerName: "Rating",
+      width: 150,
+      type: "number",
+      valueGetter: (_value, row) => row.rating ?? 0,
+      renderCell: (params) => (
+        <Rating value={params.value} readOnly size="small" />
+      ),
     },
     {
       field: "preview",
@@ -112,6 +141,18 @@ const GrantProposalsListPage: React.FC = () => {
   function CustomToolbar() {
     return (
       <Toolbar sx={{ gap: 2, backgroundColor: 'background.default' }}>
+        <Tooltip title={`Select all ${proposals.length} proposals`}>
+          <span>
+            <Button
+              size="small"
+              variant="text"
+              onClick={handleSelectAllRecords}
+              disabled={proposals.length === 0}
+            >
+              Select All ({proposals.length})
+            </Button>
+          </span>
+        </Tooltip>
         <Tooltip title="Delete Recipes">
           <Box>
             <IconButton color="error"
@@ -136,6 +177,7 @@ const GrantProposalsListPage: React.FC = () => {
         <CardHeader title="Grant Proposals" />
         <CardContent>
           <DataGrid
+            apiRef={apiRef}
             rows={proposals}
             columns={columns}
             loading={loading}
@@ -150,15 +192,16 @@ const GrantProposalsListPage: React.FC = () => {
             checkboxSelection={true}
             onRowSelectionModelChange={handleRowSelection}
 
+            paginationModel={paginationModel}
+            onPaginationModelChange={(model) => {
+              setPaginationModel(model);
+            }}
+            pageSizeOptions={[10, 25, 50]}
             initialState={{
-              pagination: {
-                paginationModel: { pageSize: 10 },
-              },
               sorting: {
                 sortModel: [{ field: 'updatedAt', sort: 'desc' }],
               },
             }}
-            pageSizeOptions={[10, 25, 50]}
             disableRowSelectionOnClick
             sx={{
               width: '100%',

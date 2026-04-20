@@ -5,17 +5,19 @@
  *
  */
 import { DeleteOutlined, InfoCircleOutlined, PlusOutlined } from '@ant-design/icons';
-import { Button, Card, CardContent, CardHeader, FormControl, IconButton, OutlinedInput, Stack, Toolbar, Typography } from "@mui/material";
+import { Button, Card, CardContent, CardHeader, FormControl, IconButton, Stack, Toolbar, Typography } from "@mui/material";
 import React, { useContext, useEffect, useState } from 'react';
 
 import { useHelp, useNotifications } from '@digitalaidseattle/core';
 import { geminiService } from '../../api/geminiService';
+import { FileUploadDialog } from '../../components/FileUploadDialog';
 import { GrantRecipeContext } from '../../components/GrantRecipeContext';
 import { HelpTopicContext } from '../../components/HelpTopicContext';
+import { StableCursorTextField } from '../../components/StableCursorTextfield';
+import { StorageFile } from '../../services/OurWaveStorageService';
 import { GrantContext, GrantRecipe } from '../../types';
 import { GrantAiService } from './grantAiService';
-import { FileUploadDialog } from '../../components/FileUploadDialog';
-import { StorageFile } from '../../services/OurWaveStorageService';
+import { RECIPE_STRINGS } from '../../constants/grantRecipe';
 
 const SUPPORTED_FILE_TYPES = [
     "text/plain",
@@ -53,19 +55,15 @@ const ContextRow = ({ index, context, onChange, onDelete }: ContextRowProps) => 
                 <DeleteOutlined />
             </Button>
             {(context.type === 'text') &&
-                <OutlinedInput
+                <StableCursorTextField
                     fullWidth={true}
                     value={context.value}
                     placeholder='Enter context information here'
                     onChange={handleTextChange}
                     multiline={true}
-                    rows={1}
-                    sx={{
-                        '& .MuiInputBase-input': {
-                            resize: 'vertical',
-                            overflow: 'auto',
-                        }
-                    }} />}
+                    minRows={1}
+                    maxRows={3}
+                />}
             {(SUPPORTED_FILE_TYPES.includes(context.type)) &&
                 <>
                     <FormControl fullWidth={true} sx={{ border: '1px solid', borderBlockColor: 'grey', padding: 2, borderRadius: 1, pr: 1 }}>
@@ -139,7 +137,8 @@ export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ onChange
 
     return (
         <Card>
-            <CardHeader title="Project Contexts"
+            <CardHeader title={RECIPE_STRINGS.projectContextsTitle}
+                subheader={RECIPE_STRINGS.projectContextsSubtext}
                 action={
                     <Toolbar disableGutters={true} sx={{ gap: 1 }} >
                         <Button

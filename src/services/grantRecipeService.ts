@@ -6,6 +6,8 @@ import { FIRESTORE_COLLECTIONS } from "../constants/firestoreCollections";
 import type { GrantRecipe } from "../types";
 
 class GrantRecipeService extends FirestoreService<GrantRecipe> {
+  output_fragment = ` Where {{#each outputs}}{{#unless @first}} and{{/unless}} the output "{{name}}" cannot have more than {{maxWords}} {{unit}} {{/each}}.`;
+
   constructor() {
     super(FIRESTORE_COLLECTIONS.grantRecipes);
   }
@@ -102,7 +104,7 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
   }
 
   generatePromptWithInputs(recipe: GrantRecipe): string {
-    const compiled = Handlebars.compile(recipe.template + `Where {{#each outputs}}{{#unless @first}} and{{/unless}} the output "{{name}}" cannot have more than {{maxWords}} of {{unit}} {{/each}}.`);
+    const compiled = Handlebars.compile(recipe.template + this.output_fragment);
 
     return compiled({
       outputs: recipe.outputsWithWordCount,
