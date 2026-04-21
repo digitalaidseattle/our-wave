@@ -14,9 +14,9 @@ import { FileUploadDialog } from '../../components/FileUploadDialog';
 import { GrantRecipeContext } from '../../components/GrantRecipeContext';
 import { HelpTopicContext } from '../../components/HelpTopicContext';
 import { StableCursorTextField } from '../../components/StableCursorTextfield';
-import { StorageFile } from '../../services/OurWaveStorageService';
 import { GrantContext, GrantRecipe } from '../../types';
 import { GrantAiService } from './grantAiService';
+import { RECIPE_STRINGS } from '../../constants/grantRecipe';
 
 const SUPPORTED_FILE_TYPES = [
     "text/plain",
@@ -60,13 +60,9 @@ const ContextRow = ({ index, context, onChange, onDelete }: ContextRowProps) => 
                     placeholder='Enter context information here'
                     onChange={handleTextChange}
                     multiline={true}
-                    rows={1}
-                    sx={{
-                        '& .MuiInputBase-input': {
-                            resize: 'vertical',
-                            overflow: 'auto',
-                        }
-                    }} />}
+                    minRows={1}
+                    maxRows={3}
+                />}
             {(SUPPORTED_FILE_TYPES.includes(context.type)) &&
                 <>
                     <FormControl fullWidth={true} sx={{ border: '1px solid', borderBlockColor: 'grey', padding: 2, borderRadius: 1, pr: 1 }}>
@@ -115,32 +111,43 @@ export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ onChange
         onChange({ ...recipe, contexts: revised });
     }
 
-    async function handleFileSelection(files: (File | StorageFile)[] | null) {
-        if (files) {
-            const contexts = files
-                .filter(file => {
-                    const fileType = file.type;
-                    if (!fileType || !SUPPORTED_FILE_TYPES.includes(fileType)) {
-                        notifications.error(`Unsupported file type: ${file.type}. Supported types are: ${SUPPORTED_FILE_TYPES.join(", ")}`);
-                        return false;
-                    } else {
-                        return true;
-                    }
-                })
-                .map(async file => {
-                    const tokenCount = file instanceof File
-                        ? await grantAiService.calcFileTokenCount(recipe.modelType, file)
-                        : await grantAiService.calcStorageFileTokenCount(recipe.modelType, file);
-                    return ({ type: file.type!, value: "", name: file.name, tokenCount: tokenCount, file: file });
-                })
-            addContexts(await Promise.all(contexts));
-        }
+    async function handleFileSelection(files: File[] | null) {
         setShowUploadDialog(false);
+
+        if (!files) {
+            return;
+        }
+
+        const supportedFiles = files.filter(file => {
+            const fileType = file.type;
+            if (!fileType || !SUPPORTED_FILE_TYPES.includes(fileType)) {
+                notifications.error(`Unsupported file type: ${file.name}. Supported types are: ${SUPPORTED_FILE_TYPES.join(", ")}`);
+                return false;
+            }
+            return true;
+        });
+
+        const newContexts = await Promise.all(supportedFiles.map(async file => {
+            let tokenCount = 0;
+            try {
+                tokenCount = await grantAiService.calcFileTokenCount(recipe.modelType, file);
+            } catch (err) {
+                console.error("Error calculating token count for file", err);
+                notifications.error(`Could not calculate token count for ${file.name}. The file was added with 0 tokens.`);
+            }
+
+            return ({ type: file.type, value: "", name: file.name, tokenCount: tokenCount, file: file });
+        }));
+
+        if (newContexts.length > 0) {
+            addContexts(newContexts);
+        }
     }
 
     return (
         <Card>
-            <CardHeader title="Project Contexts"
+            <CardHeader title={RECIPE_STRINGS.projectContextsTitle}
+                subheader={RECIPE_STRINGS.projectContextsSubtext}
                 action={
                     <Toolbar disableGutters={true} sx={{ gap: 1 }} >
                         <Button
