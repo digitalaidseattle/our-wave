@@ -4,40 +4,56 @@
  * @copyright 2026 Digital Aid Seattle
 */
 import { EditOutlined, HomeOutlined } from "@ant-design/icons";
-import DeleteIcon from "@mui/icons-material/Delete";
-import { Box, Breadcrumbs, Button, Card, CardContent, CardHeader, IconButton, Rating, Stack, Tooltip, Typography } from "@mui/material";
-import { useContext, useEffect, useMemo, useState } from "react";
-import { NavLink, useNavigate, useParams } from "react-router-dom";
-
 import { LoadingContext, useNotifications } from "@digitalaidseattle/core";
-import { Clipboard } from "@digitalaidseattle/mui";
+import { Clipboard, ConfirmationDialog } from "@digitalaidseattle/mui";
+import DeleteIcon from "@mui/icons-material/Delete";
+import {
+  Box,
+  Breadcrumbs,
+  Button,
+  Card,
+  CardActions,
+  CardContent,
+  CardHeader,
+  IconButton,
+  Rating,
+  Stack,
+  Tooltip,
+  Typography
+} from "@mui/material";
+import { useContext, useEffect, useMemo, useState } from "react";
 import Markdown from "react-markdown";
+import { NavLink, useNavigate, useParams } from "react-router-dom";
 import { LoadingOverlay } from "../../components/LoadingOverlay";
 import { TextEdit } from "../../components/TextEdit";
 import { grantProposalService } from "../../services/grantProposalService";
 import { grantRecipeService } from "../../services/grantRecipeService";
+import { deleteProposal } from "../../transactions/DeleteProposal";
 import type { GrantOutput, GrantProposal, GrantRecipe } from "../../types";
 import { DateUtils } from "../../utils/dateUtils";
 
-//Count words in string
+// Count words in string
 function countWords(text: string): number {
   return text.trim() ? text.trim().split(/\s+/).length : 0;
 }
-//Count characters in a string
+
+// Count characters in a string
 function countCharacters(text: string): number {
   return text.length;
 }
 
 const GrantProposalsDetailPage: React.FC = () => {
-  const { setLoading } = useContext(LoadingContext);
-  const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const notifications = useNotifications();
+  const navigate = useNavigate();
+  const { loading, setLoading } = useContext(LoadingContext);
+  const { id } = useParams<{ id: string }>();
 
   const [proposal, setProposal] = useState<GrantProposal | null>(null);
   const [recipe, setRecipe] = useState<GrantRecipe | null>(null);
   const [outputs, setOutputs] = useState<GrantOutput[]>([]);
   const [rating, setRating] = useState<number>(0);
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -74,7 +90,7 @@ const GrantProposalsDetailPage: React.FC = () => {
     }
 
     fetchData();
-  }, [id]);
+  }, [id, setLoading]);
 
   useEffect(() => {
     setOutputs([]);
@@ -89,7 +105,7 @@ const GrantProposalsDetailPage: React.FC = () => {
 
   // If we have recipe outputs, render in that order.
   // Otherwise, render whatever keys exist in structuredResponse.
-  const reponses: {
+  const responses: {
     name: string;
     subheader: string;
     value: string;
@@ -131,34 +147,54 @@ const GrantProposalsDetailPage: React.FC = () => {
   }, [recipe]);
 
   function handleNameChange(text: string): void {
-    if (proposal) {
-      grantProposalService.update(proposal.id as string, { name: text } as GrantProposal)
+    if (proposal?.id) {
+      grantProposalService.update(proposal.id, { name: text })
         .then(updated => setProposal({ ...proposal, ...updated }))
+        .catch(err => notifications.error(`Failed to save name: ${err instanceof Error ? err.message : "Unknown error"}`));
     }
   }
 
   function handleRatingChange(newValue: number | null): void {
     const value = newValue ?? 0;
     setRating(value);
-    if (proposal) {
-      grantProposalService.update(proposal.id as string, { rating: value } as GrantProposal)
+    if (proposal?.id) {
+      grantProposalService.update(proposal.id, { rating: value })
         .then(updated => setProposal({ ...proposal, ...updated }))
-        .catch(err => notifications.error(`Failed to save rating: ${err.message}`));
+        .catch(err => notifications.error(`Failed to save rating: ${err instanceof Error ? err.message : "Unknown error"}`));
     }
   }
 
-  function handleDeleteProposal(): void {
-    const confirmed = window.confirm("Are you sure you want to delete this proposal? This action cannot be undone.");
-    if (!confirmed) return;
-    if (proposal?.id) {
-      grantProposalService.delete(proposal.id as string)
-        .then(() => {
-          notifications.success("Proposal deleted.");
-          navigate('/grant-proposals');
-        })
-        .catch(err => notifications.error(`Failed to delete proposal: ${err instanceof Error ? err.message : 'Unknown error'}`));
+  const handleDeleteClick = () => {
+    setOpenDeleteDialog(true);
+  };
+
+  const handleDeleteCancel = () => {
+    if (!isDeleting) {
+      setOpenDeleteDialog(false);
     }
-  }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!proposal?.id) return;
+
+    try {
+      setLoading(true);
+      setIsDeleting(true);
+
+      await deleteProposal(proposal, recipe);
+
+      notifications.success("Proposal deleted successfully");
+      setOpenDeleteDialog(false);
+      navigate("/grant-proposals");
+    } catch (error) {
+      console.error("Failed to delete proposal:", error);
+      notifications.error("Failed to delete proposal. Please try again.");
+      setOpenDeleteDialog(false);
+    } finally {
+      setIsDeleting(false);
+      setLoading(false);
+    }
+  };
 
   return (
     <>
@@ -170,78 +206,97 @@ const GrantProposalsDetailPage: React.FC = () => {
       </Breadcrumbs>
       {!proposal && <Typography>No proposal data found.</Typography>}
       {proposal &&
-        <>
-          <Stack spacing={2} sx={{ pb: 1 }}>
-            <Card>
-              <CardHeader title={<TextEdit
-                value={proposal.name ? proposal.name : "Grant Proposal Detail"}
-                onChange={handleNameChange} />}
-                subheader={<>
-                  <Typography component="span">Generated on: {createdAtLabel}</Typography>
-                 {recipeLink}
-                  <Typography component="span">; Total token count: {proposal.totalTokenCount ?? "N/A"}</Typography>
-                </>}
-                action={<Clipboard text={Object.values(proposal.structuredResponse!).join('\n')} />} />
-            </Card>
-            {reponses.map((response) => {
-              return (
-                <Card key={response.name} variant="outlined">
-                  <CardHeader
-                    title={response.name}
-                    subheader={response.subheader}
-                    action={<Tooltip title="Copies this section of the proposal into clipboard."><Box><Clipboard text={response.value} /></Box></Tooltip>}
-                  />
-                  <CardContent>
-                    <Markdown>{response.value}</Markdown>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </Stack>
-          <Box
+        <Stack
+          sx={{
+            height: "calc(100dvh - 112px)",
+            gap: 2,
+          }}
+        >
+          <Card
             sx={{
-              position: 'sticky',
-              bottom: 0,
-              zIndex: 10,
-              backgroundColor: 'background.paper',
-              borderTop: '1px solid',
-              borderColor: 'divider',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              px: 2,
-              py: 1,
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
             }}
           >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Typography variant="body2">Rate this Proposal:</Typography>
-              <Rating
-                value={rating}
-                onChange={(_event, newValue) => handleRatingChange(newValue)}
-              />
-            </Box>
-            <Stack direction="row" spacing={1}>
-              {recipe && (
+            <CardHeader
+              title={<TextEdit
+                value={proposal.name ? proposal.name : "Grant Proposal Detail"}
+                onChange={handleNameChange} />}
+              subheader={<>
+                <Typography component="span">Generated on: {createdAtLabel}</Typography>
+                {recipeLink}
+                <Typography component="span">; Total token count: {proposal.totalTokenCount ?? "N/A"}</Typography>
+              </>}
+              action={<Clipboard text={Object.values(proposal.structuredResponse ?? {}).join("\n")} />}
+            />
+            <CardContent
+              sx={{
+                flex: 1,
+                overflowY: "auto",
+              }}
+            >
+              <Stack spacing={2}>
+                {responses.map((response) => {
+                  return (
+                    <Card key={response.name} variant="outlined">
+                      <CardHeader
+                        title={response.name}
+                        subheader={response.subheader}
+                        action={<Tooltip title="Copies this section of the proposal into clipboard."><Box><Clipboard text={response.value} /></Box></Tooltip>}
+                      />
+                      <CardContent>
+                        <Markdown>{response.value}</Markdown>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </Stack>
+            </CardContent>
+            <CardActions
+              sx={{
+                borderTop: "1px solid",
+                borderColor: "divider",
+                justifyContent: "space-between",
+              }}>
+              <Box sx={{ px: 1, display: "flex", alignItems: "center", gap: 1 }}>
+                <Typography variant="body2" sx={{ whiteSpace: "nowrap" }}>Rate this Proposal:</Typography>
+                <Rating
+                  value={rating}
+                  onChange={(_event, newValue) => handleRatingChange(newValue)}
+                />
+              </Box>
+              <Stack direction="row" spacing={1} alignItems="center">
+                {recipe && (
+                  <Button
+                    variant="contained"
+                    startIcon={<EditOutlined />}
+                    onClick={() => navigate(`/grant-recipes/${recipe.id}`)}
+                  >
+                    Edit Recipe
+                  </Button>
+                )}
                 <Button
-                  variant="contained"
-                  startIcon={<EditOutlined />}
-                  onClick={() => navigate(`/grant-recipes/${recipe.id}`)}
+                  variant="outlined"
+                  color="error"
+                  startIcon={<DeleteIcon />}
+                  onClick={handleDeleteClick}
+                  disabled={loading || isDeleting}
                 >
-                  Edit Recipe
+                  Delete
                 </Button>
-              )}
-              <Button
-                variant="outlined"
-                color="error"
-                startIcon={<DeleteIcon />}
-                onClick={handleDeleteProposal}
-              >
-                Delete
-              </Button>
-            </Stack>
-          </Box>
-        </>
+              </Stack>
+            </CardActions>
+          </Card>
+        </Stack>
       }
+      <ConfirmationDialog
+        title="Delete Proposal?"
+        message={`Are you sure you want to delete "${proposal?.name || "this proposal"}"? This action cannot be undone.`}
+        open={openDeleteDialog}
+        handleConfirm={handleDeleteConfirm}
+        handleCancel={handleDeleteCancel}
+      />
     </>
   );
 };
