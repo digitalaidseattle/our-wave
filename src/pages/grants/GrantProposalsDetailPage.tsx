@@ -3,15 +3,27 @@
  * 
  * @copyright 2026 Digital Aid Seattle
 */
-import { HomeOutlined } from "@ant-design/icons";
+import { EditOutlined, HomeOutlined } from "@ant-design/icons";
 import { LoadingContext, useNotifications } from "@digitalaidseattle/core";
 import { Clipboard, ConfirmationDialog } from "@digitalaidseattle/mui";
-import { Box, Breadcrumbs, Button, Card, CardActions, CardContent, CardHeader, IconButton, Stack, Tooltip, Typography } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
+import {
+  Box,
+  Breadcrumbs,
+  Button,
+  Card,
+  CardActions,
+  CardContent,
+  CardHeader,
+  IconButton,
+  Rating,
+  Stack,
+  Tooltip,
+  Typography
+} from "@mui/material";
 import { useContext, useEffect, useMemo, useState } from "react";
-import { NavLink, useNavigate, useParams } from "react-router-dom";
-
 import Markdown from "react-markdown";
+import { NavLink, useNavigate, useParams } from "react-router-dom";
 import { LoadingOverlay } from "../../components/LoadingOverlay";
 import { TextEdit } from "../../components/TextEdit";
 import { grantProposalService } from "../../services/grantProposalService";
@@ -20,11 +32,12 @@ import { deleteProposal } from "../../transactions/DeleteProposal";
 import type { GrantOutput, GrantProposal, GrantRecipe } from "../../types";
 import { DateUtils } from "../../utils/dateUtils";
 
-//Count words in string
+// Count words in string
 function countWords(text: string): number {
   return text.trim() ? text.trim().split(/\s+/).length : 0;
 }
-//Count characters in a string
+
+// Count characters in a string
 function countCharacters(text: string): number {
   return text.length;
 }
@@ -38,6 +51,7 @@ const GrantProposalsDetailPage: React.FC = () => {
   const [proposal, setProposal] = useState<GrantProposal | null>(null);
   const [recipe, setRecipe] = useState<GrantRecipe | null>(null);
   const [outputs, setOutputs] = useState<GrantOutput[]>([]);
+  const [rating, setRating] = useState<number>(0);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -76,7 +90,7 @@ const GrantProposalsDetailPage: React.FC = () => {
     }
 
     fetchData();
-  }, [id]);
+  }, [id, setLoading]);
 
   useEffect(() => {
     setOutputs([]);
@@ -85,9 +99,13 @@ const GrantProposalsDetailPage: React.FC = () => {
     }
   }, [recipe]);
 
+  useEffect(() => {
+    setRating(proposal?.rating ?? 0);
+  }, [proposal?.rating]);
+
   // If we have recipe outputs, render in that order.
   // Otherwise, render whatever keys exist in structuredResponse.
-  const reponses: {
+  const responses: {
     name: string;
     subheader: string;
     value: string;
@@ -129,9 +147,20 @@ const GrantProposalsDetailPage: React.FC = () => {
   }, [recipe]);
 
   function handleNameChange(text: string): void {
-    if (proposal) {
-      grantProposalService.update(proposal.id as string, { name: text } as GrantProposal)
+    if (proposal?.id) {
+      grantProposalService.update(proposal.id, { name: text })
         .then(updated => setProposal({ ...proposal, ...updated }))
+        .catch(err => notifications.error(`Failed to save name: ${err instanceof Error ? err.message : "Unknown error"}`));
+    }
+  }
+
+  function handleRatingChange(newValue: number | null): void {
+    const value = newValue ?? 0;
+    setRating(value);
+    if (proposal?.id) {
+      grantProposalService.update(proposal.id, { rating: value })
+        .then(updated => setProposal({ ...proposal, ...updated }))
+        .catch(err => notifications.error(`Failed to save rating: ${err instanceof Error ? err.message : "Unknown error"}`));
     }
   }
 
@@ -190,15 +219,17 @@ const GrantProposalsDetailPage: React.FC = () => {
               flexDirection: "column",
             }}
           >
-            <CardHeader title={<TextEdit
-              value={proposal.name ? proposal.name : "Grant Proposal Detail"}
-              onChange={handleNameChange} />}
+            <CardHeader
+              title={<TextEdit
+                value={proposal.name ? proposal.name : "Grant Proposal Detail"}
+                onChange={handleNameChange} />}
               subheader={<>
                 <Typography component="span">Generated on: {createdAtLabel}</Typography>
-               {recipeLink}
+                {recipeLink}
                 <Typography component="span">; Total token count: {proposal.totalTokenCount ?? "N/A"}</Typography>
               </>}
-              action={<Clipboard text={Object.values(proposal.structuredResponse!).join('\n')} />} />
+              action={<Clipboard text={Object.values(proposal.structuredResponse ?? {}).join("\n")} />}
+            />
             <CardContent
               sx={{
                 flex: 1,
@@ -206,7 +237,7 @@ const GrantProposalsDetailPage: React.FC = () => {
               }}
             >
               <Stack spacing={2}>
-                {reponses.map((response) => {
+                {responses.map((response) => {
                   return (
                     <Card key={response.name} variant="outlined">
                       <CardHeader
@@ -226,17 +257,35 @@ const GrantProposalsDetailPage: React.FC = () => {
               sx={{
                 borderTop: "1px solid",
                 borderColor: "divider",
-                justifyContent: "flex-end",
+                justifyContent: "space-between",
               }}>
-              <Button
-                variant="outlined"
-                color="error"
-                startIcon={<DeleteIcon />}
-                onClick={handleDeleteClick}
-                disabled={loading || isDeleting}
-              >
-                Delete
-              </Button>
+              <Box sx={{ px: 1, display: "flex", alignItems: "center", gap: 1 }}>
+                <Typography variant="body2" sx={{ whiteSpace: "nowrap" }}>Rate this Proposal:</Typography>
+                <Rating
+                  value={rating}
+                  onChange={(_event, newValue) => handleRatingChange(newValue)}
+                />
+              </Box>
+              <Stack direction="row" spacing={1} alignItems="center">
+                {recipe && (
+                  <Button
+                    variant="contained"
+                    startIcon={<EditOutlined />}
+                    onClick={() => navigate(`/grant-recipes/${recipe.id}`)}
+                  >
+                    Edit Recipe
+                  </Button>
+                )}
+                <Button
+                  variant="outlined"
+                  color="error"
+                  startIcon={<DeleteIcon />}
+                  onClick={handleDeleteClick}
+                  disabled={loading || isDeleting}
+                >
+                  Delete
+                </Button>
+              </Stack>
             </CardActions>
           </Card>
         </Stack>
