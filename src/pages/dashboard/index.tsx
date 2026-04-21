@@ -27,12 +27,18 @@ import { HomeOutlined } from '@ant-design/icons';
 import { grantRecipeService } from '../../services/grantRecipeService';
 import { cloneRecipe } from '../../transactions/CloneRecipe';
 import { createRecipe } from '../../transactions/CreateRecipe';
-import type { GrantProposal, GrantRecipe } from '../../types';
+import type { GrantRecipe } from '../../types';
 import { LoadingContext } from '@digitalaidseattle/core';
 import LoadingButton from '../../components/LoadingButton';
 import { DateUtils } from '../../utils/dateUtils';
 import { DASHBOARD_STRINGS } from '../../constants/dashboard';
 import { grantProposalService } from '../../services/grantProposalService';
+import TokenUsageMonthlyChart from './TokenUsageMonthlyChart';
+import {
+  tokenUsageService,
+  type MonthlyTokenUsagePoint,
+  type TokenUsageSummary,
+} from '../../services/tokenUsageService';
 
 const numberFormatter = new Intl.NumberFormat();
 const compactNumberFormatter = new Intl.NumberFormat(undefined, {
@@ -48,44 +54,6 @@ const tokenUsageColors = ["#6ea6ef", "#73b863", "#d9a941", "#e8524d", "#b694f6",
 const getDateSortValue = (value: GrantRecipe["updatedAt"]) => {
   if (value instanceof Date) return value.getTime();
   return value.seconds;
-};
-
-type TokenUsageModelSummary = {
-  model: string;
-  tokensUsed: number;
-  totalUsagePercent: number;
-};
-
-type TokenUsageSummary = {
-  totalTokensUsed: number;
-  modelSummaries: TokenUsageModelSummary[];
-};
-
-const summarizeTokenUsage = (proposals: GrantProposal[]): TokenUsageSummary => {
-  const tokensByModel = proposals.reduce<Record<string, number>>((usage, proposal) => {
-    const tokenCount = Number(proposal.totalTokenCount ?? 0);
-    if (!Number.isFinite(tokenCount)) return usage;
-
-    const model = proposal.model?.trim() || DASHBOARD_STRINGS.unspecifiedModel;
-    usage[model] = (usage[model] ?? 0) + tokenCount;
-
-    return usage;
-  }, {});
-
-  const totalTokensUsed = Object.values(tokensByModel).reduce((sum, tokensUsed) => sum + tokensUsed, 0);
-
-  const modelSummaries = Object.entries(tokensByModel)
-    .map(([model, tokensUsed]) => ({
-      model,
-      tokensUsed,
-      totalUsagePercent: totalTokensUsed > 0 ? (tokensUsed / totalTokensUsed) * 100 : 0,
-    }))
-    .sort((a, b) => b.tokensUsed - a.tokensUsed);
-
-  return {
-    totalTokensUsed,
-    modelSummaries,
-  };
 };
 
 const RecentRecipesCard = () => {
@@ -218,10 +186,11 @@ const CreateRecipeCard = () => {
 }
 
 const TokenUsageCard = () => {
-  const [tokenUsage, setTokenUsage] = useState<TokenUsageSummary>({
+  const [currentMonthUsage, setCurrentMonthUsage] = useState<TokenUsageSummary>({
     totalTokensUsed: 0,
     modelSummaries: [],
   });
+  const [monthlyUsage, setMonthlyUsage] = useState<MonthlyTokenUsagePoint[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -231,15 +200,20 @@ const TokenUsageCard = () => {
       .then((proposals) => {
         if (!active) return;
 
-        setTokenUsage(summarizeTokenUsage(proposals));
+        const now = new Date();
+        const currentMonthProposals = tokenUsageService.filterToMonth(proposals, now);
+
+        setCurrentMonthUsage(tokenUsageService.summarizeByModel(currentMonthProposals));
+        setMonthlyUsage(tokenUsageService.summarizeMonthlyUsage(proposals, 6, now));
       })
       .catch((error) => {
         console.error("Error loading token usage:", error);
         if (active) {
-          setTokenUsage({
+          setCurrentMonthUsage({
             totalTokensUsed: 0,
             modelSummaries: [],
           });
+          setMonthlyUsage([]);
         }
       })
       .finally(() => {
@@ -262,7 +236,7 @@ const TokenUsageCard = () => {
             <Typography variant="body2" color="text.secondary">
               {loading
                 ? DASHBOARD_STRINGS.loadingTokenUsage
-                : `${formatCompactTokenCount(tokenUsage.totalTokensUsed)} total`}
+                : `${formatCompactTokenCount(currentMonthUsage.totalTokensUsed)} this month`}
             </Typography>
           </Stack>
 
@@ -272,57 +246,88 @@ const TokenUsageCard = () => {
             </Typography>
           )}
 
-          {!loading && tokenUsage.modelSummaries.length === 0 && (
+          {!loading && currentMonthUsage.modelSummaries.length === 0 && monthlyUsage.every((point) => point.tokensUsed === 0) && (
             <Typography variant="body2" color="text.secondary">
               No token usage yet
             </Typography>
           )}
 
-          {!loading && tokenUsage.modelSummaries.length > 0 && (
+          {!loading && monthlyUsage.length > 0 && (
+            <Box>
+              <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+                {DASHBOARD_STRINGS.monthlyTokenUsage}
+              </Typography>
+              <TokenUsageMonthlyChart points={monthlyUsage} />
+            </Box>
+          )}
+
+          {!loading && currentMonthUsage.modelSummaries.length > 0 && (
             <Stack spacing={2.25}>
-              {tokenUsage.modelSummaries.map((summary, index) => {
+              <Typography variant="subtitle2" color="text.secondary">
+                {DASHBOARD_STRINGS.currentMonthByModel}
+              </Typography>
+              {currentMonthUsage.modelSummaries.map((summary, index) => {
                 const barColor = tokenUsageColors[index % tokenUsageColors.length];
 
                 return (
                   <Box
                     key={summary.model}
                     sx={{
-                      display: "grid",
-                      gridTemplateColumns: { xs: "1fr", sm: "220px minmax(120px, 1fr) 96px" },
-                      gap: { xs: 0.75, sm: 2 },
-                      alignItems: "center",
+                      border: "1px solid",
+                      borderColor: "divider",
+                      borderRadius: 1,
+                      px: 2,
+                      py: 1.5,
                     }}
                   >
-                    <Typography
-                      variant="body1"
-                      sx={{
-                        color: "text.primary",
-                        overflowWrap: "anywhere",
-                      }}
-                    >
-                      {summary.model}
-                    </Typography>
-                    <LinearProgress
-                      variant="determinate"
-                      value={summary.totalUsagePercent}
-                      aria-label={`${summary.model} share of total token usage`}
-                      sx={{
-                        height: 34,
-                        borderRadius: 1,
-                        backgroundColor: "action.hover",
-                        "& .MuiLinearProgress-bar": {
-                          backgroundColor: barColor,
+                    <Stack spacing={1.25}>
+                      <Stack
+                        direction={{ xs: "column", sm: "row" }}
+                        justifyContent="space-between"
+                        alignItems={{ xs: "flex-start", sm: "center" }}
+                        gap={1}
+                      >
+                        <Stack spacing={0.25} sx={{ minWidth: 0 }}>
+                          <Typography
+                            variant="body2"
+                            fontWeight={600}
+                            color="text.primary"
+                            sx={{ overflowWrap: "anywhere" }}
+                          >
+                            {summary.model}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {summary.totalUsagePercent.toFixed(1)}% of this month&apos;s usage
+                          </Typography>
+                        </Stack>
+                        <Stack
+                          direction="row"
+                          spacing={1.5}
+                          alignItems="baseline"
+                          sx={{ flexWrap: "wrap", justifyContent: { xs: "flex-start", sm: "flex-end" } }}
+                        >
+                          <Typography variant="body2" fontWeight={700} color="text.primary">
+                            {formatCompactTokenCount(summary.tokensUsed)}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {formatTokenCount(summary.tokensUsed)} tokens
+                          </Typography>
+                        </Stack>
+                      </Stack>
+                      <LinearProgress
+                        variant="determinate"
+                        value={summary.totalUsagePercent}
+                        aria-label={`${summary.model} share of current month token usage`}
+                        sx={{
+                          height: 12,
                           borderRadius: 1,
-                        },
-                      }}
-                    />
-                    <Stack spacing={0.25} alignItems={{ xs: "flex-start", sm: "flex-end" }}>
-                      <Typography variant="body1" fontWeight={600} color="text.primary">
-                        {formatCompactTokenCount(summary.tokensUsed)}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {summary.totalUsagePercent.toFixed(1)}%
-                      </Typography>
+                          backgroundColor: "action.hover",
+                          "& .MuiLinearProgress-bar": {
+                            backgroundColor: barColor,
+                            borderRadius: 1,
+                          },
+                        }}
+                      />
                     </Stack>
                   </Box>
                 );
@@ -330,9 +335,9 @@ const TokenUsageCard = () => {
             </Stack>
           )}
 
-          {!loading && tokenUsage.totalTokensUsed > 0 && (
+          {!loading && currentMonthUsage.totalTokensUsed > 0 && (
             <Typography variant="caption" color="text.secondary">
-              {DASHBOARD_STRINGS.allTimeTokensUsed}: {formatTokenCount(tokenUsage.totalTokensUsed)}
+              {DASHBOARD_STRINGS.thisMonthTokensUsed}: {formatTokenCount(currentMonthUsage.totalTokensUsed)}
             </Typography>
           )}
         </Stack>
