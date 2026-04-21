@@ -1,5 +1,5 @@
 import { CopyOutlined, DeleteOutlined, HomeOutlined, PlusCircleOutlined } from "@ant-design/icons";
-import { Box, Breadcrumbs, Button, Card, CardContent, CardHeader, Chip, IconButton, Toolbar, Tooltip, Typography } from "@mui/material";
+import { Box, Breadcrumbs, Button, Card, CardContent, CardHeader, Chip, IconButton, Rating, Toolbar, Tooltip, Typography } from "@mui/material";
 import { DataGrid, GridColDef, GridRowParams, GridRowSelectionModel, gridPaginatedVisibleSortedGridRowIdsSelector, useGridApiRef } from "@mui/x-data-grid";
 import { useContext, useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
@@ -116,6 +116,16 @@ const GrantRecipesListPage: React.FC = () => {
       field: "description",
       headerName: "Description",
       width: 400,
+    },
+    {
+      field: "rating",
+      headerName: "Rating",
+      width: 150,
+      type: "number",
+      valueGetter: (_value, row) => row.rating ?? 0,
+      renderCell: (params) => (
+        <Rating value={params.value} readOnly size="small" />
+      ),
     },
     {
       field: "tokenCount",
