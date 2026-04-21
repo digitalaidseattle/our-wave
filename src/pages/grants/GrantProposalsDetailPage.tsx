@@ -3,12 +3,13 @@
  * 
  * @copyright 2026 Digital Aid Seattle
 */
-import { HomeOutlined } from "@ant-design/icons";
-import { Box, Breadcrumbs, Card, CardContent, CardHeader, IconButton, Stack, Tooltip, Typography } from "@mui/material";
+import { EditOutlined, HomeOutlined } from "@ant-design/icons";
+import DeleteIcon from "@mui/icons-material/Delete";
+import { Box, Breadcrumbs, Button, Card, CardContent, CardHeader, IconButton, Rating, Stack, Tooltip, Typography } from "@mui/material";
 import { useContext, useEffect, useMemo, useState } from "react";
-import { NavLink, useParams } from "react-router-dom";
+import { NavLink, useNavigate, useParams } from "react-router-dom";
 
-import { LoadingContext } from "@digitalaidseattle/core";
+import { LoadingContext, useNotifications } from "@digitalaidseattle/core";
 import { Clipboard } from "@digitalaidseattle/mui";
 import Markdown from "react-markdown";
 import { LoadingOverlay } from "../../components/LoadingOverlay";
@@ -30,10 +31,13 @@ function countCharacters(text: string): number {
 const GrantProposalsDetailPage: React.FC = () => {
   const { setLoading } = useContext(LoadingContext);
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const notifications = useNotifications();
 
   const [proposal, setProposal] = useState<GrantProposal | null>(null);
   const [recipe, setRecipe] = useState<GrantRecipe | null>(null);
   const [outputs, setOutputs] = useState<GrantOutput[]>([]);
+  const [rating, setRating] = useState<number>(0);
 
   useEffect(() => {
     if (!id) return;
@@ -78,6 +82,10 @@ const GrantProposalsDetailPage: React.FC = () => {
       setOutputs(recipe.outputsWithWordCount ?? []);
     }
   }, [recipe]);
+
+  useEffect(() => {
+    setRating(proposal?.rating ?? 0);
+  }, [proposal?.rating]);
 
   // If we have recipe outputs, render in that order.
   // Otherwise, render whatever keys exist in structuredResponse.
@@ -129,6 +137,29 @@ const GrantProposalsDetailPage: React.FC = () => {
     }
   }
 
+  function handleRatingChange(newValue: number | null): void {
+    const value = newValue ?? 0;
+    setRating(value);
+    if (proposal) {
+      grantProposalService.update(proposal.id as string, { rating: value } as GrantProposal)
+        .then(updated => setProposal({ ...proposal, ...updated }))
+        .catch(err => notifications.error(`Failed to save rating: ${err.message}`));
+    }
+  }
+
+  function handleDeleteProposal(): void {
+    const confirmed = window.confirm("Are you sure you want to delete this proposal? This action cannot be undone.");
+    if (!confirmed) return;
+    if (proposal?.id) {
+      grantProposalService.delete(proposal.id as string)
+        .then(() => {
+          notifications.success("Proposal deleted.");
+          navigate('/grant-proposals');
+        })
+        .catch(err => notifications.error(`Failed to delete proposal: ${err instanceof Error ? err.message : 'Unknown error'}`));
+    }
+  }
+
   return (
     <>
       <LoadingOverlay />
@@ -139,33 +170,77 @@ const GrantProposalsDetailPage: React.FC = () => {
       </Breadcrumbs>
       {!proposal && <Typography>No proposal data found.</Typography>}
       {proposal &&
-        <Stack spacing={2}>
-          <Card>
-            <CardHeader title={<TextEdit
-              value={proposal.name ? proposal.name : "Grant Proposal Detail"}
-              onChange={handleNameChange} />}
-              subheader={<>
-                <Typography component="span">Generated on: {createdAtLabel}</Typography>
-               {recipeLink}
-                <Typography component="span">; Total token count: {proposal.totalTokenCount ?? "N/A"}</Typography>
-              </>}
-              action={<Clipboard text={Object.values(proposal.structuredResponse!).join('\n')} />} />
-          </Card>
-          {reponses.map((response) => {
-            return (
-              <Card key={response.name} variant="outlined">
-                <CardHeader
-                  title={response.name}
-                  subheader={response.subheader}
-                  action={<Tooltip title="Copies this section of the proposal into clipboard."><Box><Clipboard text={response.value} /></Box></Tooltip>}
-                />
-                <CardContent>
-                  <Markdown>{response.value}</Markdown>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </Stack>
+        <>
+          <Stack spacing={2} sx={{ pb: 1 }}>
+            <Card>
+              <CardHeader title={<TextEdit
+                value={proposal.name ? proposal.name : "Grant Proposal Detail"}
+                onChange={handleNameChange} />}
+                subheader={<>
+                  <Typography component="span">Generated on: {createdAtLabel}</Typography>
+                 {recipeLink}
+                  <Typography component="span">; Total token count: {proposal.totalTokenCount ?? "N/A"}</Typography>
+                </>}
+                action={<Clipboard text={Object.values(proposal.structuredResponse!).join('\n')} />} />
+            </Card>
+            {reponses.map((response) => {
+              return (
+                <Card key={response.name} variant="outlined">
+                  <CardHeader
+                    title={response.name}
+                    subheader={response.subheader}
+                    action={<Tooltip title="Copies this section of the proposal into clipboard."><Box><Clipboard text={response.value} /></Box></Tooltip>}
+                  />
+                  <CardContent>
+                    <Markdown>{response.value}</Markdown>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </Stack>
+          <Box
+            sx={{
+              position: 'sticky',
+              bottom: 0,
+              zIndex: 10,
+              backgroundColor: 'background.paper',
+              borderTop: '1px solid',
+              borderColor: 'divider',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              px: 2,
+              py: 1,
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="body2">Rate this Proposal:</Typography>
+              <Rating
+                value={rating}
+                onChange={(_event, newValue) => handleRatingChange(newValue)}
+              />
+            </Box>
+            <Stack direction="row" spacing={1}>
+              {recipe && (
+                <Button
+                  variant="contained"
+                  startIcon={<EditOutlined />}
+                  onClick={() => navigate(`/grant-recipes/${recipe.id}`)}
+                >
+                  Edit Recipe
+                </Button>
+              )}
+              <Button
+                variant="outlined"
+                color="error"
+                startIcon={<DeleteIcon />}
+                onClick={handleDeleteProposal}
+              >
+                Delete
+              </Button>
+            </Stack>
+          </Box>
+        </>
       }
     </>
   );

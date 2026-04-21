@@ -58,6 +58,28 @@ export const TemplateConfig = () => {
                     },
                 },
             },
+            MuiInputBase: {
+                styleOverrides: {
+                    inputMultiline: {
+                        overflowY: 'scroll !important' as 'scroll',
+                        scrollbarWidth: 'thin' as 'thin',
+                        scrollbarColor: 'rgba(180,180,180,0.8) #ffffff',
+                        '&::-webkit-scrollbar': {
+                            width: '4px',
+                            display: 'block',
+                            backgroundColor: '#ffffff',
+                        },
+                        '&::-webkit-scrollbar-track': {
+                            backgroundColor: '#ffffff',
+                            borderRadius: '4px',
+                        },
+                        '&::-webkit-scrollbar-thumb': {
+                            backgroundColor: 'rgba(163, 162, 162, 0.8)',
+                            borderRadius: '4px',
+                        },
+                    },
+                },
+            },
         },
     });
     return ({
