@@ -3,22 +3,28 @@
  * 
  * @copyright 2026 Digital Aid Seattle
 */
-import { EditOutlined, HomeOutlined } from "@ant-design/icons";
-import DeleteIcon from "@mui/icons-material/Delete";
-import { Box, Breadcrumbs, Button, Card, CardContent, CardHeader, IconButton, Rating, Stack, Tooltip, Typography } from "@mui/material";
 import { useContext, useEffect, useMemo, useState } from "react";
 import { NavLink, useNavigate, useParams } from "react-router-dom";
 
+import { DownloadOutlined, EditOutlined, HomeOutlined } from "@ant-design/icons";
+import DeleteIcon from "@mui/icons-material/Delete";
+import Markdown from "react-markdown";
+
+import { Box, Breadcrumbs, Button, Card, CardContent, CardHeader, IconButton, Menu, MenuItem, Rating, Stack, Tooltip, Typography } from "@mui/material";
+
 import { LoadingContext, useNotifications } from "@digitalaidseattle/core";
 import { Clipboard } from "@digitalaidseattle/mui";
-import Markdown from "react-markdown";
 import { LoadingOverlay } from "../../components/LoadingOverlay";
 import { TextEdit } from "../../components/TextEdit";
 import { grantProposalService } from "../../services/grantProposalService";
 import { grantRecipeService } from "../../services/grantRecipeService";
 import type { GrantOutput, GrantProposal, GrantRecipe } from "../../types";
 import { DateUtils } from "../../utils/dateUtils";
+import { SUPPORTED_DOWNLOAD_TYPE } from "../../services/ProposalExporter";
 
+const LABELS = {
+  DOWNLOAD_TOOLTIP: "Download proposal"
+}
 //Count words in string
 function countWords(text: string): number {
   return text.trim() ? text.trim().split(/\s+/).length : 0;
@@ -33,6 +39,8 @@ const GrantProposalsDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const notifications = useNotifications();
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const open = Boolean(anchorEl);
 
   const [proposal, setProposal] = useState<GrantProposal | null>(null);
   const [recipe, setRecipe] = useState<GrantRecipe | null>(null);
@@ -137,6 +145,14 @@ const GrantProposalsDetailPage: React.FC = () => {
     }
   }
 
+  function handleDownload(type: SUPPORTED_DOWNLOAD_TYPE): void {
+    grantProposalService.download(proposal!, type)
+      .then(() => console.log('Download complete'))
+      .finally(() => {
+        setAnchorEl(null)
+      })
+  }
+
   function handleRatingChange(newValue: number | null): void {
     const value = newValue ?? 0;
     setRating(value);
@@ -170,77 +186,106 @@ const GrantProposalsDetailPage: React.FC = () => {
       </Breadcrumbs>
       {!proposal && <Typography>No proposal data found.</Typography>}
       {proposal &&
-        <>
-          <Stack spacing={2} sx={{ pb: 1 }}>
-            <Card>
-              <CardHeader title={<TextEdit
-                value={proposal.name ? proposal.name : "Grant Proposal Detail"}
-                onChange={handleNameChange} />}
-                subheader={<>
-                  <Typography component="span">Generated on: {createdAtLabel}</Typography>
-                 {recipeLink}
-                  <Typography component="span">; Total token count: {proposal.totalTokenCount ?? "N/A"}</Typography>
-                </>}
-                action={<Clipboard text={Object.values(proposal.structuredResponse!).join('\n')} />} />
-            </Card>
-            {reponses.map((response) => {
-              return (
-                <Card key={response.name} variant="outlined">
-                  <CardHeader
-                    title={response.name}
-                    subheader={response.subheader}
-                    action={<Tooltip title="Copies this section of the proposal into clipboard."><Box><Clipboard text={response.value} /></Box></Tooltip>}
-                  />
-                  <CardContent>
-                    <Markdown>{response.value}</Markdown>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </Stack>
-          <Box
-            sx={{
-              position: 'sticky',
-              bottom: 0,
-              zIndex: 10,
-              backgroundColor: 'background.paper',
-              borderTop: '1px solid',
-              borderColor: 'divider',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              px: 2,
-              py: 1,
-            }}
-          >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Typography variant="body2">Rate this Proposal:</Typography>
-              <Rating
-                value={rating}
-                onChange={(_event, newValue) => handleRatingChange(newValue)}
-              />
-            </Box>
-            <Stack direction="row" spacing={1}>
-              {recipe && (
+        <Stack spacing={2}>
+          <Card>
+            <CardHeader title={<TextEdit
+              value={proposal.name ? proposal.name : "Grant Proposal Detail"}
+              onChange={handleNameChange} />}
+              subheader={<>
+                <Typography component="span">Generated on: {createdAtLabel}</Typography>
+                {recipeLink}
+                <Typography component="span">; Total token count: {proposal.totalTokenCount ?? "N/A"}</Typography>
+              </>}
+              action={
+                <>
+                  <Tooltip title={LABELS.DOWNLOAD_TOOLTIP}>
+                    <IconButton color="primary"
+                      id="download-button"
+                      aria-controls={open ? 'basic-menu' : undefined}
+                      aria-haspopup="true"
+                      aria-expanded={open ? 'true' : undefined}
+                      onClick={evt => setAnchorEl(evt.currentTarget)}
+                    >
+                      <DownloadOutlined />
+                    </IconButton>
+                  </Tooltip>
+                  <Menu
+                    id="download-menu"
+                    anchorEl={anchorEl}
+                    open={open}
+                    onClose={() => setAnchorEl(null)}
+                    slotProps={{
+                      list: {
+                        'aria-labelledby': 'basic-button',
+                      },
+                    }}
+                  >
+                    <MenuItem onClick={() => handleDownload('markdown')}>Markdown</MenuItem>
+                    <MenuItem onClick={() => handleDownload('text')}>Text</MenuItem>
+                    <MenuItem onClick={() => handleDownload('json')}>JSON</MenuItem>
+                  </Menu>
+                </>
+              } />
+          </Card>
+          {reponses.map((response) => {
+            return (
+              <Card key={response.name} variant="outlined">
+                <CardHeader
+                  title={response.name}
+                  subheader={response.subheader}
+                  action={<Tooltip title="Copies this section of the proposal into clipboard."><Box><Clipboard text={response.value} /></Box></Tooltip>}
+                />
+                <CardContent>
+                  <Markdown>{response.value}</Markdown>
+                </CardContent>
+              </Card>
+            );
+          })}
+          <>
+            <Box
+              sx={{
+                position: 'sticky',
+                bottom: 0,
+                zIndex: 10,
+                backgroundColor: 'background.paper',
+                borderTop: '1px solid',
+                borderColor: 'divider',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                px: 2,
+                py: 1,
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography variant="body2">Rate this Proposal:</Typography>
+                <Rating
+                  value={rating}
+                  onChange={(_event, newValue) => handleRatingChange(newValue)}
+                />
+              </Box>
+              <Stack direction="row" spacing={1}>
+                {recipe && (
+                  <Button
+                    variant="contained"
+                    startIcon={<EditOutlined />}
+                    onClick={() => navigate(`/grant-recipes/${recipe.id}`)}
+                  >
+                    Edit Recipe
+                  </Button>
+                )}
                 <Button
-                  variant="contained"
-                  startIcon={<EditOutlined />}
-                  onClick={() => navigate(`/grant-recipes/${recipe.id}`)}
+                  variant="outlined"
+                  color="error"
+                  startIcon={<DeleteIcon />}
+                  onClick={handleDeleteProposal}
                 >
-                  Edit Recipe
+                  Delete
                 </Button>
-              )}
-              <Button
-                variant="outlined"
-                color="error"
-                startIcon={<DeleteIcon />}
-                onClick={handleDeleteProposal}
-              >
-                Delete
-              </Button>
-            </Stack>
-          </Box>
-        </>
+              </Stack>
+            </Box>
+          </>
+        </Stack>
       }
     </>
   );

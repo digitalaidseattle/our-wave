@@ -3,8 +3,12 @@ import { FirestoreService } from "@digitalaidseattle/firebase";
 import { authService } from "../App";
 import { FIRESTORE_COLLECTIONS } from "../constants/firestoreCollections";
 import type { GrantProposal } from "../types";
+import { ProposalExporter, SUPPORTED_DOWNLOAD_TYPE } from "./ProposalExporter";
 
 class GrantProposalService extends FirestoreService<GrantProposal> {
+
+  proposalExporter = new ProposalExporter();
+
   constructor() {
     super(FIRESTORE_COLLECTIONS.grantProposals);
   }
@@ -80,6 +84,14 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
       throw e;
     }
   }
+
+  async download(proposal: GrantProposal, downloadType: SUPPORTED_DOWNLOAD_TYPE): Promise<void> {
+    return this.proposalExporter.run(proposal, downloadType);
+  }
+
 }
+
+
+
 
 export const grantProposalService = new GrantProposalService();
