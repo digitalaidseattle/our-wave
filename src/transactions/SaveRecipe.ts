@@ -6,10 +6,9 @@
  */
 
 import { authService, storageService } from "../App";
+import { FIREBASE_STORAGE_FOLDER } from "../constants/storage";
 import { grantRecipeService } from "../services/grantRecipeService";
 import { GrantContext, GrantRecipe } from "../types";
-
-const GLOUD_FOLDER = import.meta.env.VITE_FIREBASE_STORAGE_FOLDER;
 
 
 function isNewFile(context: GrantContext): boolean {
@@ -29,7 +28,7 @@ async function uploadFiles(contexts: GrantContext[]): Promise<GrantContext[]> {
     return Promise.all(contexts
         .map(async (context) => {
             if (isNewFile(context)) {
-                const url = await storageService.upload(`${GLOUD_FOLDER}/${context.file!.name}`, context.file!);
+                const url = await storageService.upload(`${FIREBASE_STORAGE_FOLDER}/${context.file!.name}`, context.file!);
                 const newContext = { ...context, fileUrl: url };
                 delete newContext.file;
                 return newContext;
@@ -58,4 +57,3 @@ export async function saveRecipe(recipe: GrantRecipe): Promise<GrantRecipe> {
             }
         }))
 }
-

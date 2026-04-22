@@ -17,10 +17,9 @@
 
 import { createPartFromText, createPartFromUri, createUserContent, GoogleGenAI, Part } from "@google/genai";
 import { storageService } from "../../App";
+import { FIREBASE_STORAGE_FOLDER } from "../../constants/storage";
 import { StorageFile } from "../../services/OurWaveStorageService";
 import { GrantContext } from "../../types";
-
-const CLOUD_FOLDER = import.meta.env.VITE_FIREBASE_STORAGE_FOLDER;
 
 class GrantAiService {
 
@@ -72,7 +71,7 @@ class GrantAiService {
             if (gc.type === 'text') {
                 parts.push(createPartFromText(gc.value!));
             } else {
-                const uri = await storageService.getDownloadURL(`${CLOUD_FOLDER}/${gc.name}`);
+                const uri = await storageService.getDownloadURL(`${FIREBASE_STORAGE_FOLDER}/${gc.name}`);
                 parts.push(createPartFromUri(uri, contexts[idx].type));
             }
         });
