@@ -1,7 +1,10 @@
-export const DASHBOARD_STRINGS = {
-  recentRecipes: "Recent Recipes",
-  cloneRecipe: "Clone Recipe",
-  selectRecentRecipe: "Select a recent Recipe",
-  newRecipe: "New Recipe",
-  noProposals: "No proposals yet",
-};
+/**
+ * dashboard.tsx
+ * 
+ * @copyright 2026 Digital Aid Seattle
+*/
+import { DASHBOARD_LABELS } from "./labels";
+
+// To maintain backward compatibility, we export the same object under a different name
+// TODO update references
+export const DASHBOARD_STRINGS = DASHBOARD_LABELS
