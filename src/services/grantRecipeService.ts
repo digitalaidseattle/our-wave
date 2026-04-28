@@ -57,11 +57,20 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
 
     // Compile prompt from template before saving
     const prompt = await this.generatePromptWithInputs(entity);
-    const { id, ...entityWithoutId } = entity;
+
+    const cleaned = {
+      ...entity,
+      contexts: entity.contexts.map(gc => {
+        const clone = { ...gc }
+        delete clone.file;
+        return clone
+      })
+    }
+    delete cleaned.id;
 
     return super.insert(
       {
-        ...entityWithoutId,
+        ...cleaned,
         prompt,
         createdAt: now,
         createdBy: sessionUser.email,
@@ -85,15 +94,31 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
     mapper?: (json: any) => GrantRecipe,
     user?: User
   ): Promise<GrantRecipe> {
+
     const sessionUser = user ?? await authService.getUser();
     if (!sessionUser) {
       throw new Error("No valid user found.");
     }
 
+
+    const cleaned = {
+      ...updatedFields,
+      contexts: updatedFields.contexts.map(gc => {
+        const clone = { ...gc }
+        delete clone.file;
+        return clone
+      })
+    }
+
+    // Compile prompt from template before saving
+    const prompt = await this.generatePromptWithInputs(updatedFields);
+    console.log("Updating recipe with prompt:", prompt, cleaned);
+
     return super.update(
       entityId,
       {
-        ...updatedFields,
+        ...cleaned,
+        prompt,
         updatedAt: new Date(),
         updatedBy: sessionUser.email,
       },

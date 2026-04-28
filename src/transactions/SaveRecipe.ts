@@ -19,7 +19,7 @@ function isNewFile(context: GrantContext): boolean {
     if (context.fileUrl) {  // previously uploaded
         return false;
     }
-    if (context.file!.webkitRelativePath) {  // new file
+    if (context.file && context.file.webkitRelativePath) {  // new file
         return true;
     }
     return false;
