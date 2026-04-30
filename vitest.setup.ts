@@ -12,6 +12,9 @@ vi.mock('@digitalaidseattle/firebase', () => {
         this.tableName = tableName;
       }
     },
+    FirebaseStorageService: class {
+      storage = {};
+    },
     FirebaseAuthService: class {
       getUser = vi.fn();
     }

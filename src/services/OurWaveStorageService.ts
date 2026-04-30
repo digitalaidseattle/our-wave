@@ -14,13 +14,39 @@ export type StorageFile = File & {
     updated?: string;
 }
 
-export class OurWaveStorageService extends FirebaseStorageService {
+export type StorageFolder = "dev" | "qa" | "prod";
 
-      async list(filepath?: string): Promise<any[]> {
+export function resolveConfiguredStorageFolder(storageFolder = import.meta.env.VITE_FIREBASE_STORAGE_FOLDER): StorageFolder {
+    if (storageFolder === "dev" || storageFolder === "qa" || storageFolder === "prod") {
+        return storageFolder;
+    }
+
+    throw new Error("VITE_FIREBASE_STORAGE_FOLDER must be set to dev, qa, or prod.");
+}
+
+export class OurWaveStorageService extends FirebaseStorageService {
+    private readonly storageFolder: StorageFolder;
+
+    constructor() {
+        super();
+        this.storageFolder = resolveConfiguredStorageFolder();
+    }
+
+    private resolvePath(filepath?: string): string {
         if (!filepath) {
-            return [];
+            return this.storageFolder;
         }
-        const folderRef = ref(this.storage, filepath);
+
+        const normalizedPath = filepath.replace(/^\/+/, "");
+        if (normalizedPath.startsWith(`${this.storageFolder}/`)) {
+            return normalizedPath;
+        }
+
+        return `${this.storageFolder}/${normalizedPath}`;
+    }
+
+    async list(filepath?: string): Promise<any[]> {
+        const folderRef = ref(this.storage, this.resolvePath(filepath));
         const result = await listAll(folderRef);
         const files = await Promise.all(result.items.map(async (item) => {
             const metadata = await getMetadata(item);
@@ -36,12 +62,12 @@ export class OurWaveStorageService extends FirebaseStorageService {
     }
 
     async getDownloadURL(filepath: string): Promise<string> {
-        const fileRef = ref(this.storage, filepath);
+        const fileRef = ref(this.storage, this.resolvePath(filepath));
         return await getDownloadURL(fileRef);
     }
 
     async upload(path: string, file: File): Promise<any> {
-        const storageRef = ref(this.storage, path);
+        const storageRef = ref(this.storage, this.resolvePath(path));
 
         // Upload file
         const snapshot = await uploadBytes(storageRef, file, {
