@@ -4,9 +4,9 @@ import Handlebars from "handlebars";
 import { authService } from "../App";
 import { FIRESTORE_COLLECTIONS } from "../constants/firestoreCollections";
 import type { GrantRecipe } from "../types";
+import { SettingsService } from "./settingsService";
 
 class GrantRecipeService extends FirestoreService<GrantRecipe> {
-  output_fragment = ` Where {{#each outputs}}{{#unless @first}} and{{/unless}} the output "{{name}}" cannot have more than {{maxWords}} {{unit}} {{/each}}.`;
 
   constructor() {
     super(FIRESTORE_COLLECTIONS.grantRecipes);
@@ -56,7 +56,7 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
     const now = new Date();
 
     // Compile prompt from template before saving
-    const prompt = this.generatePromptWithInputs(entity);
+    const prompt = await this.generatePromptWithInputs(entity);
     const { id, ...entityWithoutId } = entity;
 
     return super.insert(
@@ -103,16 +103,23 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
     );
   }
 
-  generatePromptWithInputs(recipe: GrantRecipe): string {
-    const compiled = Handlebars.compile(recipe.template + this.output_fragment);
+  async generatePromptWithInputs(recipe: GrantRecipe): Promise<string> {
+    const settings = await SettingsService.getInstance().getSettings();
+    const output_fragment = settings.outputTemplate;
+    const lowerBoundPercentage = settings.lowerBoundPercentage;
+    const compiled = Handlebars.compile(recipe.template + output_fragment);
 
     return compiled({
-      outputs: recipe.outputsWithWordCount,
+      outputs: recipe.outputsWithWordCount.map(output => ({
+        ...output,
+        upperBound: output.maxWords,
+        lowerBound: lowerBoundPercentage * output.maxWords
+      }))
     });
-
   }
+
   async updatePrompt(recipe: GrantRecipe): Promise<GrantRecipe> {
-    const prompt = this.generatePromptWithInputs(recipe);
+    const prompt = await this.generatePromptWithInputs(recipe);
 
     // If token counting is needed later, it can live here
     // For now we keep existing tokenCount
