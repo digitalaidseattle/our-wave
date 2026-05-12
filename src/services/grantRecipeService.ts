@@ -60,7 +60,7 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
 
     const cleaned = {
       ...entity,
-      contexts: entity.contexts.map(gc => {
+      contexts: (entity.contexts ?? []).map(gc => {
         const clone = { ...gc }
         delete clone.file;
         return clone
@@ -103,7 +103,7 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
 
     const cleaned = {
       ...updatedFields,
-      contexts: updatedFields.contexts.map(gc => {
+      contexts: (updatedFields.contexts ?? []).map(gc => {
         const clone = { ...gc }
         delete clone.file;
         return clone
