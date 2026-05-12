@@ -1,4 +1,4 @@
-import { DeleteOutlined, HomeOutlined } from "@ant-design/icons";
+import { DeleteOutlined, DownloadOutlined, HomeOutlined } from "@ant-design/icons";
 import { LoadingContext, useNotifications } from "@digitalaidseattle/core";
 import {
   Box, Breadcrumbs, Button, Card, CardContent, CardHeader,
@@ -22,6 +22,10 @@ import { PROPOSAL_LABELS } from "../../constants/labels";
 
 const LABELS = PROPOSAL_LABELS;
 
+const LABELS = {
+  DELETE_TOOLTIP: "Delete proposals",
+  DOWNLOAD_TOOLTIP: "Download proposal as Markdown"
+}
 const GrantProposalsListPage: React.FC = () => {
   const notifications = useNotifications();
 
@@ -104,6 +108,14 @@ const GrantProposalsListPage: React.FC = () => {
     apiRef.current?.setRowSelectionModel({ type: "include", ids: new Set(allIds) });
   }
 
+  async function handleDownload() {
+    setLoading(true);
+    const proposalId = selectedIds[0];
+    const proposal = await grantProposalService.getById(proposalId);
+    await grantProposalService.download(proposal, "markdown");
+    setLoading(false);
+  }
+
   const columns: GridColDef<GrantProposal>[] = [
     {
       field: "name",
@@ -160,6 +172,15 @@ const GrantProposalsListPage: React.FC = () => {
               onClick={handleDelete}
               disabled={selectedIds.length === 0} >
               <DeleteOutlined />
+            </IconButton>
+          </Box>
+        </Tooltip>
+        <Tooltip title={LABELS.DOWNLOAD_TOOLTIP}>
+          <Box>
+            <IconButton color="primary"
+              onClick={handleDownload}
+              disabled={selectedIds.length !== 1} >
+              <DownloadOutlined />
             </IconButton>
           </Box>
         </Tooltip>
