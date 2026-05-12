@@ -39,6 +39,7 @@ export const PROPOSAL_LABELS = {
     DELETE_PROPOSALS: "Delete Proposal(s)",
     DELETE_CONFIRMATION: "Are you sure you want to delete the proposal(s)? This action cannot be undone.",
     DELETE_SUCCESS: "Proposal(s) deleted successfully.",
+    DOWNLOAD_TOOLTIP: "Download proposal as Markdown",
     DELETE_FAILURE: "Failed to delete proposal(s): ",
     UNKNOWN_ERROR: UNKNOWN_ERROR
 }

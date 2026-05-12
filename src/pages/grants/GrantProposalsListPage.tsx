@@ -22,10 +22,6 @@ import { PROPOSAL_LABELS } from "../../constants/labels";
 
 const LABELS = PROPOSAL_LABELS;
 
-const LABELS = {
-  DELETE_TOOLTIP: "Delete proposals",
-  DOWNLOAD_TOOLTIP: "Download proposal as Markdown"
-}
 const GrantProposalsListPage: React.FC = () => {
   const notifications = useNotifications();
 
