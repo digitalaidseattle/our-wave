@@ -18,11 +18,10 @@ import { LoadingOverlay } from "../../components/LoadingOverlay";
 import { grantProposalService } from "../../services/grantProposalService";
 import type { GrantProposal } from "../../types";
 import { DateUtils } from "../../utils/dateUtils";
+import { PROPOSAL_LABELS } from "../../constants/labels";
 
-const LABELS = {
-  DELETE_TOOLTIP: "Delete proposals",
-  DOWNLOAD_TOOLTIP: "Download proposal as Markdown"
-}
+const LABELS = PROPOSAL_LABELS;
+
 const GrantProposalsListPage: React.FC = () => {
   const notifications = useNotifications();
 
@@ -52,9 +51,7 @@ const GrantProposalsListPage: React.FC = () => {
 
   const handleDelete = () => {
     // Confirm deletion
-    const confirmed = window.confirm(
-      "Are you sure you want to delete the recipes? This action cannot be undone."
-    );
+    const confirmed = window.confirm(LABELS.DELETE_CONFIRMATION);
 
     if (!confirmed) {
       return;
@@ -65,11 +62,11 @@ const GrantProposalsListPage: React.FC = () => {
       .all(selectedIds.map(id => grantProposalService.delete(id)))
       .then(() => {
         fetchProposals();
-        notifications.success("Proposals deleted!")
+        notifications.success(LABELS.DELETE_SUCCESS);
       })
       .catch(error => {
         console.error("Error deleting proposal:", error);
-        notifications.error(`Failed to delete proposal: ${error instanceof Error ? error.message : "Unknown error"}`);
+        notifications.error(LABELS.DELETE_FAILURE + `${error instanceof Error ? error.message : LABELS.UNKNOWN_ERROR}`);
       })
       .finally(() => setLoading(false));
   }
@@ -165,7 +162,7 @@ const GrantProposalsListPage: React.FC = () => {
             </Button>
           </span>
         </Tooltip>
-        <Tooltip title={LABELS.DELETE_TOOLTIP}>
+        <Tooltip title={LABELS.DELETE_PROPOSALS}>
           <Box>
             <IconButton color="error"
               onClick={handleDelete}
@@ -192,10 +189,10 @@ const GrantProposalsListPage: React.FC = () => {
       <LoadingOverlay />
       <Breadcrumbs aria-label="breadcrumb">
         <NavLink to="/" ><IconButton size="medium"><HomeOutlined /></IconButton></NavLink>
-        <Typography color="text.primary">Proposals</Typography>
+        <Typography color="text.primary">{LABELS.TITLE}</Typography>
       </Breadcrumbs>
       <Card>
-        <CardHeader title="Grant Proposals" />
+        <CardHeader title={LABELS.TITLE} />
         <CardContent>
           <DataGrid
             apiRef={apiRef}
