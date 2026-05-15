@@ -68,12 +68,13 @@ const GrantProposalsDetailPage: React.FC = () => {
 
   useEffect(() => {
     if (!id) return;
+    const proposalId = id;
 
     async function fetchData() {
       setLoading(true);
 
       try {
-        const proposalData = await grantProposalService.getById(id);
+        const proposalData = await grantProposalService.getById(proposalId);
         setProposal(proposalData);
 
         const recipeId = proposalData?.grantRecipeId;

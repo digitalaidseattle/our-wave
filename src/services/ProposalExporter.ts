@@ -4,8 +4,6 @@
  *  @copyright 2026 Digital Aid Seattle
  *
  */
-import { saveAs } from "file-saver";
-
 import { GrantProposal } from "../types";
 
 abstract class AbstractExporter {
@@ -14,7 +12,12 @@ abstract class AbstractExporter {
         const type = this.getApplicationType()
         const extension = this.getDownloadExtension()
         const blob = new Blob([data], { type: type });
-        saveAs(blob, `${proposal.name}.${extension}`);
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `${proposal.name}.${extension}`;
+        link.click();
+        URL.revokeObjectURL(url);
     }
     abstract getApplicationType(): string;
     abstract getDownloadExtension(): string;
