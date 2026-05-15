@@ -19,7 +19,7 @@ function isNewFile(context: GrantContext): boolean {
     if (context.fileUrl) {  // previously uploaded
         return false;
     }
-    if (context.file!.webkitRelativePath) {  // new file
+    if (context.file && context.file.webkitRelativePath) {  // new file
         return true;
     }
     return false;
@@ -42,7 +42,7 @@ async function uploadFiles(contexts: GrantContext[]): Promise<GrantContext[]> {
 export async function saveRecipe(recipe: GrantRecipe): Promise<GrantRecipe> {
     return authService.getUser()
         .then((async user => {
-            const prompt = grantRecipeService.generatePromptWithInputs(recipe);
+            const prompt = await grantRecipeService.generatePromptWithInputs(recipe);
             const contexts = await uploadFiles(recipe.contexts);
 
             const newRecipe = {
