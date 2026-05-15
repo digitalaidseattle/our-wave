@@ -16,7 +16,8 @@ import { useContext, useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { LoadingOverlay } from "../../components/LoadingOverlay";
 import { grantProposalService } from "../../services/grantProposalService";
-import type { GrantProposal } from "../../types";
+import { deleteProposal } from "../../transactions/DeleteProposal";
+import type { GrantProposal, Timestamp } from "../../types";
 import { DateUtils } from "../../utils/dateUtils";
 import { PROPOSAL_LABELS } from "../../constants/labels";
 
@@ -32,6 +33,10 @@ const GrantProposalsListPage: React.FC = () => {
   const [proposals, setProposals] = useState<GrantProposal[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 10 });
+
+  function getCreatedAtSortValue(createdAt: GrantProposal["createdAt"]): number {
+    return createdAt instanceof Date ? createdAt.getTime() : (createdAt as Timestamp).seconds;
+  }
 
   useEffect(() => {
     fetchProposals();
@@ -58,8 +63,12 @@ const GrantProposalsListPage: React.FC = () => {
     }
 
     setLoading(true);
+    const selectedProposals = proposals.filter((proposal) => {
+      return proposal.id != null && selectedIds.includes(String(proposal.id));
+    });
+
     Promise
-      .all(selectedIds.map(id => grantProposalService.delete(id)))
+      .all(selectedProposals.map((proposal) => deleteProposal(proposal)))
       .then(() => {
         fetchProposals();
         notifications.success(LABELS.DELETE_SUCCESS);
@@ -143,7 +152,7 @@ const GrantProposalsListPage: React.FC = () => {
       headerName: "Last Updated",
       width: 180,
       renderCell: (params) => <Typography>{DateUtils.formatDateTime(params.row.createdAt)}</Typography>,
-      valueGetter: (_value, row) => (row.createdAt as any).seconds,
+      valueGetter: (_value, row) => getCreatedAtSortValue(row.createdAt),
     }
   ];
 
