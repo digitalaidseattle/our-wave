@@ -119,8 +119,16 @@ export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ onChange
     }
 
     function removeContext(index: number) {
+        const removed = contexts[index];
         const revised = contexts.filter((_, i) => i !== index);
         onChange({ ...recipe, contexts: revised });
+        if (removed?.name) {
+            setDoneFileNames(prev => {
+                const next = new Set(prev);
+                next.delete(removed.name as string);
+                return next;
+            });
+        }
     }
 
     async function handleFileSelection(files: File[] | null) {
@@ -147,8 +155,22 @@ export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ onChange
         onUploadingChange?.(true);
 
         // Calculate token counts; null means unavailable (e.g. browser CORS restriction on Gemini Files API)
+        // Text-readable files are read directly and counted via calcTokenCount (works in browser).
+        // Binary files (e.g. PDF) must use calcFileTokenCount which requires server-side API — returns null in browser.
+        const TEXT_READABLE_TYPES = ["text/plain", "text/html", "application/json", "text/markdown"];
         const newContexts = await Promise.all(supportedFiles.map(async file => {
-            const tokenCount = await grantAiService.calcFileTokenCount(recipe.modelType, file);
+            let tokenCount: number | null = null;
+            if (TEXT_READABLE_TYPES.includes(file.type)) {
+                try {
+                    const text = await file.text();
+                    tokenCount = await geminiService.calcTokenCount(recipe.modelType, text);
+                } catch (err) {
+                    console.error("Error calculating token count for text file", err);
+                    tokenCount = null;
+                }
+            } else {
+                tokenCount = await grantAiService.calcFileTokenCount(recipe.modelType, file);
+            }
             return ({
                 type: file.type,
                 value: "",
@@ -164,8 +186,7 @@ export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ onChange
         setUploadingFileNames(new Set());
         onUploadingChange?.(false);
         const completedNames = new Set(newContexts.map(c => c.name as string));
-        setDoneFileNames(completedNames);
-        setTimeout(() => setDoneFileNames(new Set()), 2000);
+        setDoneFileNames(prev => new Set([...prev, ...completedNames]));
     }
 
     return (
