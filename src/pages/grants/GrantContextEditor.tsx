@@ -4,8 +4,8 @@
  *  @copyright 2025 Digital Aid Seattle
  *
  */
-import { DeleteOutlined, InfoCircleOutlined, PlusOutlined } from '@ant-design/icons';
-import { Button, Card, CardContent, CardHeader, FormControl, IconButton, Stack, Toolbar, Typography } from "@mui/material";
+import { CheckCircleOutlined, DeleteOutlined, InfoCircleOutlined, PlusOutlined } from '@ant-design/icons';
+import { Button, Card, CardContent, CardHeader, CircularProgress, FormControl, IconButton, Stack, Toolbar, Tooltip, Typography } from "@mui/material";
 import React, { useContext, useEffect, useState } from 'react';
 
 import { useHelp, useNotifications } from '@digitalaidseattle/core';
@@ -23,15 +23,17 @@ const SUPPORTED_FILE_TYPES = [
     "application/pdf",
     "text/html",
     "application/json",
-    "text/markdown"];
+    "text/markdown"
+];
 
 interface ContextRowProps {
     index: number;
     context: GrantContext;
     onChange: (index: number, param: GrantContext) => void
     onDelete: (index: number) => void
+    isDone?: boolean;
 };
-const ContextRow = ({ index, context, onChange, onDelete }: ContextRowProps) => {
+const ContextRow = ({ index, context, onChange, onDelete, isDone }: ContextRowProps) => {
 
     function handleTextChange(e: React.ChangeEvent<HTMLInputElement>): void {
         onChange(index, { ...context, value: e.target.value });
@@ -65,13 +67,20 @@ const ContextRow = ({ index, context, onChange, onDelete }: ContextRowProps) => 
                 />}
             {(SUPPORTED_FILE_TYPES.includes(context.type)) &&
                 <>
-                    <FormControl fullWidth={true} sx={{ border: '1px solid', borderBlockColor: 'grey', padding: 2, borderRadius: 1, pr: 1 }}>
-                        <Typography >File: {context.name}</Typography>
+                    <FormControl fullWidth={true} sx={{ border: '1px solid', borderBlockColor: isDone ? 'success.main' : 'grey', padding: 2, borderRadius: 1, pr: 1, display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 1 }}>
+                        <Typography>File: {context.name}</Typography>
+                        {isDone && (
+                            <Tooltip title="Upload complete">
+                                <CheckCircleOutlined style={{ color: '#2e7d32', marginLeft: 8, fontSize: 18 }} />
+                            </Tooltip>
+                        )}
                     </FormControl>
                 </>
             }
             <Typography variant="body2" sx={{ alignSelf: 'center', minWidth: 80 }}>
-                Tokens: {context.tokenCount}
+                {context.tokenCountUnavailable
+                    ? 'Token count = count unavailable'
+                    : `Tokens: ${context.tokenCount}`}
             </Typography>
         </Stack >
     )
@@ -79,9 +88,10 @@ const ContextRow = ({ index, context, onChange, onDelete }: ContextRowProps) => 
 
 type GrantContextEditorProps = {
     onChange: (recipe: GrantRecipe) => void;
+    onUploadingChange?: (isUploading: boolean) => void;
 };
 
-export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ onChange }) => {
+export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ onChange, onUploadingChange }) => {
     const grantAiService = GrantAiService.getInstance();
     const notifications = useNotifications();
 
@@ -89,6 +99,8 @@ export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ onChange
     const { setShowHelp } = useHelp();
     const { recipe } = useContext(GrantRecipeContext);
     const [contexts, setContexts] = React.useState<GrantContext[]>([]);
+    const [uploadingFileNames, setUploadingFileNames] = useState<Set<string>>(new Set());
+    const [doneFileNames, setDoneFileNames] = useState<Set<string>>(new Set());
 
     const [showUploadDialog, setShowUploadDialog] = useState<boolean>(false);
     useEffect(() => {
@@ -127,21 +139,33 @@ export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ onChange
             return true;
         });
 
-        const newContexts = await Promise.all(supportedFiles.map(async file => {
-            let tokenCount = 0;
-            try {
-                tokenCount = await grantAiService.calcFileTokenCount(recipe.modelType, file);
-            } catch (err) {
-                console.error("Error calculating token count for file", err);
-                notifications.error(`Could not calculate token count for ${file.name}. The file was added with 0 tokens.`);
-            }
+        if (supportedFiles.length === 0) return;
 
-            return ({ type: file.type, value: "", name: file.name, tokenCount: tokenCount, file: file });
+        // Show spinner rows immediately via local state — no parent state change needed yet
+        const uploadingNames = new Set(supportedFiles.map(f => f.name));
+        setUploadingFileNames(uploadingNames);
+        onUploadingChange?.(true);
+
+        // Calculate token counts; null means unavailable (e.g. browser CORS restriction on Gemini Files API)
+        const newContexts = await Promise.all(supportedFiles.map(async file => {
+            const tokenCount = await grantAiService.calcFileTokenCount(recipe.modelType, file);
+            return ({
+                type: file.type,
+                value: "",
+                name: file.name,
+                tokenCount: tokenCount ?? 0,
+                tokenCountUnavailable: tokenCount === null,
+                file: file
+            } as GrantContext);
         }));
 
-        if (newContexts.length > 0) {
-            addContexts(newContexts);
-        }
+        // Add completed contexts, clear spinners, show done checkmarks for 2s
+        onChange({ ...recipe, contexts: [...(contexts ?? []), ...newContexts] });
+        setUploadingFileNames(new Set());
+        onUploadingChange?.(false);
+        const completedNames = new Set(newContexts.map(c => c.name as string));
+        setDoneFileNames(completedNames);
+        setTimeout(() => setDoneFileNames(new Set()), 2000);
     }
 
     return (
@@ -178,7 +202,25 @@ export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ onChange
                             index={idx}
                             context={context}
                             onChange={udpateContext}
-                            onDelete={removeContext} />
+                            onDelete={removeContext}
+                            isDone={!!context.name && doneFileNames.has(context.name)} />
+                    ))}
+                    {Array.from(uploadingFileNames).map(name => (
+                        <Stack
+                            direction="row"
+                            key={`uploading-${name}`}
+                            gap={1}
+                            sx={{ position: 'relative', width: '100%' }}
+                        >
+                            <Button color="error" disabled><DeleteOutlined /></Button>
+                            <FormControl fullWidth sx={{ border: '1px solid', borderBlockColor: 'grey', padding: 2, borderRadius: 1, display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 1 }}>
+                                <Typography>File: {name}</Typography>
+                                <CircularProgress size={20} sx={{ ml: 1 }} />
+                            </FormControl>
+                            <Typography variant="body2" sx={{ alignSelf: 'center', minWidth: 80 }}>
+                                Processing...
+                            </Typography>
+                        </Stack>
                     ))}
                 </Stack>
                 <FileUploadDialog

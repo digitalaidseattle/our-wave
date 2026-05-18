@@ -131,13 +131,14 @@ const GrantRecipesDetailPage: React.FC = () => {
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [rating, setRating] = useState<number>(0);
+  const [isFileUploading, setIsFileUploading] = useState<boolean>(false);
 
   const isDescriptionMissing = !hasValidDescription;
   const isOutputFieldsIncomplete = !hasCompleteOutputFields;
   const isTemplateMissing = !hasValidTemplate;
   const isSaveDisabled = loading || !dirty || isDescriptionMissing;
   const isCloneDisabled = loading || isDescriptionMissing;
-  const isGenerateDisabled = loading || isDescriptionMissing || isOutputFieldsIncomplete || isTemplateMissing;
+  const isGenerateDisabled = loading || isFileUploading || isDescriptionMissing || isOutputFieldsIncomplete || isTemplateMissing;
 
   const actionMessages: string[] = [];
   if (!loading && hasValidDescription && !dirty) {
@@ -425,7 +426,7 @@ const GrantRecipesDetailPage: React.FC = () => {
                         helperText={templateTouched && isTemplateMissing ? "Template is required to generate." : " "}
                         onBlur={() => setTemplateTouched(true)}
                       />
-                      <GrantContextEditor onChange={handleGrantContextsChange} />
+                      <GrantContextEditor onChange={handleGrantContextsChange} onUploadingChange={setIsFileUploading} />
                       <GrantOutputEditor
                         fields={recipe.outputsWithWordCount}
                         onChange={handleGrantOutputChange}

@@ -25,6 +25,7 @@ export type GrantContext = {
   name: string | null;
   value: string | null;
   tokenCount: number;
+  tokenCountUnavailable?: boolean;
   file?: File;
   fileUrl?: string;
 }
