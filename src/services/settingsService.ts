@@ -17,6 +17,7 @@ import { FIRESTORE_COLLECTIONS } from "../constants/firestoreCollections";
 export type Settings = {
   outputTemplate: string;
   lowerBoundPercentage: number;
+  models: string[];
   updatedAt: Date;
 };
 
@@ -53,6 +54,7 @@ export class SettingsService {
       const defaultSettings: Settings = {
         outputTemplate: SettingsService.DEFAULT_OUTPUT_TEMPLATE,
         lowerBoundPercentage: SettingsService.DEFAULT_LOWER_BOUND_PERCENTAGE,
+        models: [],
         updatedAt: new Date(),
       };
       return defaultSettings;
