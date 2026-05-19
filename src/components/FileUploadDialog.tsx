@@ -1,9 +1,14 @@
 /**
+<<<<<<< HEAD
  *  GoogleDriveFileSearchDialog.ts
+=======
+ *  FileUploadDialog.tsx
+>>>>>>> origin/dev
  *
  *  @copyright 2026 Digital Aid Seattle
  *
  */
+<<<<<<< HEAD
 import { Box, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, Divider, List, ListItem, ListItemButton, ListItemText, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 
@@ -12,11 +17,18 @@ import { storageService } from "../App";
 import { StorageFile } from "../services/OurWaveStorageService";
 const DEFAULT_FOLDER = import.meta.env.VITE_FIREBASE_STORAGE_FOLDER;
 
+=======
+import { Box, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, List, Typography } from "@mui/material";
+import { useEffect, useState } from "react";
+
+import Dropzone from "react-dropzone";
+>>>>>>> origin/dev
 
 
 interface FileUploadDialogProps {
     title?: string;
     open: boolean
+<<<<<<< HEAD
     folderPath?: string;
     onChange: (files: (File | StorageFile)[] | null) => void
 };
@@ -28,6 +40,23 @@ const FileUploadDialog = ({ title = "Select or upload files", open, folderPath =
 
     function handleConfirm(): void {
         onChange(files);
+=======
+    onChange: (files: File[] | null) => void
+};
+
+const FileUploadDialog = ({ title = "Select files", open, onChange }: FileUploadDialogProps) => {
+
+    const [files, setFiles] = useState<File[]>([]);
+
+    function handleConfirm(): void {
+        onChange(files);
+        setFiles([]);
+    }
+
+    function handleCancel(): void {
+        onChange(null);
+        setFiles([]);
+>>>>>>> origin/dev
     }
 
     function handleDeleteFile(idx: number): void {
@@ -37,6 +66,7 @@ const FileUploadDialog = ({ title = "Select or upload files", open, folderPath =
     }
 
     useEffect(() => {
+<<<<<<< HEAD
         if (!open || !folderPath) {
             return;
         }
@@ -52,10 +82,17 @@ const FileUploadDialog = ({ title = "Select or upload files", open, folderPath =
     function handleFileList(file: StorageFile): void {
         setFiles(prev => [...prev, file]);
     }
+=======
+        if (!open) {
+            setFiles([]);
+        }
+    }, [open]);
+>>>>>>> origin/dev
 
     return <Dialog
         fullWidth={true}
         open={open}
+<<<<<<< HEAD
         onClose={() => onChange(null)}
         sx={{ minHeight: '600px' }}>
         <DialogTitle sx={{ fontSize: 16, fontWeight: 600 }}>{title}</DialogTitle>
@@ -92,6 +129,12 @@ const FileUploadDialog = ({ title = "Select or upload files", open, folderPath =
                 </List>
             </Box>}
             {folderPath && <Divider sx={{ mb: 2 }} />}
+=======
+        onClose={handleCancel}
+        sx={{ minHeight: '600px' }}>
+        <DialogTitle sx={{ fontSize: 16, fontWeight: 600 }}>{title}</DialogTitle>
+        <DialogContent>
+>>>>>>> origin/dev
             <Dropzone onDrop={acceptedFiles => setFiles([...files, ...acceptedFiles])}>
                 {({ getRootProps, getInputProps }) => (
                     <section>
@@ -125,7 +168,11 @@ const FileUploadDialog = ({ title = "Select or upload files", open, folderPath =
         <DialogActions>
             <Button
                 variant='outlined'
+<<<<<<< HEAD
                 onClick={() => onChange(null)}>Cancel</Button>
+=======
+                onClick={handleCancel}>Cancel</Button>
+>>>>>>> origin/dev
             <Button
                 variant='outlined'
                 onClick={handleConfirm}>OK</Button>

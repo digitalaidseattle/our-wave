@@ -14,7 +14,10 @@ import { FileUploadDialog } from '../../components/FileUploadDialog';
 import { GrantRecipeContext } from '../../components/GrantRecipeContext';
 import { HelpTopicContext } from '../../components/HelpTopicContext';
 import { StableCursorTextField } from '../../components/StableCursorTextfield';
+<<<<<<< HEAD
 import { StorageFile } from '../../services/OurWaveStorageService';
+=======
+>>>>>>> origin/dev
 import { GrantContext, GrantRecipe } from '../../types';
 import { GrantAiService } from './grantAiService';
 import { RECIPE_STRINGS } from '../../constants/grantRecipe';
@@ -112,6 +115,7 @@ export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ onChange
         onChange({ ...recipe, contexts: revised });
     }
 
+<<<<<<< HEAD
     async function handleFileSelection(files: (File | StorageFile)[] | null) {
         if (files) {
             const contexts = files
@@ -133,6 +137,39 @@ export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ onChange
             addContexts(await Promise.all(contexts));
         }
         setShowUploadDialog(false);
+=======
+    async function handleFileSelection(files: File[] | null) {
+        setShowUploadDialog(false);
+
+        if (!files) {
+            return;
+        }
+
+        const supportedFiles = files.filter(file => {
+            const fileType = file.type;
+            if (!fileType || !SUPPORTED_FILE_TYPES.includes(fileType)) {
+                notifications.error(`Unsupported file type: ${file.name}. Supported types are: ${SUPPORTED_FILE_TYPES.join(", ")}`);
+                return false;
+            }
+            return true;
+        });
+
+        const newContexts = await Promise.all(supportedFiles.map(async file => {
+            let tokenCount = 0;
+            try {
+                tokenCount = await grantAiService.calcFileTokenCount(recipe.modelType, file);
+            } catch (err) {
+                console.error("Error calculating token count for file", err);
+                notifications.error(`Could not calculate token count for ${file.name}. The file was added with 0 tokens.`);
+            }
+
+            return ({ type: file.type, value: "", name: file.name, tokenCount: tokenCount, file: file });
+        }));
+
+        if (newContexts.length > 0) {
+            addContexts(newContexts);
+        }
+>>>>>>> origin/dev
     }
 
     return (

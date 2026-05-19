@@ -1,4 +1,4 @@
-import { DeleteOutlined, HomeOutlined } from "@ant-design/icons";
+import { DeleteOutlined, DownloadOutlined, HomeOutlined } from "@ant-design/icons";
 import { LoadingContext, useNotifications } from "@digitalaidseattle/core";
 import {
   Box, Breadcrumbs, Button, Card, CardContent, CardHeader,
@@ -16,8 +16,12 @@ import { useContext, useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { LoadingOverlay } from "../../components/LoadingOverlay";
 import { grantProposalService } from "../../services/grantProposalService";
-import type { GrantProposal } from "../../types";
+import { deleteProposal } from "../../transactions/DeleteProposal";
+import type { GrantProposal, Timestamp } from "../../types";
 import { DateUtils } from "../../utils/dateUtils";
+import { PROPOSAL_LABELS } from "../../constants/labels";
+
+const LABELS = PROPOSAL_LABELS;
 
 const GrantProposalsListPage: React.FC = () => {
   const notifications = useNotifications();
@@ -29,6 +33,10 @@ const GrantProposalsListPage: React.FC = () => {
   const [proposals, setProposals] = useState<GrantProposal[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 10 });
+
+  function getCreatedAtSortValue(createdAt: GrantProposal["createdAt"]): number {
+    return createdAt instanceof Date ? createdAt.getTime() : (createdAt as Timestamp).seconds;
+  }
 
   useEffect(() => {
     fetchProposals();
@@ -48,24 +56,26 @@ const GrantProposalsListPage: React.FC = () => {
 
   const handleDelete = () => {
     // Confirm deletion
-    const confirmed = window.confirm(
-      "Are you sure you want to delete the recipes? This action cannot be undone."
-    );
+    const confirmed = window.confirm(LABELS.DELETE_CONFIRMATION);
 
     if (!confirmed) {
       return;
     }
 
     setLoading(true);
+    const selectedProposals = proposals.filter((proposal) => {
+      return proposal.id != null && selectedIds.includes(String(proposal.id));
+    });
+
     Promise
-      .all(selectedIds.map(id => grantProposalService.delete(id)))
+      .all(selectedProposals.map((proposal) => deleteProposal(proposal)))
       .then(() => {
         fetchProposals();
-        notifications.success("Proposals deleted!")
+        notifications.success(LABELS.DELETE_SUCCESS);
       })
       .catch(error => {
         console.error("Error deleting proposal:", error);
-        notifications.error(`Failed to delete proposal: ${error instanceof Error ? error.message : "Unknown error"}`);
+        notifications.error(LABELS.DELETE_FAILURE + `${error instanceof Error ? error.message : LABELS.UNKNOWN_ERROR}`);
       })
       .finally(() => setLoading(false));
   }
@@ -103,6 +113,14 @@ const GrantProposalsListPage: React.FC = () => {
     apiRef.current?.setRowSelectionModel({ type: "include", ids: new Set(allIds) });
   }
 
+  async function handleDownload() {
+    setLoading(true);
+    const proposalId = selectedIds[0];
+    const proposal = await grantProposalService.getById(proposalId);
+    await grantProposalService.download(proposal, "markdown");
+    setLoading(false);
+  }
+
   const columns: GridColDef<GrantProposal>[] = [
     {
       field: "name",
@@ -134,7 +152,7 @@ const GrantProposalsListPage: React.FC = () => {
       headerName: "Last Updated",
       width: 180,
       renderCell: (params) => <Typography>{DateUtils.formatDateTime(params.row.createdAt)}</Typography>,
-      valueGetter: (_value, row) => (row.createdAt as any).seconds,
+      valueGetter: (_value, row) => getCreatedAtSortValue(row.createdAt),
     }
   ];
 
@@ -153,12 +171,21 @@ const GrantProposalsListPage: React.FC = () => {
             </Button>
           </span>
         </Tooltip>
-        <Tooltip title="Delete Recipes">
+        <Tooltip title={LABELS.DELETE_PROPOSALS}>
           <Box>
             <IconButton color="error"
               onClick={handleDelete}
               disabled={selectedIds.length === 0} >
               <DeleteOutlined />
+            </IconButton>
+          </Box>
+        </Tooltip>
+        <Tooltip title={LABELS.DOWNLOAD_TOOLTIP}>
+          <Box>
+            <IconButton color="primary"
+              onClick={handleDownload}
+              disabled={selectedIds.length !== 1} >
+              <DownloadOutlined />
             </IconButton>
           </Box>
         </Tooltip>
@@ -171,10 +198,10 @@ const GrantProposalsListPage: React.FC = () => {
       <LoadingOverlay />
       <Breadcrumbs aria-label="breadcrumb">
         <NavLink to="/" ><IconButton size="medium"><HomeOutlined /></IconButton></NavLink>
-        <Typography color="text.primary">Proposals</Typography>
+        <Typography color="text.primary">{LABELS.TITLE}</Typography>
       </Breadcrumbs>
       <Card>
-        <CardHeader title="Grant Proposals" />
+        <CardHeader title={LABELS.TITLE} />
         <CardContent>
           <DataGrid
             apiRef={apiRef}
