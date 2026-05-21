@@ -5,7 +5,7 @@
  *
  */
 import { CheckCircleOutlined, DeleteOutlined, InfoCircleOutlined, PlusOutlined } from '@ant-design/icons';
-import { Button, Card, CardContent, CardHeader, CircularProgress, FormControl, IconButton, Stack, Toolbar, Tooltip, Typography } from "@mui/material";
+import { Box, Button, Card, CardContent, CardHeader, CircularProgress, FormControl, IconButton, Stack, Toolbar, Tooltip, Typography } from "@mui/material";
 import React, { useContext, useEffect, useState } from 'react';
 
 import { useHelp, useNotifications } from '@digitalaidseattle/core';
@@ -71,16 +71,16 @@ const ContextRow = ({ index, context, onChange, onDelete, isDone }: ContextRowPr
                         <Typography>File: {context.name}</Typography>
                         {isDone && (
                             <Tooltip title="Upload complete">
-                                <CheckCircleOutlined style={{ color: '#2e7d32', marginLeft: 8, fontSize: 18 }} />
+                                <Box component={CheckCircleOutlined} sx={{ color: 'success.main', ml: 1, fontSize: 18 }} />
                             </Tooltip>
                         )}
                     </FormControl>
                 </>
             }
             <Typography variant="body2" sx={{ alignSelf: 'center', minWidth: 80 }}>
-                {context.tokenCountUnavailable
-                    ? 'Token count = count unavailable'
-                    : `Tokens: ${context.tokenCount}`}
+                {context.tokenCount !== undefined
+                    ? `Tokens: ${context.tokenCount}`
+                    : `Tokens: ${RECIPE_STRINGS.tokenCountUnavailable}`}
             </Typography>
         </Stack >
     )
@@ -175,8 +175,7 @@ export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ onChange
                 type: file.type,
                 value: "",
                 name: file.name,
-                tokenCount: tokenCount ?? 0,
-                tokenCountUnavailable: tokenCount === null,
+                tokenCount: tokenCount ?? undefined,
                 file: file
             } as GrantContext);
         }));
