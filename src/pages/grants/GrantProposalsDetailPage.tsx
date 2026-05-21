@@ -223,7 +223,7 @@ const GrantProposalsDetailPage: React.FC = () => {
       setLoading(true);
       setIsDeleting(true);
 
-      await deleteProposal(proposal, recipe);
+      await deleteProposal(proposal);
 
       notifications.success(LABELS.DELETE_SUCCESS);
       setOpenDeleteDialog(false);
