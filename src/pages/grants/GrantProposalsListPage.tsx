@@ -16,7 +16,7 @@ import { useContext, useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { LoadingOverlay } from "../../components/LoadingOverlay";
 import { grantProposalService } from "../../services/grantProposalService";
-import { deleteProposal } from "../../transactions/DeleteProposal";
+
 import type { GrantProposal, Timestamp } from "../../types";
 import { DateUtils } from "../../utils/dateUtils";
 import { PROPOSAL_LABELS } from "../../constants/labels";
@@ -68,7 +68,7 @@ const GrantProposalsListPage: React.FC = () => {
     });
 
     Promise
-      .all(selectedProposals.map((proposal) => deleteProposal(proposal)))
+      .all(selectedProposals.map((proposal) => grantProposalService.deleteProposal(proposal)))
       .then(() => {
         fetchProposals();
         notifications.success(LABELS.DELETE_SUCCESS);

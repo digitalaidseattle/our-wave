@@ -44,7 +44,6 @@ export type GrantRecipe = Entity & {
   inputParameters: GrantInput[];
   outputsWithWordCount: GrantOutput[];
   tokenCount: number;
-  proposalIds: string[];
   modelType: string; // "gemini-2.5-flash", etc.
 };
 

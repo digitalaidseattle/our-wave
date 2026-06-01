@@ -89,6 +89,13 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
     return this.proposalExporter.run(proposal, downloadType);
   }
 
+  async deleteProposal(proposal: Pick<GrantProposal, "id" | "grantRecipeId">): Promise<void> {
+    if (!proposal.id) {
+      throw new Error("Proposal ID is required");
+    }
+    await this.delete(String(proposal.id));
+  }
+
 }
 
 
