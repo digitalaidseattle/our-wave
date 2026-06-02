@@ -19,12 +19,13 @@ import { createPartFromText, createPartFromUri, createUserContent, GoogleGenAI, 
 import { storageService } from "../../App";
 import { StorageFile } from "../../services/OurWaveStorageService";
 import { GrantContext } from "../../types";
+import { SettingsService } from "../../services/settingsService";
 
 const CLOUD_FOLDER = import.meta.env.VITE_FIREBASE_STORAGE_FOLDER;
 
 class GrantAiService {
 
-    static models = ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.5-flash-lite"];
+    static DEFAULT_MODEL = "gemini-flash-latest";
     static instance: GrantAiService;
 
     static getInstance() {
@@ -36,12 +37,16 @@ class GrantAiService {
 
     // Lazy initialize so missing key does not crash page render.
     private ai?: GoogleGenAI;
+    private models: string[] = [];
 
     constructor() {
         const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
         if (apiKey) {
             this.ai = new GoogleGenAI({ apiKey });
         }
+        SettingsService.getInstance()
+            .getSettings()
+            .then(settings => this.models = settings.models ?? [])
     }
 
     private requireAi(): GoogleGenAI {
@@ -59,7 +64,7 @@ class GrantAiService {
         const ai = this.requireAi();
         const parts = this.createParts(contexts ?? []);
         return await ai.models.generateContent({
-            model: modelType ?? GrantAiService.models[0],
+            model: modelType ?? this.getDefaultModel(),
             contents: createUserContent([
                 prompt, ...parts
             ]),
@@ -105,7 +110,7 @@ class GrantAiService {
         console.log('parameterizedQuery parts:', parts);
         const responseSchema = this.createSchema(schemaParams);
         return await ai.models.generateContent({
-            model: modelType ?? GrantAiService.models[0],
+            model: modelType ?? this.getDefaultModel(),
             contents: [prompt, ...parts],
             config: {
                 responseMimeType: "application/json",
@@ -169,6 +174,15 @@ class GrantAiService {
             return 0;
         }
     }
+
+    getModels() {
+        return this.models;
+    }
+
+    getDefaultModel() {
+        return this.models.length === 0 ? GrantAiService.DEFAULT_MODEL : this.models[0];
+    }
+
 }
 
 export { GrantAiService };
