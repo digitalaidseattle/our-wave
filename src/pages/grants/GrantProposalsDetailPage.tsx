@@ -309,7 +309,7 @@ const GrantProposalsDetailPage: React.FC = () => {
                     <MenuItem onClick={() => handleDownload("markdown")}>Markdown</MenuItem>
                     <MenuItem onClick={() => handleDownload("text")}>Text</MenuItem>
                     <MenuItem onClick={() => handleDownload("json")}>JSON</MenuItem>
-                    <MenuItem onClick={() => handleDownload("docx")}>Word (.docx)</MenuItem>
+                    <MenuItem onClick={() => handleDownload("docx")}>MS Word (.docx)</MenuItem>
                     <MenuItem onClick={() => handleDownload("pdf")}>PDF (.pdf)</MenuItem>
                   </Menu>
                   <Clipboard text={Object.values(proposal.structuredResponse ?? {}).join("\n")} />
