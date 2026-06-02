@@ -28,7 +28,6 @@ export const grantRecipeSchema = z.object({
 
   inputParameters: z.array(grantInput).optional(),
   outputsWithWordCount: z.array(grantOutput).optional(),
-  proposalIds: z.array(z.string().trim()).optional(),
 });
 
 // Proposal rules

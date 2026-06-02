@@ -32,6 +32,7 @@ export const RECIPE_DETAIL_LABELS = {
     outputFieldsTitle: "Output Fields",
     outputFieldsSubtext: "Add the questions or sections from the grant application that you want the grant writer to answer.",
     promptTitle: "Prompt (system-generated)",
+    tokenCountUnavailable: "count unavailable",
 };
 
 export const PROPOSAL_LABELS = {
