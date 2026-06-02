@@ -55,7 +55,7 @@ export async function generateProposal(recipe: GrantRecipe): Promise<GrantPropos
 
     const proposal = {
         ...grantProposalService.empty(),
-        name: `${savedRecipe.description} (${savedRecipe.proposalIds.length + 1})`,
+        name: `${savedRecipe.description} (${(savedRecipe.lastSubmitted as Date).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })})`,
         grantRecipeId: String(savedRecipe.id),
         structuredResponse: JSON.parse(response.text!),
         rating: null,

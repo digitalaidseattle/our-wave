@@ -124,29 +124,31 @@ class GrantAiService {
             .then(response => response.totalTokens ?? 0);
     }
 
-    async calcFileTokenCount(model: string, file: File): Promise<number> {
-        const ai = this.requireAi();
-        // const bytes = await fileToBase64(file);
-        console.log("Calculating token count for file:", file);
-        const uploaded = await ai.files.upload({
-            file: file,
-            config: { mimeType: file.type },
-        });
-
-        return ai.models
-            .countTokens(
-                {
-                    model: model,
-                    contents: createUserContent([
-                        "Count tokens for this document",
-                        createPartFromUri(uploaded.uri!, uploaded.mimeType!),
-                    ])
-                })
-            .then(response => response.totalTokens ?? 0)
-            .catch(err => {
-                console.error("Error calculating token count for file", err);
-                return 0;
-            })
+    async calcFileTokenCount(model: string, file: File): Promise<number | null> {
+        try {
+            const ai = this.requireAi();
+            console.log("Calculating token count for file:", file);
+            const uploaded = await ai.files.upload({
+                file: file,
+                config: { mimeType: file.type },
+            });
+            const response = await ai.models.countTokens({
+                model: model,
+                contents: createUserContent([
+                    "Count tokens for this document",
+                    createPartFromUri(uploaded.uri!, uploaded.mimeType!),
+                ])
+            });
+            return response.totalTokens ?? 0;
+        } catch (err) {
+            // NOTE: ai.files.upload() is a server-side Gemini Files API — it fails in the
+            // browser due to CORS and API key restrictions. Token count will be unavailable
+            // for binary files (e.g. PDFs) uploaded directly from the browser.
+            // calcStorageFileTokenCount has the same issue and also returns null-equivalent.
+            // TODO: Move file token counting to a Firebase Cloud Function.
+            console.error("Error calculating token count for file", err);
+            return null;
+        }
     }
 
     async calcStorageFileTokenCount(model: string, file: StorageFile): Promise<number> {

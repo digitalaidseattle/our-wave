@@ -34,7 +34,7 @@ import { TextEdit } from "../../components/TextEdit";
 import { SUPPORTED_DOWNLOAD_TYPE } from "../../services/ProposalExporter";
 import { grantProposalService } from "../../services/grantProposalService";
 import { grantRecipeService } from "../../services/grantRecipeService";
-import { deleteProposal } from "../../transactions/DeleteProposal";
+
 import type { GrantOutput, GrantProposal, GrantRecipe } from "../../types";
 import { DateUtils } from "../../utils/dateUtils";
 
@@ -223,7 +223,7 @@ const GrantProposalsDetailPage: React.FC = () => {
       setLoading(true);
       setIsDeleting(true);
 
-      await deleteProposal(proposal, recipe);
+      await grantProposalService.deleteProposal(proposal);
 
       notifications.success(LABELS.DELETE_SUCCESS);
       setOpenDeleteDialog(false);
@@ -309,6 +309,8 @@ const GrantProposalsDetailPage: React.FC = () => {
                     <MenuItem onClick={() => handleDownload("markdown")}>Markdown</MenuItem>
                     <MenuItem onClick={() => handleDownload("text")}>Text</MenuItem>
                     <MenuItem onClick={() => handleDownload("json")}>JSON</MenuItem>
+                    <MenuItem onClick={() => handleDownload("docx")}>MS Word (.docx)</MenuItem>
+                    <MenuItem onClick={() => handleDownload("pdf")}>PDF (.pdf)</MenuItem>
                   </Menu>
                   <Clipboard text={Object.values(proposal.structuredResponse ?? {}).join("\n")} />
                 </Stack>

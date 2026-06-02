@@ -44,7 +44,6 @@ describe("GenerateProposal", () => {
       ],
       inputParameters: [],
       tokenCount: 0,
-      proposalIds: [],
       modelType: "gemini-2.5-flash",
     };
 
@@ -88,7 +87,6 @@ describe("GenerateProposal", () => {
       outputsWithWordCount: [],
       tokenCount: 0,
       inputParameters: [],
-      proposalIds: [],
       modelType: "gemini-2.5-flash",
     };
 
