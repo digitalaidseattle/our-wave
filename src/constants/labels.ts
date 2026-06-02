@@ -11,7 +11,7 @@ export const DASHBOARD_LABELS = {
     cloneRecipe: "Clone Recipe",
     selectRecentRecipe: "Select a recent Recipe",
     newRecipe: "New Recipe",
-    noProposals: "No proposals yet",
+    noRecipes: "No recipes yet",
 };
 
 export const RECIPE_LABELS = {

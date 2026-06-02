@@ -107,7 +107,7 @@ const RecentRecipesCard = () => {
         ) : (
           <Stack alignItems="center" justifyContent="center" sx={{ py: 4, px: 2 }}>
             <Typography color="textSecondary" align="center">
-              {DASHBOARD_STRINGS.noProposals}
+              {DASHBOARD_STRINGS.noRecipes}
             </Typography>
           </Stack>
         )}
