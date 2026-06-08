@@ -49,6 +49,7 @@ export const TextEditor = ({
   error = false,
   helperText,
   onBlur,
+  onEdit,
   subheader,
   helpTopic,
 }: {
@@ -59,6 +60,7 @@ export const TextEditor = ({
   error?: boolean,
   helperText?: string,
   onBlur?: () => void,
+  onEdit?: () => void,
   subheader?: string,
   helpTopic?: string,
 }) => {
@@ -82,6 +84,7 @@ export const TextEditor = ({
           error={error}
           helperText={helperText ?? " "}
           onBlur={onBlur}
+          onEdit={onEdit}
           multiline={true}
           sx={{
             '& .MuiInputBase-input': {
@@ -332,10 +335,13 @@ const GrantRecipesDetailPage: React.FC = () => {
   }
 
   function handleTemplateChange(updated: string): void {
-    grantRecipeService.updatePrompt({ ...recipe, template: updated })
+    const updatedRecipe = { ...recipe, template: updated };
+    setRecipe(updatedRecipe);
+    setDirty(true);
+
+    grantRecipeService.updatePrompt(updatedRecipe)
       .then(revised => {
         setRecipe(revised);
-        setDirty(true);
       })
   }
 
@@ -415,6 +421,7 @@ const GrantRecipesDetailPage: React.FC = () => {
                         onChange={handleInfoChange}
                         showDescriptionError={descriptionTouched && isDescriptionMissing}
                         onDescriptionBlur={() => setDescriptionTouched(true)}
+                        onEdit={() => setDirty(true)}
                       />
                       <TextEditor
                         title={RECIPE_STRINGS.templateTitle}
@@ -425,13 +432,19 @@ const GrantRecipesDetailPage: React.FC = () => {
                         error={templateTouched && isTemplateMissing}
                         helperText={templateTouched && isTemplateMissing ? "Template is required to generate." : " "}
                         onBlur={() => setTemplateTouched(true)}
+                        onEdit={() => setDirty(true)}
                       />
-                      <GrantContextEditor onChange={handleGrantContextsChange} onUploadingChange={setIsFileUploading} />
+                      <GrantContextEditor
+                        onChange={handleGrantContextsChange}
+                        onEdit={() => setDirty(true)}
+                        onUploadingChange={setIsFileUploading}
+                      />
                       <GrantOutputEditor
                         fields={recipe.outputsWithWordCount}
                         onChange={handleGrantOutputChange}
                         touchedFields={outputFieldTouched}
                         onFieldBlur={handleOutputFieldBlur}
+                        onEdit={() => setDirty(true)}
                       />
                       <PlainTextCard title={RECIPE_STRINGS.promptTitle} helpTopic="Prompt" value={recipe.prompt} />
                     </Stack>
