@@ -114,7 +114,7 @@ const GrantRecipesListPage: React.FC = () => {
   const columns: GridColDef<GrantRecipe>[] = [
     {
       field: "description",
-      headerName: "Description",
+      headerName: "Recipe Name",
       width: 400,
     },
     {
