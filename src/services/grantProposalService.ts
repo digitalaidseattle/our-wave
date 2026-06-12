@@ -1,11 +1,21 @@
 import type { Identifier, User } from "@digitalaidseattle/core";
 import { FirestoreService } from "@digitalaidseattle/firebase";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import { authService } from "../App";
 import { FIRESTORE_COLLECTIONS } from "../constants/firestoreCollections";
 import type { GrantProposal } from "../types";
 import { ProposalExporter, SUPPORTED_DOWNLOAD_TYPE } from "./ProposalExporter";
 
 class GrantProposalService extends FirestoreService<GrantProposal> {
+
+  private static instance: GrantProposalService;
+
+  static getInstance(): GrantProposalService {
+    if (!GrantProposalService.instance) {
+      GrantProposalService.instance = new GrantProposalService();
+    }
+    return GrantProposalService.instance;
+  }
 
   proposalExporter = new ProposalExporter();
 
@@ -89,6 +99,16 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
     return this.proposalExporter.run(proposal, downloadType);
   }
 
+  async proposalNameExists(name: string, recipeId: string): Promise<boolean> {
+    const q = query(
+      collection(this.db, FIRESTORE_COLLECTIONS.grantProposals),
+      where("grantRecipeId", "==", recipeId),
+      where("name", "==", name)
+    );
+    const snapshot = await getDocs(q);
+    return !snapshot.empty;
+  }
+
   async deleteProposal(proposal: Pick<GrantProposal, "id" | "grantRecipeId">): Promise<void> {
     if (!proposal.id) {
       throw new Error("Proposal ID is required");
@@ -101,4 +121,4 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
 
 
 
-export const grantProposalService = new GrantProposalService();
+export { GrantProposalService };

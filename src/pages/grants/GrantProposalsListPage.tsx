@@ -15,7 +15,7 @@ import {
 import { useContext, useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { LoadingOverlay } from "../../components/LoadingOverlay";
-import { grantProposalService } from "../../services/grantProposalService";
+import { GrantProposalService } from "../../services/grantProposalService";
 
 import type { GrantProposal, Timestamp } from "../../types";
 import { DateUtils } from "../../utils/dateUtils";
@@ -45,7 +45,7 @@ const GrantProposalsListPage: React.FC = () => {
   const fetchProposals = async () => {
     try {
       setLoading(true);
-      setProposals(await grantProposalService.getAll())
+      setProposals(await GrantProposalService.getInstance().getAll())
     } catch (error) {
       console.error("Error fetching grant proposals:", error);
       setProposals([]);
@@ -68,7 +68,7 @@ const GrantProposalsListPage: React.FC = () => {
     });
 
     Promise
-      .all(selectedProposals.map((proposal) => grantProposalService.deleteProposal(proposal)))
+      .all(selectedProposals.map((proposal) => GrantProposalService.getInstance().deleteProposal(proposal)))
       .then(() => {
         fetchProposals();
         notifications.success(LABELS.DELETE_SUCCESS);
@@ -116,8 +116,8 @@ const GrantProposalsListPage: React.FC = () => {
   async function handleDownload() {
     setLoading(true);
     const proposalId = selectedIds[0];
-    const proposal = await grantProposalService.getById(proposalId);
-    await grantProposalService.download(proposal, "markdown");
+    const proposal = await GrantProposalService.getInstance().getById(proposalId);
+    await GrantProposalService.getInstance().download(proposal, "markdown");
     setLoading(false);
   }
 

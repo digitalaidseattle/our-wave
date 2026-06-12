@@ -7,12 +7,28 @@
 
 import { authService } from "../App";
 import { GrantAiService } from "../pages/grants/grantAiService";
-import { grantProposalService } from "../services/grantProposalService";
+import { GrantProposalService } from "../services/grantProposalService";
 import { grantRecipeService } from "../services/grantRecipeService";
 import { GrantProposal, GrantRecipe } from "../types";
 
+// Format: "6/22 2:27:09 PM"
+function formatProposalDate(date: Date): string {
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    const hours = date.getHours();
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    const seconds = String(date.getSeconds()).padStart(2, "0");
+    const ampm = hours >= 12 ? "PM" : "AM";
+    const hour12 = hours % 12 || 12;
+    return `${month}/${day} ${hour12}:${minutes}:${seconds} ${ampm}`;
+}
+
 export async function generateProposal(recipe: GrantRecipe): Promise<GrantProposal> {
     const grantAiService = GrantAiService.getInstance();
+
+    if (!recipe.id) {
+        throw new Error("Recipe ID is required");
+    }
 
     const outputs = recipe.outputsWithWordCount ?? [];
     if (outputs.length === 0) {
@@ -34,14 +50,7 @@ export async function generateProposal(recipe: GrantRecipe): Promise<GrantPropos
         ...recipe,
         lastSubmitted: now
     }
-    console.log(updatedRecipe);
-
-    let savedRecipe: GrantRecipe;
-    if (recipe.id) {
-        savedRecipe = await grantRecipeService.update(recipe.id, updatedRecipe);
-    } else {
-        savedRecipe = await grantRecipeService.insert(updatedRecipe);
-    }
+    const savedRecipe = await grantRecipeService.update(recipe.id, updatedRecipe);
 
     // Ask AI for structured JSON using output field names as keys
     const schemaParams = outputs.map((o) => o.name);
@@ -52,18 +61,30 @@ export async function generateProposal(recipe: GrantRecipe): Promise<GrantPropos
         recipe.contexts,
     );
 
+    // Build a unique proposal name using the recipe description + generation timestamp.
+    // If a proposal with that name already exists (e.g. two generates in the same second),
+    // increment by one second until the name is free.
+    const recipeId = String(savedRecipe.id);
+    let nameDate = new Date();
+    let proposalName: string;
+    do {
+        proposalName = `${savedRecipe.description} ${formatProposalDate(nameDate)}`;
+        const exists = await GrantProposalService.getInstance().proposalNameExists(proposalName, recipeId);
+        if (!exists) break;
+        nameDate = new Date(nameDate.getTime() + 1000);
+    } while (true);
 
     const proposal = {
-        ...grantProposalService.empty(),
-        name: `${savedRecipe.description} (${(savedRecipe.lastSubmitted as Date).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })})`,
-        grantRecipeId: String(savedRecipe.id),
+        ...GrantProposalService.getInstance().empty(),
+        name: proposalName,
+        grantRecipeId: recipeId,
         structuredResponse: JSON.parse(response.text!),
         rating: null,
         totalTokenCount: response.usageMetadata ? response.usageMetadata.totalTokenCount : null,
         model: recipe.modelType
     };
 
-    return grantProposalService.insert(proposal,
+    return GrantProposalService.getInstance().insert(proposal,
         undefined,
         undefined,
         user);
