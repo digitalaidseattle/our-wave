@@ -3,8 +3,8 @@
  * 
  * @copyright 2025 Digital Aid Seattle
 */
-import { useContext, useEffect, useState } from "react";
-import { NavLink, useNavigate, useParams } from "react-router-dom";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
+import { NavLink, useBeforeUnload, useBlocker, useNavigate, useParams } from "react-router-dom";
 
 import { HomeOutlined, InfoCircleOutlined } from "@ant-design/icons";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -117,6 +117,7 @@ const GrantRecipesDetailPage: React.FC = () => {
   const notifications = useNotifications();
   const navigate = useNavigate();
   const { loading, setLoading } = useContext(LoadingContext);
+  const allowNavigationRef = useRef(false);
 
   const [recipe, setRecipe] = useState<GrantRecipe>(grantRecipeService.empty());
   const [lastUpdated, setLastUpdated] = useState<string>("");
@@ -132,6 +133,19 @@ const GrantRecipesDetailPage: React.FC = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [rating, setRating] = useState<number>(0);
   const [isFileUploading, setIsFileUploading] = useState<boolean>(false);
+
+  const shouldBlockNavigation = useCallback(
+    () => !id && !allowNavigationRef.current,
+    [id]
+  );
+  const navigationBlocker = useBlocker(shouldBlockNavigation);
+
+  useBeforeUnload(useCallback((event: BeforeUnloadEvent) => {
+    if (!id && !allowNavigationRef.current) {
+      event.preventDefault();
+      event.returnValue = "";
+    }
+  }, [id]));
 
   const hasValidDescription = hasRecipeName(recipe);
   const isDescriptionMissing = !hasValidDescription;
@@ -197,6 +211,7 @@ const GrantRecipesDetailPage: React.FC = () => {
         setRecipe(saved);
         setDirty(false);
         if (isNewRecipe) {
+          allowNavigationRef.current = true;
           navigate(`/grant-recipes/${saved.id}`, { replace: true });
         }
         notifications.success(`${saved.description} has been successfully saved.`)
@@ -218,6 +233,7 @@ const GrantRecipesDetailPage: React.FC = () => {
     setLoading(true);
     cloneRecipe(recipe)
       .then(cloned => {
+        allowNavigationRef.current = true;
         navigate(`/grant-recipes/${cloned.id}`);
         notifications.success(`${recipe.description} has been successfully cloned.`)
       })
@@ -250,6 +266,7 @@ const GrantRecipesDetailPage: React.FC = () => {
       generateProposal(recipe)
         .then(proposal => {
           notifications.success(`Proposal generated for ${recipe.description}.`);
+          allowNavigationRef.current = true;
           navigate(`/grant-proposals/${proposal.id}`);
         })
         .catch((err: unknown) => {
@@ -489,6 +506,13 @@ const GrantRecipesDetailPage: React.FC = () => {
                     open={openDeleteDialog}
                     handleConfirm={handleDeleteConfirm}
                     handleCancel={handleDeleteCancel}
+                  />
+                  <ConfirmationDialog
+                    title="Discard unsaved recipe?"
+                    message="This recipe has not been saved. Are you sure you want to leave this page?"
+                    open={navigationBlocker.state === "blocked"}
+                    handleConfirm={() => navigationBlocker.state === "blocked" && navigationBlocker.proceed()}
+                    handleCancel={() => navigationBlocker.state === "blocked" && navigationBlocker.reset()}
                   />
                 </Card>
               </Stack>
