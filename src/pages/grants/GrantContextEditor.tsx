@@ -31,9 +31,10 @@ interface ContextRowProps {
     context: GrantContext;
     onChange: (index: number, param: GrantContext) => void
     onDelete: (index: number) => void
+    onEdit?: () => void;
     isDone?: boolean;
-};
-const ContextRow = ({ index, context, onChange, onDelete, isDone }: ContextRowProps) => {
+}
+const ContextRow = ({ index, context, onChange, onDelete, onEdit, isDone }: ContextRowProps) => {
 
     function handleTextChange(e: React.ChangeEvent<HTMLInputElement>): void {
         onChange(index, { ...context, value: e.target.value });
@@ -61,6 +62,7 @@ const ContextRow = ({ index, context, onChange, onDelete, isDone }: ContextRowPr
                     value={context.value}
                     placeholder='Enter context information here'
                     onChange={handleTextChange}
+                    onEdit={onEdit}
                     multiline={true}
                     minRows={1}
                     maxRows={3}
@@ -88,10 +90,11 @@ const ContextRow = ({ index, context, onChange, onDelete, isDone }: ContextRowPr
 
 type GrantContextEditorProps = {
     onChange: (recipe: GrantRecipe) => void;
+    onEdit?: () => void;
     onUploadingChange?: (isUploading: boolean) => void;
 };
 
-export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ onChange, onUploadingChange }) => {
+export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ onChange, onEdit, onUploadingChange }) => {
     const grantAiService = GrantAiService.getInstance();
     const notifications = useNotifications();
 
@@ -113,9 +116,13 @@ export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ onChange
     }
 
     async function udpateContext(index: number, revised: GrantContext) {
-        revised.tokenCount = await geminiService.calcTokenCount(recipe.modelType, revised.value || '');
-        contexts[index] = revised;
-        onChange({ ...recipe, contexts: contexts.slice() });
+        const revisedContexts = contexts.slice();
+        revisedContexts[index] = revised;
+        onChange({ ...recipe, contexts: revisedContexts });
+
+        const tokenCount = await geminiService.calcTokenCount(recipe.modelType, revised.value || '');
+        revisedContexts[index] = { ...revised, tokenCount };
+        onChange({ ...recipe, contexts: revisedContexts });
     }
 
     function removeContext(index: number) {
@@ -223,6 +230,7 @@ export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ onChange
                             context={context}
                             onChange={udpateContext}
                             onDelete={removeContext}
+                            onEdit={onEdit}
                             isDone={!!context.name && doneFileNames.has(context.name)} />
                     ))}
                     {Array.from(uploadingFileNames).map(name => (
