@@ -5,15 +5,9 @@
  *
  */
 
-import { authService } from "../App";
 import { grantRecipeService } from "../services/grantRecipeService";
 import { GrantRecipe } from "../types";
-// import { DateUtils } from "../utils/dateUtils";
 
 export function createRecipe(): Promise<GrantRecipe> {
-    return authService.getUser()
-        .then((user => {
-            const newRecipe = grantRecipeService.empty();
-            return grantRecipeService.insert(newRecipe, undefined, undefined, user);
-        }))
+    return Promise.resolve(grantRecipeService.empty());
 }

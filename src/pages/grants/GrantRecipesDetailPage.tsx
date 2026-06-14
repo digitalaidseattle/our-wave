@@ -25,6 +25,7 @@ import { generateProposal } from "../../transactions/GenerateProposal";
 import { saveRecipe } from "../../transactions/SaveRecipe";
 import { GrantOutput, GrantRecipe, Timestamp } from "../../types";
 import { DateUtils } from "../../utils/dateUtils";
+import { hasRecipeName } from "../../utils/recipeValidation";
 import { GrantAiService } from "./grantAiService";
 import { GrantContextEditor } from "./GrantContextEditor";
 import { GrantInfoEditor } from "./GrantInfoEditor";
@@ -122,7 +123,6 @@ const GrantRecipesDetailPage: React.FC = () => {
   const [dirty, setDirty] = useState<boolean>(false);
   const { showHelp } = useHelp();
   const [helpTopic, setHelpTopic] = useState<string | undefined>();
-  const [hasValidDescription, setHasValidDescription] = useState<boolean>(false);
   const [hasCompleteOutputFields, setHasCompleteOutputFields] = useState<boolean>(false);
   const [hasValidTemplate, setHasValidTemplate] = useState<boolean>(false);
   const [descriptionTouched, setDescriptionTouched] = useState<boolean>(false);
@@ -133,6 +133,7 @@ const GrantRecipesDetailPage: React.FC = () => {
   const [rating, setRating] = useState<number>(0);
   const [isFileUploading, setIsFileUploading] = useState<boolean>(false);
 
+  const hasValidDescription = hasRecipeName(recipe);
   const isDescriptionMissing = !hasValidDescription;
   const isOutputFieldsIncomplete = !hasCompleteOutputFields;
   const isTemplateMissing = !hasValidTemplate;
@@ -144,10 +145,6 @@ const GrantRecipesDetailPage: React.FC = () => {
   if (!loading && hasValidDescription && !dirty) {
     actionMessages.push("Make a change to enable Save.");
   }
-
-  useEffect(() => {
-    setHasValidDescription((recipe?.description ?? "").trim().length > 0);
-  }, [recipe?.description]);
 
   useEffect(() => {
     const outputs = recipe?.outputsWithWordCount ?? [];
@@ -193,11 +190,15 @@ const GrantRecipesDetailPage: React.FC = () => {
       notifications.error("Please name your recipe before saving.");
       return;
     }
+    const isNewRecipe = !recipe.id;
     setLoading(true);
     saveRecipe(recipe)
       .then(saved => {
         setRecipe(saved);
         setDirty(false);
+        if (isNewRecipe) {
+          navigate(`/grant-recipes/${saved.id}`, { replace: true });
+        }
         notifications.success(`${saved.description} has been successfully saved.`)
       })
       .catch(err => {
@@ -472,7 +473,7 @@ const GrantRecipesDetailPage: React.FC = () => {
                         color="error"
                         startIcon={<DeleteIcon />}
                         onClick={handleDeleteClick}
-                        disabled={loading || isDeleting}
+                        disabled={loading || isDeleting || !recipe.id}
                       >
                         Delete
                       </Button>

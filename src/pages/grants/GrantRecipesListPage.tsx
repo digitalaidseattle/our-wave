@@ -11,6 +11,7 @@ import { cloneRecipe } from "../../transactions/CloneRecipe";
 import { createRecipe } from "../../transactions/CreateRecipe";
 import type { GrantRecipe, Timestamp } from "../../types";
 import { DateUtils } from "../../utils/dateUtils";
+import { hasRecipeName } from "../../utils/recipeValidation";
 
 const GrantRecipesListPage: React.FC = () => {
   const notifications = useNotifications();
@@ -70,18 +71,25 @@ const GrantRecipesListPage: React.FC = () => {
 
   const handleAdd = async () => {
     createRecipe()
-      .then(recipe => navigate(`/grant-recipes/${recipe.id}`))
+      .then(() => navigate("/grant-recipes/new"))
   }
 
   const handleClone = async () => {
     const recipe = recipes.find(r => r.id === selectedIds[0]);
-    if (recipe) {
-      const inserted = await cloneRecipe(recipe);
-      navigate(`/grant-recipes/${inserted.id}`);
+    if (recipe && hasRecipeName(recipe)) {
+      try {
+        const inserted = await cloneRecipe(recipe);
+        navigate(`/grant-recipes/${inserted.id}`);
+      } catch (error) {
+        notifications.error(`Failed to clone the recipe: ${error instanceof Error ? error.message : "Unknown error"}`);
+      }
     } else {
-      notifications.error(`Failed to clone the recipe.`);
+      notifications.error("A named recipe must be selected before cloning.");
     }
   }
+
+  const selectedRecipe = recipes.find(recipe => recipe.id === selectedIds[0]);
+  const isCloneDisabled = selectedIds.length !== 1 || !selectedRecipe || !hasRecipeName(selectedRecipe);
 
   function handleRowSelection(model: GridRowSelectionModel) {
     if (!model) return;
@@ -189,7 +197,7 @@ const GrantRecipesListPage: React.FC = () => {
           <Box>
             <IconButton color="primary"
               onClick={handleClone}
-              disabled={selectedIds.length !== 1} >
+              disabled={isCloneDisabled} >
               <CopyOutlined />
             </IconButton>
           </Box>

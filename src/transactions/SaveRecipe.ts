@@ -8,6 +8,7 @@
 import { authService, storageService } from "../App";
 import { grantRecipeService } from "../services/grantRecipeService";
 import { GrantContext, GrantRecipe } from "../types";
+import { requireRecipeName } from "../utils/recipeValidation";
 
 const GLOUD_FOLDER = import.meta.env.VITE_FIREBASE_STORAGE_FOLDER;
 
@@ -40,6 +41,8 @@ async function uploadFiles(contexts: GrantContext[]): Promise<GrantContext[]> {
 
 
 export async function saveRecipe(recipe: GrantRecipe): Promise<GrantRecipe> {
+    requireRecipeName(recipe, "save");
+
     return authService.getUser()
         .then((async user => {
             const prompt = await grantRecipeService.generatePromptWithInputs(recipe);
@@ -58,4 +61,3 @@ export async function saveRecipe(recipe: GrantRecipe): Promise<GrantRecipe> {
             }
         }))
 }
-
