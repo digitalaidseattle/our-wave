@@ -328,9 +328,11 @@ const GrantRecipesDetailPage: React.FC = () => {
   }
 
   function handleGrantContextsChange(revised: GrantRecipe): void {
-    console.log(revised)
-    // prompt not affected by contexts change
-    setRecipe(revised);
+    const totalTokenCount = (revised.contexts ?? []).reduce(
+      (sum, ctx) => sum + (ctx.tokenCount ?? 0),
+      0
+    );
+    setRecipe({ ...revised, tokenCount: totalTokenCount });
     setDirty(true);
   }
 
@@ -408,7 +410,7 @@ const GrantRecipesDetailPage: React.FC = () => {
                   }}
                 >
                   <CardHeader title={recipe.description ?? ""}
-                    action={`Token count = ${recipe.tokenCount}`}
+                    action={`Estimated Token Count = ${recipe.tokenCount}`}
                     subheader={`Last updated: ${lastUpdated}`} />
                   <CardContent
                     sx={{
