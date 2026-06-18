@@ -70,19 +70,26 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
     }
     delete cleaned.id;
 
-    return super.insert(
-      {
-        ...cleaned,
-        prompt,
-        createdAt: now,
-        createdBy: sessionUser.email,
-        updatedAt: now,
-        updatedBy: sessionUser.email,
-      } as GrantRecipe,
+    const savedRecipe = {
+      ...cleaned,
+      prompt,
+      createdAt: now,
+      createdBy: sessionUser.email,
+      updatedAt: now,
+      updatedBy: sessionUser.email,
+    } as GrantRecipe;
+
+    const inserted = await super.insert(
+      savedRecipe,
       select,
       mapper,
       user
     );
+
+    return {
+      ...savedRecipe,
+      id: inserted.id,
+    };
   }
 
   /**

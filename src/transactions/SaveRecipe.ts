@@ -55,9 +55,9 @@ export async function saveRecipe(recipe: GrantRecipe): Promise<GrantRecipe> {
             }
 
             if (recipe.id) {
-                return grantRecipeService.update(recipe.id, newRecipe, user);
+                return grantRecipeService.update(recipe.id, newRecipe, undefined, undefined, user);
             } else {
-                return grantRecipeService.insert(newRecipe, user);
+                return grantRecipeService.insert(newRecipe, undefined, undefined, user);
             }
         }))
 }

@@ -138,17 +138,17 @@ const GrantRecipesDetailPage: React.FC = () => {
   const [isFileUploading, setIsFileUploading] = useState<boolean>(false);
 
   const shouldBlockNavigation = useCallback(
-    () => !id && !allowNavigationRef.current,
-    [id]
+    () => dirty && !allowNavigationRef.current,
+    [dirty]
   );
   const navigationBlocker = useBlocker(shouldBlockNavigation);
 
   useBeforeUnload(useCallback((event: BeforeUnloadEvent) => {
-    if (!id && !allowNavigationRef.current) {
+    if (dirty && !allowNavigationRef.current) {
       event.preventDefault();
       event.returnValue = "";
     }
-  }, [id]));
+  }, [dirty]));
 
   const hasValidDescription = hasRecipeName(recipe);
   const isDescriptionMissing = !hasValidDescription;
@@ -176,6 +176,8 @@ const GrantRecipesDetailPage: React.FC = () => {
   }, [recipe?.template]);
 
   useEffect(() => {
+    allowNavigationRef.current = false;
+
     if (id) {
       grantRecipeService.getById(id)
         .then(found => {
@@ -521,8 +523,11 @@ const GrantRecipesDetailPage: React.FC = () => {
                     handleCancel={handleDeleteCancel}
                   />
                   <ConfirmationDialog
-                    title="Discard unsaved recipe?"
-                    message="This recipe has not been saved. Are you sure you want to leave this page?"
+                    title={recipe.id ? "Discard unsaved changes?" : "Discard unsaved recipe?"}
+                    message={recipe.id
+                      ? "You have unsaved changes. Are you sure you want to leave this page?"
+                      : "This recipe has not been saved. Are you sure you want to leave this page?"
+                    }
                     open={navigationBlocker.state === "blocked"}
                     handleConfirm={() => navigationBlocker.state === "blocked" && navigationBlocker.proceed()}
                     handleCancel={() => navigationBlocker.state === "blocked" && navigationBlocker.reset()}

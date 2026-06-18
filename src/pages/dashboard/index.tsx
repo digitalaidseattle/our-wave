@@ -39,7 +39,7 @@ import {
   type MonthlyTokenUsagePoint,
   type TokenUsageSummary,
 } from '../../services/tokenUsageService';
-import { hasRecipeName } from '../../utils/recipeValidation';
+import { isValidRecipe } from '../../utils/recipeValidation';
 
 const numberFormatter = new Intl.NumberFormat();
 const compactNumberFormatter = new Intl.NumberFormat(undefined, {
@@ -132,7 +132,7 @@ const CloneRecipeCard = () => {
   }
 
   function handleClick() {
-    if (selectedRecipe && hasRecipeName(selectedRecipe)) {
+    if (isValidRecipe(selectedRecipe, recipes)) {
       cloneRecipe(selectedRecipe)
         .then(recipe => navigate(`/grant-recipes/${recipe.id}`))
     }
@@ -151,7 +151,7 @@ const CloneRecipeCard = () => {
         </Select>
       </CardContent>
       <CardActions>
-        <Button variant="contained" disabled={!selectedRecipe || !hasRecipeName(selectedRecipe)} onClick={handleClick}>Clone</Button>
+        <Button variant="contained" disabled={!isValidRecipe(selectedRecipe, recipes)} onClick={handleClick}>Clone</Button>
       </CardActions>
     </Card >
   )
