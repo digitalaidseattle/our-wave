@@ -14,6 +14,9 @@ vi.mock('@digitalaidseattle/firebase', () => {
     },
     FirebaseAuthService: class {
       getUser = vi.fn();
+    },
+    FirebaseStorageService: class {
+      upload = vi.fn();
     }
   };
 });
