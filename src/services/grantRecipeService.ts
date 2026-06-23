@@ -4,9 +4,9 @@ import Handlebars from "handlebars";
 import { authService } from "../App";
 import { FIRESTORE_COLLECTIONS } from "../constants/firestoreCollections";
 import type { GrantRecipe } from "../types";
+import { SettingsService } from "./settingsService";
 
 class GrantRecipeService extends FirestoreService<GrantRecipe> {
-  output_fragment = ` Where {{#each outputs}}{{#unless @first}} and{{/unless}} the output "{{name}}" cannot have more than {{maxWords}} {{unit}} {{/each}}.`;
 
   constructor() {
     super(FIRESTORE_COLLECTIONS.grantRecipes);
@@ -33,7 +33,6 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
       outputsWithWordCount: [{ name: '', maxWords: 500, unit: 'words' }],
       inputParameters: [],
       tokenCount: 0,
-      proposalIds: [],
       modelType: "gemini-2.5-flash",
     };
   }
@@ -56,12 +55,21 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
     const now = new Date();
 
     // Compile prompt from template before saving
-    const prompt = this.generatePromptWithInputs(entity);
-    const { id, ...entityWithoutId } = entity;
+    const prompt = await this.generatePromptWithInputs(entity);
+
+    const cleaned = {
+      ...entity,
+      contexts: (entity.contexts ?? []).map(gc => {
+        const clone = { ...gc }
+        delete clone.file;
+        return clone
+      })
+    }
+    delete cleaned.id;
 
     return super.insert(
       {
-        ...entityWithoutId,
+        ...cleaned,
         prompt,
         createdAt: now,
         createdBy: sessionUser.email,
@@ -85,15 +93,31 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
     mapper?: (json: any) => GrantRecipe,
     user?: User
   ): Promise<GrantRecipe> {
+
     const sessionUser = user ?? await authService.getUser();
     if (!sessionUser) {
       throw new Error("No valid user found.");
     }
 
+
+    const cleaned = {
+      ...updatedFields,
+      contexts: (updatedFields.contexts ?? []).map(gc => {
+        const clone = { ...gc }
+        delete clone.file;
+        return clone
+      })
+    }
+
+    // Compile prompt from template before saving
+    const prompt = await this.generatePromptWithInputs(updatedFields);
+    console.log("Updating recipe with prompt:", prompt, cleaned);
+
     return super.update(
       entityId,
       {
-        ...updatedFields,
+        ...cleaned,
+        prompt,
         updatedAt: new Date(),
         updatedBy: sessionUser.email,
       },
@@ -103,16 +127,23 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
     );
   }
 
-  generatePromptWithInputs(recipe: GrantRecipe): string {
-    const compiled = Handlebars.compile(recipe.template + this.output_fragment);
+  async generatePromptWithInputs(recipe: GrantRecipe): Promise<string> {
+    const settings = await SettingsService.getInstance().getSettings();
+    const output_fragment = settings.outputTemplate;
+    const lowerBoundPercentage = settings.lowerBoundPercentage;
+    const compiled = Handlebars.compile(recipe.template + output_fragment);
 
     return compiled({
-      outputs: recipe.outputsWithWordCount,
+      outputs: recipe.outputsWithWordCount.map(output => ({
+        ...output,
+        upperBound: output.maxWords,
+        lowerBound: lowerBoundPercentage * output.maxWords
+      }))
     });
-
   }
+
   async updatePrompt(recipe: GrantRecipe): Promise<GrantRecipe> {
-    const prompt = this.generatePromptWithInputs(recipe);
+    const prompt = await this.generatePromptWithInputs(recipe);
 
     // If token counting is needed later, it can live here
     // For now we keep existing tokenCount

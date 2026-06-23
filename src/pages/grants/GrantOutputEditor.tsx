@@ -21,12 +21,14 @@ export const GrantOutputEditor = ({
   fields,
   onChange,
   touchedFields = {},
-  onFieldBlur
+  onFieldBlur,
+  onEdit
 }: {
   fields: GrantOutput[],
   onChange: (updated: GrantOutput[]) => void,
   touchedFields?: Record<string, boolean>,
-  onFieldBlur?: (index: number, field: 'name' | 'maxWords') => void
+  onFieldBlur?: (index: number, field: 'name' | 'maxWords') => void,
+  onEdit?: () => void
 }) => {
 
   const [outputFields, setOutputFields] = useState<GrantOutput[]>(fields || []);
@@ -101,6 +103,7 @@ export const GrantOutputEditor = ({
                 error={Boolean(touchedFields[`name-${index}`]) && field.name.trim().length === 0}
                 helperText={Boolean(touchedFields[`name-${index}`]) && field.name.trim().length === 0 ? "Field name is required." : " "}
                 onBlur={() => onFieldBlur?.(index, 'name')}
+                onEdit={onEdit}
                 onChange={(e) => handleOutputFieldChange(index, 'name', e.target.value)}
               />
               <StableCursorTextField
@@ -111,6 +114,7 @@ export const GrantOutputEditor = ({
                 error={Boolean(touchedFields[`maxWords-${index}`]) && Number(field.maxWords) <= 0}
                 helperText={Boolean(touchedFields[`maxWords-${index}`]) && Number(field.maxWords) <= 0 ? "Enter a value greater than 0." : " "}
                 onBlur={() => onFieldBlur?.(index, 'maxWords')}
+                onEdit={onEdit}
                 onChange={(e) => handleOutputFieldChange(index, 'maxWords', parseInt(e.target.value) || 0)}
               />
               <ButtonGroup variant="contained" aria-label="Basic button group">

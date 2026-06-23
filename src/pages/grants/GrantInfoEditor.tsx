@@ -65,12 +65,14 @@ export const GrantInfoEditor = ({
   recipe,
   onChange,
   showDescriptionError = false,
-  onDescriptionBlur
+  onDescriptionBlur,
+  onEdit
 }: {
   recipe: GrantRecipe,
   onChange: (updated: GrantRecipe) => void,
   showDescriptionError?: boolean,
-  onDescriptionBlur?: () => void
+  onDescriptionBlur?: () => void,
+  onEdit?: () => void
 }) => {
 
   const { setHelpTopic } = useContext(HelpTopicContext);
@@ -119,6 +121,7 @@ export const GrantInfoEditor = ({
               error={showDescriptionError}
               helperText={showDescriptionError ? "Description is required." : " "}
               onBlur={onDescriptionBlur}
+              onEdit={onEdit}
               onChange={(evt) => handleDescriptionChange(evt.target.value)} />
           </Grid>
           <Grid size={2}><Typography>Tags</Typography></Grid>

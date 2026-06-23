@@ -11,6 +11,7 @@ import { cloneRecipe } from "../../transactions/CloneRecipe";
 import { createRecipe } from "../../transactions/CreateRecipe";
 import type { GrantRecipe, Timestamp } from "../../types";
 import { DateUtils } from "../../utils/dateUtils";
+import { deleteRecipe } from "../../transactions/DeleteRecipe";
 
 const GrantRecipesListPage: React.FC = () => {
   const notifications = useNotifications();
@@ -56,7 +57,7 @@ const GrantRecipesListPage: React.FC = () => {
 
     setLoading(true);
     Promise
-      .all(selectedIds.map(id => grantRecipeService.delete(id)))
+      .all(selectedIds.map(id => deleteRecipe(id)))
       .then(() => {
         fetchRecipes();
         notifications.success("Recipes deleted!")
@@ -114,7 +115,7 @@ const GrantRecipesListPage: React.FC = () => {
   const columns: GridColDef<GrantRecipe>[] = [
     {
       field: "description",
-      headerName: "Description",
+      headerName: "Recipe Name",
       width: 400,
     },
     {

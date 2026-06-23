@@ -30,6 +30,7 @@ import { GrantContextEditor } from "./GrantContextEditor";
 import { GrantInfoEditor } from "./GrantInfoEditor";
 import { GrantOutputEditor } from "./GrantOutputEditor";
 import { RECIPE_STRINGS } from '../../constants/grantRecipe';
+import { deleteRecipe } from "../../transactions/DeleteRecipe";
 
 const HELP_DRAWER_WIDTH = 300;
 const HELP_TITLE = "Our Wave";
@@ -49,6 +50,7 @@ export const TextEditor = ({
   error = false,
   helperText,
   onBlur,
+  onEdit,
   subheader,
   helpTopic,
 }: {
@@ -59,6 +61,7 @@ export const TextEditor = ({
   error?: boolean,
   helperText?: string,
   onBlur?: () => void,
+  onEdit?: () => void,
   subheader?: string,
   helpTopic?: string,
 }) => {
@@ -82,6 +85,7 @@ export const TextEditor = ({
           error={error}
           helperText={helperText ?? " "}
           onBlur={onBlur}
+          onEdit={onEdit}
           multiline={true}
           sx={{
             '& .MuiInputBase-input': {
@@ -131,13 +135,14 @@ const GrantRecipesDetailPage: React.FC = () => {
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [rating, setRating] = useState<number>(0);
+  const [isFileUploading, setIsFileUploading] = useState<boolean>(false);
 
   const isDescriptionMissing = !hasValidDescription;
   const isOutputFieldsIncomplete = !hasCompleteOutputFields;
   const isTemplateMissing = !hasValidTemplate;
   const isSaveDisabled = loading || !dirty || isDescriptionMissing;
   const isCloneDisabled = loading || isDescriptionMissing;
-  const isGenerateDisabled = loading || isDescriptionMissing || isOutputFieldsIncomplete || isTemplateMissing;
+  const isGenerateDisabled = loading || isFileUploading || isDescriptionMissing || isOutputFieldsIncomplete || isTemplateMissing;
 
   const actionMessages: string[] = [];
   if (!loading && hasValidDescription && !dirty) {
@@ -324,17 +329,22 @@ const GrantRecipesDetailPage: React.FC = () => {
   }
 
   function handleGrantContextsChange(revised: GrantRecipe): void {
-    console.log(revised)
-    // prompt not affected by contexts change
-    setRecipe(revised);
+    const totalTokenCount = (revised.contexts ?? []).reduce(
+      (sum, ctx) => sum + (ctx.tokenCount ?? 0),
+      0
+    );
+    setRecipe({ ...revised, tokenCount: totalTokenCount });
     setDirty(true);
   }
 
   function handleTemplateChange(updated: string): void {
-    grantRecipeService.updatePrompt({ ...recipe, template: updated })
+    const updatedRecipe = { ...recipe, template: updated };
+    setRecipe(updatedRecipe);
+    setDirty(true);
+
+    grantRecipeService.updatePrompt(updatedRecipe)
       .then(revised => {
         setRecipe(revised);
-        setDirty(true);
       })
   }
 
@@ -347,7 +357,7 @@ const GrantRecipesDetailPage: React.FC = () => {
 
     try {
       setIsDeleting(true);
-      await grantRecipeService.delete(recipe.id);
+      await deleteRecipe(recipe.id as string);
       notifications.success("Recipe deleted successfully");
       setOpenDeleteDialog(false);
       navigate('/grant-recipes');
@@ -401,7 +411,7 @@ const GrantRecipesDetailPage: React.FC = () => {
                   }}
                 >
                   <CardHeader title={recipe.description ?? ""}
-                    action={`Token count = ${recipe.tokenCount}`}
+                    action={`Estimated Token Count = ${recipe.tokenCount}`}
                     subheader={`Last updated: ${lastUpdated}`} />
                   <CardContent
                     sx={{
@@ -414,6 +424,7 @@ const GrantRecipesDetailPage: React.FC = () => {
                         onChange={handleInfoChange}
                         showDescriptionError={descriptionTouched && isDescriptionMissing}
                         onDescriptionBlur={() => setDescriptionTouched(true)}
+                        onEdit={() => setDirty(true)}
                       />
                       <TextEditor
                         title={RECIPE_STRINGS.templateTitle}
@@ -424,13 +435,19 @@ const GrantRecipesDetailPage: React.FC = () => {
                         error={templateTouched && isTemplateMissing}
                         helperText={templateTouched && isTemplateMissing ? "Template is required to generate." : " "}
                         onBlur={() => setTemplateTouched(true)}
+                        onEdit={() => setDirty(true)}
                       />
-                      <GrantContextEditor onChange={handleGrantContextsChange} />
+                      <GrantContextEditor
+                        onChange={handleGrantContextsChange}
+                        onEdit={() => setDirty(true)}
+                        onUploadingChange={setIsFileUploading}
+                      />
                       <GrantOutputEditor
                         fields={recipe.outputsWithWordCount}
                         onChange={handleGrantOutputChange}
                         touchedFields={outputFieldTouched}
                         onFieldBlur={handleOutputFieldBlur}
+                        onEdit={() => setDirty(true)}
                       />
                       <PlainTextCard title={RECIPE_STRINGS.promptTitle} helpTopic="Prompt" value={recipe.prompt} />
                     </Stack>
@@ -457,7 +474,7 @@ const GrantRecipesDetailPage: React.FC = () => {
                       <Tooltip title='Click to generate.'>
                         <Box>
                           <SplitButton
-                            options={GrantAiService.models.map(m => ({ label: `Generate with ${m}`, value: m }))}
+                            options={GrantAiService.getInstance().getModels().map(m => ({ label: `Generate with ${m}`, value: m }))}
                             disabled={isGenerateDisabled}
                             onClick={(model: string) => handleGenerate(model)} />
                         </Box>
