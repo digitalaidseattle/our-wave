@@ -12,33 +12,39 @@ import { requireRecipeName } from "../utils/recipeValidation";
 
 const GLOUD_FOLDER = import.meta.env.VITE_FIREBASE_STORAGE_FOLDER;
 
+async function organizeContextsFiles(recipe: GrantRecipe): Promise<GrantContext[]> {
+    // get existing files
+    const cloudFiles = await storageService
+        .list(`${GLOUD_FOLDER}/${recipe.id}`)
+        .then((files: any[]) => files.map((file: any) => file.name));
 
-function isNewFile(context: GrantContext): boolean {
-    if (context.type === 'text') {
-        return false;
-    }
-    if (context.fileUrl) {  // previously uploaded
-        return false;
-    }
-    if (context.file && context.file.webkitRelativePath) {  // new file
-        return true;
-    }
-    return false;
-}
-
-async function uploadFiles(contexts: GrantContext[]): Promise<GrantContext[]> {
-    return Promise.all(contexts
-        .map(async (context) => {
-            if (isNewFile(context)) {
-                const url = await storageService.upload(`${GLOUD_FOLDER}/${context.file!.name}`, context.file!);
-                const newContext = { ...context, fileUrl: url };
-                delete newContext.file;
-                return newContext;
+    const updatedContexts: GrantContext[] = [];
+    recipe.contexts.forEach(async context => {
+        if (context.type === 'text') {
+            updatedContexts.push(context);
+        } else if (context.file! instanceof File) {
+            // Existing files will be overwritten
+            const url = await storageService.upload(`${GLOUD_FOLDER}/${recipe.id}/${context.file!.name}`, context.file!);
+            const newContext = { ...context, fileUrl: url };
+            delete newContext.file;
+            updatedContexts.push(newContext);
+        } else {
+            const index = cloudFiles.indexOf(context.name);
+            if (index > -1) {  // remove from cloudFiles list
+                cloudFiles.splice(index, 1);
+                updatedContexts.push(context);
+            } else {
+                console.error('not in the cloud & no file to upload', context);
             }
-            return { ...context };
-        }));
-}
+        }
+    });
 
+    // remove unwanted files
+    cloudFiles.forEach(async fileName => {
+        await storageService.removeFile(`${GLOUD_FOLDER}/${recipe.id}/${fileName}`)
+    })
+    return updatedContexts;
+}
 
 export async function saveRecipe(recipe: GrantRecipe): Promise<GrantRecipe> {
     requireRecipeName(recipe, "save");
@@ -46,7 +52,7 @@ export async function saveRecipe(recipe: GrantRecipe): Promise<GrantRecipe> {
     return authService.getUser()
         .then((async user => {
             const prompt = await grantRecipeService.generatePromptWithInputs(recipe);
-            const contexts = await uploadFiles(recipe.contexts);
+            const contexts = await organizeContextsFiles(recipe);
 
             const newRecipe = {
                 ...recipe,

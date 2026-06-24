@@ -31,6 +31,7 @@ import { GrantContextEditor } from "./GrantContextEditor";
 import { GrantInfoEditor } from "./GrantInfoEditor";
 import { GrantOutputEditor } from "./GrantOutputEditor";
 import { RECIPE_STRINGS } from '../../constants/grantRecipe';
+import { deleteRecipe } from "../../transactions/DeleteRecipe";
 
 const HELP_DRAWER_WIDTH = 300;
 const HELP_TITLE = "Our Wave";
@@ -376,7 +377,7 @@ const GrantRecipesDetailPage: React.FC = () => {
 
     try {
       setIsDeleting(true);
-      await grantRecipeService.delete(recipe.id);
+      await deleteRecipe(recipe.id as string);
       notifications.success("Recipe deleted successfully");
       setOpenDeleteDialog(false);
       navigate('/grant-recipes');
