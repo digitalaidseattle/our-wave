@@ -4,6 +4,7 @@ import Handlebars from "handlebars";
 import { authService } from "../App";
 import { FIRESTORE_COLLECTIONS } from "../constants/firestoreCollections";
 import type { GrantRecipe } from "../types";
+import { requireRecipeName } from "../utils/recipeValidation";
 import { SettingsService } from "./settingsService";
 
 class GrantRecipeService extends FirestoreService<GrantRecipe> {
@@ -47,6 +48,8 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
     mapper?: (json: any) => GrantRecipe,
     user?: User
   ): Promise<GrantRecipe> {
+    requireRecipeName(entity, "save");
+
     const sessionUser = user ?? await authService.getUser();
     if (!sessionUser?.email) {
       throw new Error("grantRecipeService.insert: user.email is required");
@@ -67,19 +70,26 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
     }
     delete cleaned.id;
 
-    return super.insert(
-      {
-        ...cleaned,
-        prompt,
-        createdAt: now,
-        createdBy: sessionUser.email,
-        updatedAt: now,
-        updatedBy: sessionUser.email,
-      } as GrantRecipe,
+    const savedRecipe = {
+      ...cleaned,
+      prompt,
+      createdAt: now,
+      createdBy: sessionUser.email,
+      updatedAt: now,
+      updatedBy: sessionUser.email,
+    } as GrantRecipe;
+
+    const inserted = await super.insert(
+      savedRecipe,
       select,
       mapper,
       user
     );
+
+    return {
+      ...savedRecipe,
+      id: inserted.id,
+    };
   }
 
   /**
@@ -93,6 +103,7 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
     mapper?: (json: any) => GrantRecipe,
     user?: User
   ): Promise<GrantRecipe> {
+    requireRecipeName(updatedFields, "save");
 
     const sessionUser = user ?? await authService.getUser();
     if (!sessionUser) {
