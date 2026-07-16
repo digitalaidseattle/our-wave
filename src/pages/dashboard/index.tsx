@@ -2,10 +2,7 @@ import { useContext, useEffect, useState } from 'react';
 
 // material-ui
 import {
-<<<<<<< HEAD
-=======
   Box,
->>>>>>> origin/dev
   Breadcrumbs,
   Button,
   Card,
@@ -14,10 +11,7 @@ import {
   CardHeader,
   Grid,
   IconButton,
-<<<<<<< HEAD
-=======
   LinearProgress,
->>>>>>> origin/dev
   List,
   ListItemButton,
   ListItemText,
@@ -33,17 +27,11 @@ import { HomeOutlined } from '@ant-design/icons';
 import { grantRecipeService } from '../../services/grantRecipeService';
 import { cloneRecipe } from '../../transactions/CloneRecipe';
 import { createRecipe } from '../../transactions/CreateRecipe';
-<<<<<<< HEAD
-import { GrantRecipe } from '../../types';
-=======
 import type { GrantRecipe } from '../../types';
->>>>>>> origin/dev
 import { LoadingContext } from '@digitalaidseattle/core';
 import LoadingButton from '../../components/LoadingButton';
 import { DateUtils } from '../../utils/dateUtils';
 import { DASHBOARD_STRINGS } from '../../constants/dashboard';
-<<<<<<< HEAD
-=======
 import { grantProposalService } from '../../services/grantProposalService';
 import TokenUsageMonthlyChart from './TokenUsageMonthlyChart';
 import {
@@ -67,7 +55,6 @@ const getDateSortValue = (value: GrantRecipe["updatedAt"]) => {
   if (value instanceof Date) return value.getTime();
   return value.seconds;
 };
->>>>>>> origin/dev
 
 const RecentRecipesCard = () => {
   const navigate = useNavigate();
@@ -76,11 +63,7 @@ const RecentRecipesCard = () => {
   useEffect(() => {
     grantRecipeService.getAll()
       .then(resp => setRecipes(resp
-<<<<<<< HEAD
-        .sort((a, b) => (b.updatedAt as any).seconds - (a.updatedAt as any).seconds)
-=======
         .sort((a, b) => getDateSortValue(b.updatedAt) - getDateSortValue(a.updatedAt))
->>>>>>> origin/dev
         .slice(0, 6))
       );
   }, []);
@@ -140,11 +123,7 @@ const CloneRecipeCard = () => {
 
   useEffect(() => {
     grantRecipeService.getAll()
-<<<<<<< HEAD
-      .then(resp => setRecipes(resp.sort((a, b) => (b.updatedAt as any).seconds - (a.updatedAt as any).seconds)));
-=======
       .then(resp => setRecipes(resp.sort((a, b) => getDateSortValue(b.updatedAt) - getDateSortValue(a.updatedAt))));
->>>>>>> origin/dev
   }, []);
 
   function handleSelect(recipeId: string) {
@@ -205,8 +184,6 @@ const CreateRecipeCard = () => {
     </Card>
   )
 }
-<<<<<<< HEAD
-=======
 
 const TokenUsageCard = () => {
   const [currentMonthUsage, setCurrentMonthUsage] = useState<TokenUsageSummary>({
@@ -368,7 +345,6 @@ const TokenUsageCard = () => {
     </Card>
   );
 };
->>>>>>> origin/dev
 // ==============================|| DASHBOARD - DEFAULT ||============================== //
 
 const DashboardDefault = () => {
@@ -381,10 +357,7 @@ const DashboardDefault = () => {
       {/* row 1 */}
       <Grid size={6}>
         <Stack spacing={2} >
-<<<<<<< HEAD
-=======
           <TokenUsageCard />
->>>>>>> origin/dev
           <CreateRecipeCard />
           <CloneRecipeCard />
         </Stack>
@@ -397,8 +370,4 @@ const DashboardDefault = () => {
   );
 };
 
-<<<<<<< HEAD
 export default DashboardDefault;
-=======
-export default DashboardDefault;
->>>>>>> origin/dev

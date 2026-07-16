@@ -14,10 +14,6 @@ import { FileUploadDialog } from '../../components/FileUploadDialog';
 import { GrantRecipeContext } from '../../components/GrantRecipeContext';
 import { HelpTopicContext } from '../../components/HelpTopicContext';
 import { StableCursorTextField } from '../../components/StableCursorTextfield';
-<<<<<<< HEAD
-import { StorageFile } from '../../services/OurWaveStorageService';
-=======
->>>>>>> origin/dev
 import { GrantContext, GrantRecipe } from '../../types';
 import { GrantAiService } from './grantAiService';
 import { RECIPE_STRINGS } from '../../constants/grantRecipe';
@@ -115,29 +111,6 @@ export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ onChange
         onChange({ ...recipe, contexts: revised });
     }
 
-<<<<<<< HEAD
-    async function handleFileSelection(files: (File | StorageFile)[] | null) {
-        if (files) {
-            const contexts = files
-                .filter(file => {
-                    const fileType = file.type;
-                    if (!fileType || !SUPPORTED_FILE_TYPES.includes(fileType)) {
-                        notifications.error(`Unsupported file type: ${file.type}. Supported types are: ${SUPPORTED_FILE_TYPES.join(", ")}`);
-                        return false;
-                    } else {
-                        return true;
-                    }
-                })
-                .map(async file => {
-                    const tokenCount = file instanceof File
-                        ? await grantAiService.calcFileTokenCount(recipe.modelType, file)
-                        : await grantAiService.calcStorageFileTokenCount(recipe.modelType, file);
-                    return ({ type: file.type!, value: "", name: file.name, tokenCount: tokenCount, file: file });
-                })
-            addContexts(await Promise.all(contexts));
-        }
-        setShowUploadDialog(false);
-=======
     async function handleFileSelection(files: File[] | null) {
         setShowUploadDialog(false);
 
@@ -169,7 +142,6 @@ export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ onChange
         if (newContexts.length > 0) {
             addContexts(newContexts);
         }
->>>>>>> origin/dev
     }
 
     return (
