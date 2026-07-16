@@ -77,8 +77,8 @@ service cloud.firestore {
       allow update: if request.auth != null;
       allow delete: if request.auth != null;
     }
-<<<<<<< HEAD
-=======
+ HEAD
+
         
     // Settings Collection
     match /settings /{id}{
