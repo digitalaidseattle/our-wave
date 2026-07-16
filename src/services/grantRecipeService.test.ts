@@ -1,51 +1,56 @@
 import { describe, expect, it, vi } from "vitest";
-import { GrantRecipe } from "../types";
+import type { GrantRecipe } from "../types";
+
+vi.mock("../App", () => ({
+  authService: { getUser: vi.fn() },
+}));
+
+vi.mock("./settingsService", () => ({
+  SettingsService: {
+    getInstance: () => ({
+      getSettings: vi.fn().mockResolvedValue({
+        outputTemplate: "",
+        lowerBoundPercentage: 0.5,
+      }),
+    }),
+  },
+}));
+
 import { grantRecipeService } from "./grantRecipeService";
-import { geminiService } from "../api/geminiService";
 
 describe("grantRecipeService", () => {
-
-  vi.mock('../api/geminiService', () => ({
-    geminiService: ({
-      calcTokenCount: () => { }
-    }),
-  }));
-
-  it("generatePromptWithInputs", () => {
-
+  it("generates a prompt with output word-count bounds", async () => {
     const recipe = {
-      prompt: "Create a grant proposal including the following information:\n {{#each inputs}}{{key}} = {{value}},\n{{/each}}"
-        + " where{{#each outputs}}{{#unless @first}} and{{/unless}} the output {{name}} is constrained by a maximum {{maxWords}} of {{unit}} {{/each}}.",
-      inputParameters: [
-        { key: "organizationName", value: "Our Wave" },
-        { key: "projectDescription", value: "Community garden for local residents" },
-        { key: "requestedAmount", value: "$5000" }
-      ],
+      template: "Write {{#each outputs}}{{name}} {{lowerBound}}-{{upperBound}}{{/each}}",
       outputsWithWordCount: [
-        { name: "Executive Summary", maxWords: 200, unit: "words" },
-        { name: "Mission Statement", maxWords: 400, unit: "words" },
-      ]
-    } as unknown as GrantRecipe;
+        { name: "Summary", maxWords: 200, unit: "words" },
+      ],
+    } as GrantRecipe;
 
-    const result = grantRecipeService.generatePromptWithInputs(recipe)
-    console.log(result);
-  })
+    await expect(grantRecipeService.generatePromptWithInputs(recipe)).resolves.toBe(
+      "Write Summary 100-200"
+    );
+  });
 
-  it("updatePrompt", () => {
-
+  it("updates the local compiled prompt without persisting", async () => {
     const recipe = {
-      modelType: 'GEMINI',
-      prompt: "Create a grant proposal including the following information:",
-      inputParameters: []
-    } as unknown as GrantRecipe;
+      description: "Named recipe",
+      template: "Write {{#each outputs}}{{name}}{{/each}}",
+      outputsWithWordCount: [
+        { name: "Summary", maxWords: 200, unit: "words" },
+      ],
+      prompt: "old prompt",
+      tokenCount: 5,
+    } as GrantRecipe;
 
-    const tokenSpy = vi.spyOn(geminiService, "calcTokenCount").mockResolvedValue(5);
+    await expect(grantRecipeService.updatePrompt(recipe)).resolves.toEqual(
+      expect.objectContaining({ prompt: "Write Summary", tokenCount: 5 })
+    );
+  });
 
-    grantRecipeService.updatePrompt(recipe)
-      .then(updated => {
-        expect(tokenSpy).toBeCalledWith("GEMINI", "Create a grant proposal including the following information:[]");
-        expect(updated.tokenCount).toBe(5)
-      })
-  })
-
+  it("rejects unnamed recipes before inserting them", async () => {
+    await expect(
+      grantRecipeService.insert({ description: " " } as GrantRecipe)
+    ).rejects.toThrow("Recipe name is required to save.");
+  });
 });

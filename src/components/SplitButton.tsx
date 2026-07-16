@@ -1,3 +1,8 @@
+/**
+ * SplitButton.tsx
+ * 
+ * @copyright 2026 Digital Aid Seattle
+*/
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import Button from '@mui/material/Button';
 import ButtonGroup from '@mui/material/ButtonGroup';
@@ -13,12 +18,18 @@ export const SplitButton = ({ options, onClick, disabled = false }: { options: s
     const [open, setOpen] = React.useState(false);
     const anchorRef = React.useRef<HTMLDivElement>(null);
     const [selectedIndex, setSelectedIndex] = React.useState(0);
+    const [selectedOption, setSelectedOption] = React.useState<string | { label: string, value: string }>();
+
+
+    React.useEffect(() => {
+        setSelectedOption(options[selectedIndex]);
+    }, [options, selectedIndex]);
 
     const handleClick = () => {
-        if (disabled) {
+        if (disabled || !selectedOption) {
             return;
         }
-        onClick(options[selectedIndex].hasOwnProperty('value') ? (options[selectedIndex] as any).value : options[selectedIndex]);
+        onClick(selectedOption.hasOwnProperty('value') ? (selectedOption as any).value : options[selectedIndex]);
     };
 
     const handleMenuItemClick = (
@@ -46,13 +57,22 @@ export const SplitButton = ({ options, onClick, disabled = false }: { options: s
 
         setOpen(false);
     };
-    
-    function getOptionLabel(option: string | { label: string, value: string }) {
-        return option.hasOwnProperty('label') ? (option as any).label : option;
+
+    function getOptionLabel(option: string | { label: string, value: string } | undefined) {
+        if (option) {
+            return option.hasOwnProperty('label') ? (option as any).label : option;
+        } else {
+            return "";
+        }
+
     }
-    
-    function getOptionValue(option: string | { label: string, value: string }) {
-        return option.hasOwnProperty('value') ? (option as any).value : option;
+
+    function getOptionValue(option: string | { label: string, value: string } | undefined) {
+        if (option) {
+            return option.hasOwnProperty('value') ? (option as any).value : option;
+        } else {
+            return undefined
+        }
     }
 
     return (
@@ -63,7 +83,7 @@ export const SplitButton = ({ options, onClick, disabled = false }: { options: s
                 aria-label="Button group with a nested menu"
                 disabled={disabled}
             >
-                <Button onClick={handleClick}>{getOptionLabel(options[selectedIndex])}</Button>
+                <Button onClick={handleClick}>{getOptionLabel(selectedOption)}</Button>
                 <Button
                     size="small"
                     aria-controls={open ? 'split-button-menu' : undefined}

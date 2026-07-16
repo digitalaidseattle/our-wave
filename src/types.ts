@@ -24,7 +24,7 @@ export type GrantContext = {
   type: string;
   name: string | null;
   value: string | null;
-  tokenCount: number;
+  tokenCount?: number;
   file?: File;
   fileUrl?: string;
 }
@@ -44,7 +44,6 @@ export type GrantRecipe = Entity & {
   inputParameters: GrantInput[];
   outputsWithWordCount: GrantOutput[];
   tokenCount: number;
-  proposalIds: string[];
   modelType: string; // "gemini-2.5-flash", etc.
 };
 

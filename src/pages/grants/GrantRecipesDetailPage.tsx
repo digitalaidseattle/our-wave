@@ -3,8 +3,8 @@
  * 
  * @copyright 2025 Digital Aid Seattle
 */
-import { useContext, useEffect, useState } from "react";
-import { NavLink, useNavigate, useParams } from "react-router-dom";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
+import { NavLink, useBeforeUnload, useBlocker, useNavigate, useParams } from "react-router-dom";
 
 import { HomeOutlined, InfoCircleOutlined } from "@ant-design/icons";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -25,11 +25,13 @@ import { generateProposal } from "../../transactions/GenerateProposal";
 import { saveRecipe } from "../../transactions/SaveRecipe";
 import { GrantOutput, GrantRecipe, Timestamp } from "../../types";
 import { DateUtils } from "../../utils/dateUtils";
+import { hasRecipeName } from "../../utils/recipeValidation";
 import { GrantAiService } from "./grantAiService";
 import { GrantContextEditor } from "./GrantContextEditor";
 import { GrantInfoEditor } from "./GrantInfoEditor";
 import { GrantOutputEditor } from "./GrantOutputEditor";
 import { RECIPE_STRINGS } from '../../constants/grantRecipe';
+import { deleteRecipe } from "../../transactions/DeleteRecipe";
 
 const HELP_DRAWER_WIDTH = 300;
 const HELP_TITLE = "Our Wave";
@@ -49,6 +51,7 @@ export const TextEditor = ({
   error = false,
   helperText,
   onBlur,
+  onEdit,
   subheader,
   helpTopic,
 }: {
@@ -59,6 +62,7 @@ export const TextEditor = ({
   error?: boolean,
   helperText?: string,
   onBlur?: () => void,
+  onEdit?: () => void,
   subheader?: string,
   helpTopic?: string,
 }) => {
@@ -82,6 +86,7 @@ export const TextEditor = ({
           error={error}
           helperText={helperText ?? " "}
           onBlur={onBlur}
+          onEdit={onEdit}
           multiline={true}
           sx={{
             '& .MuiInputBase-input': {
@@ -116,13 +121,13 @@ const GrantRecipesDetailPage: React.FC = () => {
   const notifications = useNotifications();
   const navigate = useNavigate();
   const { loading, setLoading } = useContext(LoadingContext);
+  const allowNavigationRef = useRef(false);
 
   const [recipe, setRecipe] = useState<GrantRecipe>(grantRecipeService.empty());
   const [lastUpdated, setLastUpdated] = useState<string>("");
   const [dirty, setDirty] = useState<boolean>(false);
   const { showHelp } = useHelp();
   const [helpTopic, setHelpTopic] = useState<string | undefined>();
-  const [hasValidDescription, setHasValidDescription] = useState<boolean>(false);
   const [hasCompleteOutputFields, setHasCompleteOutputFields] = useState<boolean>(false);
   const [hasValidTemplate, setHasValidTemplate] = useState<boolean>(false);
   const [descriptionTouched, setDescriptionTouched] = useState<boolean>(false);
@@ -131,22 +136,33 @@ const GrantRecipesDetailPage: React.FC = () => {
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [rating, setRating] = useState<number>(0);
+  const [isFileUploading, setIsFileUploading] = useState<boolean>(false);
 
+  const shouldBlockNavigation = useCallback(
+    () => dirty && !allowNavigationRef.current,
+    [dirty]
+  );
+  const navigationBlocker = useBlocker(shouldBlockNavigation);
+
+  useBeforeUnload(useCallback((event: BeforeUnloadEvent) => {
+    if (dirty && !allowNavigationRef.current) {
+      event.preventDefault();
+      event.returnValue = "";
+    }
+  }, [dirty]));
+
+  const hasValidDescription = hasRecipeName(recipe);
   const isDescriptionMissing = !hasValidDescription;
   const isOutputFieldsIncomplete = !hasCompleteOutputFields;
   const isTemplateMissing = !hasValidTemplate;
   const isSaveDisabled = loading || !dirty || isDescriptionMissing;
   const isCloneDisabled = loading || isDescriptionMissing;
-  const isGenerateDisabled = loading || isDescriptionMissing || isOutputFieldsIncomplete || isTemplateMissing;
+  const isGenerateDisabled = loading || isFileUploading || isDescriptionMissing || isOutputFieldsIncomplete || isTemplateMissing;
 
   const actionMessages: string[] = [];
   if (!loading && hasValidDescription && !dirty) {
     actionMessages.push("Make a change to enable Save.");
   }
-
-  useEffect(() => {
-    setHasValidDescription((recipe?.description ?? "").trim().length > 0);
-  }, [recipe?.description]);
 
   useEffect(() => {
     const outputs = recipe?.outputsWithWordCount ?? [];
@@ -161,6 +177,8 @@ const GrantRecipesDetailPage: React.FC = () => {
   }, [recipe?.template]);
 
   useEffect(() => {
+    allowNavigationRef.current = false;
+
     if (id) {
       grantRecipeService.getById(id)
         .then(found => {
@@ -192,11 +210,16 @@ const GrantRecipesDetailPage: React.FC = () => {
       notifications.error("Please name your recipe before saving.");
       return;
     }
+    const isNewRecipe = !recipe.id;
     setLoading(true);
     saveRecipe(recipe)
       .then(saved => {
         setRecipe(saved);
         setDirty(false);
+        if (isNewRecipe) {
+          allowNavigationRef.current = true;
+          navigate(`/grant-recipes/${saved.id}`, { replace: true });
+        }
         notifications.success(`${saved.description} has been successfully saved.`)
       })
       .catch(err => {
@@ -216,6 +239,7 @@ const GrantRecipesDetailPage: React.FC = () => {
     setLoading(true);
     cloneRecipe(recipe)
       .then(cloned => {
+        allowNavigationRef.current = true;
         navigate(`/grant-recipes/${cloned.id}`);
         notifications.success(`${recipe.description} has been successfully cloned.`)
       })
@@ -248,6 +272,7 @@ const GrantRecipesDetailPage: React.FC = () => {
       generateProposal(recipe)
         .then(proposal => {
           notifications.success(`Proposal generated for ${recipe.description}.`);
+          allowNavigationRef.current = true;
           navigate(`/grant-proposals/${proposal.id}`);
         })
         .catch((err: unknown) => {
@@ -324,17 +349,22 @@ const GrantRecipesDetailPage: React.FC = () => {
   }
 
   function handleGrantContextsChange(revised: GrantRecipe): void {
-    console.log(revised)
-    // prompt not affected by contexts change
-    setRecipe(revised);
+    const totalTokenCount = (revised.contexts ?? []).reduce(
+      (sum, ctx) => sum + (ctx.tokenCount ?? 0),
+      0
+    );
+    setRecipe({ ...revised, tokenCount: totalTokenCount });
     setDirty(true);
   }
 
   function handleTemplateChange(updated: string): void {
-    grantRecipeService.updatePrompt({ ...recipe, template: updated })
+    const updatedRecipe = { ...recipe, template: updated };
+    setRecipe(updatedRecipe);
+    setDirty(true);
+
+    grantRecipeService.updatePrompt(updatedRecipe)
       .then(revised => {
         setRecipe(revised);
-        setDirty(true);
       })
   }
 
@@ -347,7 +377,7 @@ const GrantRecipesDetailPage: React.FC = () => {
 
     try {
       setIsDeleting(true);
-      await grantRecipeService.delete(recipe.id);
+      await deleteRecipe(recipe.id as string);
       notifications.success("Recipe deleted successfully");
       setOpenDeleteDialog(false);
       navigate('/grant-recipes');
@@ -401,7 +431,7 @@ const GrantRecipesDetailPage: React.FC = () => {
                   }}
                 >
                   <CardHeader title={recipe.description ?? ""}
-                    action={`Token count = ${recipe.tokenCount}`}
+                    action={`Estimated Token Count = ${recipe.tokenCount}`}
                     subheader={`Last updated: ${lastUpdated}`} />
                   <CardContent
                     sx={{
@@ -414,6 +444,7 @@ const GrantRecipesDetailPage: React.FC = () => {
                         onChange={handleInfoChange}
                         showDescriptionError={descriptionTouched && isDescriptionMissing}
                         onDescriptionBlur={() => setDescriptionTouched(true)}
+                        onEdit={() => setDirty(true)}
                       />
                       <TextEditor
                         title={RECIPE_STRINGS.templateTitle}
@@ -424,13 +455,19 @@ const GrantRecipesDetailPage: React.FC = () => {
                         error={templateTouched && isTemplateMissing}
                         helperText={templateTouched && isTemplateMissing ? "Template is required to generate." : " "}
                         onBlur={() => setTemplateTouched(true)}
+                        onEdit={() => setDirty(true)}
                       />
-                      <GrantContextEditor onChange={handleGrantContextsChange} />
+                      <GrantContextEditor
+                        onChange={handleGrantContextsChange}
+                        onEdit={() => setDirty(true)}
+                        onUploadingChange={setIsFileUploading}
+                      />
                       <GrantOutputEditor
                         fields={recipe.outputsWithWordCount}
                         onChange={handleGrantOutputChange}
                         touchedFields={outputFieldTouched}
                         onFieldBlur={handleOutputFieldBlur}
+                        onEdit={() => setDirty(true)}
                       />
                       <PlainTextCard title={RECIPE_STRINGS.promptTitle} helpTopic="Prompt" value={recipe.prompt} />
                     </Stack>
@@ -457,7 +494,7 @@ const GrantRecipesDetailPage: React.FC = () => {
                       <Tooltip title='Click to generate.'>
                         <Box>
                           <SplitButton
-                            options={GrantAiService.models.map(m => ({ label: `Generate with ${m}`, value: m }))}
+                            options={GrantAiService.getInstance().getModels().map(m => ({ label: `Generate with ${m}`, value: m }))}
                             disabled={isGenerateDisabled}
                             onClick={(model: string) => handleGenerate(model)} />
                         </Box>
@@ -471,7 +508,7 @@ const GrantRecipesDetailPage: React.FC = () => {
                         color="error"
                         startIcon={<DeleteIcon />}
                         onClick={handleDeleteClick}
-                        disabled={loading || isDeleting}
+                        disabled={loading || isDeleting || !recipe.id}
                       >
                         Delete
                       </Button>
@@ -485,6 +522,16 @@ const GrantRecipesDetailPage: React.FC = () => {
                     open={openDeleteDialog}
                     handleConfirm={handleDeleteConfirm}
                     handleCancel={handleDeleteCancel}
+                  />
+                  <ConfirmationDialog
+                    title={recipe.id ? "Discard unsaved changes?" : "Discard unsaved recipe?"}
+                    message={recipe.id
+                      ? "You have unsaved changes. Are you sure you want to leave this page?"
+                      : "This recipe has not been saved. Are you sure you want to leave this page?"
+                    }
+                    open={navigationBlocker.state === "blocked"}
+                    handleConfirm={() => navigationBlocker.state === "blocked" && navigationBlocker.proceed()}
+                    handleCancel={() => navigationBlocker.state === "blocked" && navigationBlocker.reset()}
                   />
                 </Card>
               </Stack>

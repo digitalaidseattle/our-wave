@@ -11,7 +11,7 @@ export const DASHBOARD_LABELS = {
     cloneRecipe: "Clone Recipe",
     selectRecentRecipe: "Select a recent Recipe",
     newRecipe: "New Recipe",
-    noProposals: "No proposals yet",
+    noRecipes: "No recipes yet",
 };
 
 export const RECIPE_LABELS = {
@@ -32,6 +32,7 @@ export const RECIPE_DETAIL_LABELS = {
     outputFieldsTitle: "Output Fields",
     outputFieldsSubtext: "Add the questions or sections from the grant application that you want the grant writer to answer.",
     promptTitle: "Prompt (system-generated)",
+    tokenCountUnavailable: "count unavailable",
 };
 
 export const PROPOSAL_LABELS = {

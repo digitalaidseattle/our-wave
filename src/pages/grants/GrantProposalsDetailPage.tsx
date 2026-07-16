@@ -31,16 +31,20 @@ import Markdown from "react-markdown";
 import { PROPOSAL_LABELS } from "../../constants/labels";
 import { LoadingOverlay } from "../../components/LoadingOverlay";
 import { TextEdit } from "../../components/TextEdit";
-import { SUPPORTED_DOWNLOAD_TYPE } from "../../services/ProposalExporter";
+import {
+  SUPPORTED_DOWNLOAD_TYPE,
+  createProposalClipboardPlainText,
+} from "../../services/ProposalExporter";
 import { grantProposalService } from "../../services/grantProposalService";
 import { grantRecipeService } from "../../services/grantRecipeService";
-import { deleteProposal } from "../../transactions/DeleteProposal";
+
 import type { GrantOutput, GrantProposal, GrantRecipe } from "../../types";
 import { DateUtils } from "../../utils/dateUtils";
 
 const LABELS = {
   ...PROPOSAL_LABELS,
   DOWNLOAD_TOOLTIP: "Download proposal",
+  COPY_ALL_TOOLTIP: "Copy the entire proposal with headings and sections preserved.",
 };
 
 function countWords(text: string): number {
@@ -223,7 +227,7 @@ const GrantProposalsDetailPage: React.FC = () => {
       setLoading(true);
       setIsDeleting(true);
 
-      await deleteProposal(proposal, recipe);
+      await grantProposalService.deleteProposal(proposal);
 
       notifications.success(LABELS.DELETE_SUCCESS);
       setOpenDeleteDialog(false);
@@ -295,6 +299,11 @@ const GrantProposalsDetailPage: React.FC = () => {
                       <DownloadOutlined />
                     </IconButton>
                   </Tooltip>
+                  <Tooltip title={LABELS.COPY_ALL_TOOLTIP}>
+                    <Box>
+                      <Clipboard text={createProposalClipboardPlainText(proposal)} />
+                    </Box>
+                  </Tooltip>
                   <Menu
                     id="download-menu"
                     anchorEl={anchorEl}
@@ -309,8 +318,9 @@ const GrantProposalsDetailPage: React.FC = () => {
                     <MenuItem onClick={() => handleDownload("markdown")}>Markdown</MenuItem>
                     <MenuItem onClick={() => handleDownload("text")}>Text</MenuItem>
                     <MenuItem onClick={() => handleDownload("json")}>JSON</MenuItem>
+                    <MenuItem onClick={() => handleDownload("docx")}>MS Word (.docx)</MenuItem>
+                    <MenuItem onClick={() => handleDownload("pdf")}>PDF (.pdf)</MenuItem>
                   </Menu>
-                  <Clipboard text={Object.values(proposal.structuredResponse ?? {}).join("\n")} />
                 </Stack>
               }
             />
