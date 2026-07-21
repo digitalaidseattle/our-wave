@@ -75,7 +75,7 @@ const GrantProposalsListPage: React.FC = () => {
       })
       .catch(error => {
         console.error("Error deleting proposal:", error);
-        notifications.error(LABELS.DELETE_FAILURE + `${error instanceof Error ? error.message : LABELS.UNKNOWN_ERROR}`);
+        notifications.error(LABELS.DELETE_FAILURE, `${error instanceof Error ? error.message : undefined}`);
       })
       .finally(() => setLoading(false));
   }

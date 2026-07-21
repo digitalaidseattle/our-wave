@@ -34,7 +34,7 @@ const GrantRecipesListPage: React.FC = () => {
         .then(data => setRecipes(data))
         .catch(error => {
           console.error("Error fetching grant recipes:", error);
-          notifications.error(`Failed to retrieve grant recipes: ${error instanceof Error ? error.message : "Unknown error"}`);
+          notifications.error("Failed to retrieve grant recipes", `${error instanceof Error ? error.message : "Unknown error"}`);
         })
         .finally(() => setLoading(false));
     };
@@ -65,7 +65,7 @@ const GrantRecipesListPage: React.FC = () => {
       })
       .catch(error => {
         console.error("Error deleting recipe:", error);
-        notifications.error(`Failed to delete recipe: ${error instanceof Error ? error.message : "Unknown error"}`);
+        notifications.error("Failed to delete the recipe:", `${error instanceof Error ? error.message : undefined}`);
       })
       .finally(() => setLoading(false));
   }
@@ -82,7 +82,7 @@ const GrantRecipesListPage: React.FC = () => {
         const inserted = await cloneRecipe(recipe);
         navigate(`/grant-recipes/${inserted.id}`);
       } catch (error) {
-        notifications.error(`Failed to clone the recipe: ${error instanceof Error ? error.message : "Unknown error"}`);
+        notifications.error("Failed to clone the recipe:", `${error instanceof Error ? error.message : undefined}`);
       }
     } else {
       notifications.error("A named recipe must be selected before cloning.");

@@ -224,7 +224,7 @@ const GrantRecipesDetailPage: React.FC = () => {
       })
       .catch(err => {
         console.error(err)
-        notifications.error(`Could not save this recipe. ${err.message}`)
+        notifications.error(`Could not save this recipe.`, `${err.message}`)
       })
       .finally(() => setLoading(false))
   }
@@ -245,7 +245,7 @@ const GrantRecipesDetailPage: React.FC = () => {
       })
       .catch(err => {
         console.error(err)
-        notifications.error(`Could not clone this recipe. ${err.message}`)
+        notifications.error(`Could not clone this recipe.`, `${err.message}`)
       })
       .finally(() => setLoading(false))
   }
@@ -278,9 +278,7 @@ const GrantRecipesDetailPage: React.FC = () => {
         .catch((err: unknown) => {
           console.error(err);
           const errorMessage = err instanceof Error ? err.message : "Unknown error";
-          notifications.error(
-            `Could not generate a proposal for this recipe. ${errorMessage}`
-          )
+          notifications.error(`Could not generate a proposal for this recipe.`, `${errorMessage}`)
         })
         .finally(() => {
           setLoading(false);
@@ -402,7 +400,7 @@ const GrantRecipesDetailPage: React.FC = () => {
     if (recipe.id) {
       grantRecipeService.update(recipe.id, { ...recipe, rating: value })
         .then(updated => setRecipe(updated))
-        .catch(err => notifications.error(`Failed to save rating: ${err instanceof Error ? err.message : 'Unknown error'}`));
+        .catch(err => notifications.error(`Failed to save rating.`, `${err instanceof Error ? err.message : undefined}`));
     }
   }
 
