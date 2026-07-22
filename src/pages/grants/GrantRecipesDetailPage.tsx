@@ -42,6 +42,9 @@ const HELP_DICTIONARY = {
   "Prompt": "This prompt template is filled with text using the input and output parameters.",
   "Outputs": "Guidance for output constraints.",
 }
+const LOADING_MESSAGES = [
+  "AI-generated content may contain inaccuracies or hallucinations.",
+  "Please review all generated content before use."];
 
 export const TextEditor = ({
   title,
@@ -408,7 +411,7 @@ const GrantRecipesDetailPage: React.FC = () => {
 
   return (recipe &&
     <>
-      <LoadingOverlay />
+      <LoadingOverlay messages={LOADING_MESSAGES} />
       <HelpTopicContext.Provider value={{ helpTopic, setHelpTopic }} >
         <GrantRecipeContext.Provider value={{ recipe, setRecipe }} >
           <Breadcrumbs aria-label="breadcrumbs">
