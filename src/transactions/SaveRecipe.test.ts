@@ -1,6 +1,6 @@
 import { User } from "@digitalaidseattle/core";
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { authService } from "../App";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { authService, storageService } from "../App";
 import { DUPLICATE_RECIPE_NAME_ERROR, grantRecipeService } from "../services/grantRecipeService";
 import { GrantRecipe } from "../types";
 import { saveRecipe } from "./SaveRecipe";
@@ -10,11 +10,17 @@ vi.mock("../App", () => ({
     getUser: vi.fn(),
   },
   storageService: {
+    list: vi.fn().mockResolvedValue([]),
+    removeFile: vi.fn(),
     upload: vi.fn(),
   },
 }));
 
 describe("saveRecipe", () => {
+  beforeEach(() => {
+    vi.mocked(storageService.list).mockResolvedValue([]);
+  });
+
   afterEach(() => {
     vi.restoreAllMocks();
   });
