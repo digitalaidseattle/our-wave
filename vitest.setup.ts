@@ -1,5 +1,4 @@
 
-import { firebaseClient, FirestoreService } from '@digitalaidseattle/firebase';
 import { vi } from 'vitest';
 
 vi.mock('@digitalaidseattle/firebase', () => {

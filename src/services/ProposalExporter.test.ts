@@ -1,6 +1,11 @@
 import { describe, expect, it, vi, afterEach } from "vitest";
 import type { GrantProposal } from "../types";
-import { ProposalExporter, type SUPPORTED_DOWNLOAD_TYPE } from "./ProposalExporter";
+import {
+  createMarkdownContent,
+  createProposalClipboardPlainText,
+  ProposalExporter,
+  type SUPPORTED_DOWNLOAD_TYPE,
+} from "./ProposalExporter";
 
 const buildProposal = (): GrantProposal => ({
   id: "proposal-1",
@@ -38,6 +43,26 @@ async function readBlobBuffer(blob: Blob): Promise<Buffer> {
 }
 
 describe("ProposalExporter", () => {
+  it("builds markdown content with structured proposal sections", () => {
+    const proposal = buildProposal();
+    const markdown = createMarkdownContent(proposal);
+
+    expect(markdown).toContain("# Community Garden Proposal");
+    expect(markdown).toContain("## Summary");
+    expect(markdown).toContain("## Impact");
+    expect(markdown).toContain("Build planters");
+  });
+
+  it("builds clipboard plain text with visible structure", () => {
+    const proposal = buildProposal();
+    const plainText = createProposalClipboardPlainText(proposal);
+
+    expect(plainText).toContain("Community Garden Proposal");
+    expect(plainText).toContain("Summary");
+    expect(plainText).toContain("Impact");
+    expect(plainText).toContain("Build planters");
+  });
+
   it.each([
     ["markdown", "Community Garden Proposal.md"],
     ["text", "Community Garden Proposal.txt"],

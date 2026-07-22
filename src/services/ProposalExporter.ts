@@ -15,15 +15,38 @@ type ExportBlock =
     | { type: "paragraph"; text: string }
     | { type: "blank"; text: string };
 
-function createMarkdownContent(proposal: GrantProposal): string {
+type ProposalSection = {
+    name: string;
+    value: string;
+};
+
+function getProposalSections(proposal: GrantProposal): ProposalSection[] {
+    return Object.entries(proposal.structuredResponse ?? {}).map(([name, value]) => ({
+        name,
+        value,
+    }));
+}
+
+export function createMarkdownContent(proposal: GrantProposal): string {
     let data = `# ${proposal.name}\n\n`;
 
-    Object.entries(proposal.structuredResponse ?? {}).forEach(entry => {
-        data += `## ${entry[0]}\n\n`;
-        data += entry[1] + "\n\n";
+    getProposalSections(proposal).forEach((entry) => {
+        data += `## ${entry.name}\n\n`;
+        data += `${entry.value}\n\n`;
     });
 
     return data;
+}
+
+export function createProposalClipboardPlainText(proposal: GrantProposal): string {
+    const sections = getProposalSections(proposal);
+    const lines = [proposal.name, ""];
+
+    sections.forEach((section) => {
+        lines.push(section.name, "", section.value, "");
+    });
+
+    return lines.join("\n").trimEnd();
 }
 
 function parseExportBlocks(content: string): ExportBlock[] {
@@ -72,14 +95,7 @@ class TextExporter extends AbstractExporter {
         return 'txt';
     }
     async createDownloadBlob(proposal: GrantProposal): Promise<Blob> {
-        let data = `${proposal.name}\n\n`;
-
-        Object.entries(proposal.structuredResponse ?? []).forEach(entry => {
-            data += entry[0] + "\n\n";
-            data += entry[1] + "\n\n";
-        });
-
-        return new Blob([data], { type: 'text/plain;charset=utf-8' });
+        return new Blob([createProposalClipboardPlainText(proposal)], { type: 'text/plain;charset=utf-8' });
     }
 }
 
