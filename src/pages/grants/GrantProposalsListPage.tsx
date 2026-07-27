@@ -24,6 +24,7 @@ import { PROPOSAL_LABELS } from "../../constants/labels";
 const LABELS = PROPOSAL_LABELS;
 
 const GrantProposalsListPage: React.FC = () => {
+  const grantProposalService = GrantProposalService.getInstance();
   const notifications = useNotifications();
 
   const navigate = useNavigate();
