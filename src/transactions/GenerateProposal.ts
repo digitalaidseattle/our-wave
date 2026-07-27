@@ -12,6 +12,18 @@ import { grantRecipeService } from "../services/grantRecipeService";
 import { GrantProposal, GrantRecipe } from "../types";
 import { requireRecipeName, requireUniqueRecipeConfigFields } from "../utils/recipeValidation";
 
+// Format: "6/22 2:27:09 PM"
+function formatProposalDate(date: Date): string {
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    const hours = date.getHours();
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    const seconds = String(date.getSeconds()).padStart(2, "0");
+    const ampm = hours >= 12 ? "PM" : "AM";
+    const hour12 = hours % 12 || 12;
+    return `${month}/${day} ${hour12}:${minutes}:${seconds} ${ampm}`;
+}
+
 export async function generateProposal(recipe: GrantRecipe): Promise<GrantProposal> {
     requireRecipeName(recipe, "generate a proposal");
     requireUniqueRecipeConfigFields(recipe);
@@ -56,10 +68,19 @@ export async function generateProposal(recipe: GrantRecipe): Promise<GrantPropos
     );
 
 
+    // Build a unique proposal name using recipe description + generation timestamp.
+    // Try once — if the name already exists, fail fast.
+    const recipeId = String(savedRecipe.id);
+    const proposalName = `${savedRecipe.description} ${formatProposalDate(new Date())}`;
+
+    if (await GrantProposalService.getInstance().proposalNameExists(proposalName)) {
+        throw new Error(`A proposal named "${proposalName}" already exists. Please try again in a moment.`);
+    }
+
     const proposal = {
         ...GrantProposalService.getInstance().empty(),
-        name: `${savedRecipe.description} (${(savedRecipe.lastSubmitted as Date).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })})`,
-        grantRecipeId: String(savedRecipe.id),
+        name: proposalName,
+        grantRecipeId: recipeId,
         structuredResponse: JSON.parse(response.text!),
         rating: null,
         totalTokenCount: response.usageMetadata ? response.usageMetadata.totalTokenCount : null,
