@@ -29,9 +29,11 @@ vi.mock("../services/grantRecipeService", () => ({
 }));
 
 vi.mock("../services/grantProposalService", () => ({
-  grantProposalService: {
-    empty: () => ({}),
-    insert: mocks.proposalInsert,
+  GrantProposalService: {
+    getInstance: vi.fn(() => ({
+      empty: () => ({}),
+      insert: mocks.proposalInsert,
+    })),
   },
 }));
 

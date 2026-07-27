@@ -7,6 +7,15 @@ import { ProposalExporter, SUPPORTED_DOWNLOAD_TYPE } from "./ProposalExporter";
 
 class GrantProposalService extends FirestoreService<GrantProposal> {
 
+  private static instance: GrantProposalService;
+
+  static getInstance(): GrantProposalService {
+    if (!GrantProposalService.instance) {
+      GrantProposalService.instance = new GrantProposalService();
+    }
+    return GrantProposalService.instance;
+  }
+
   proposalExporter = new ProposalExporter();
 
   constructor() {
@@ -101,4 +110,4 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
 
 
 
-export const grantProposalService = new GrantProposalService();
+export { GrantProposalService };
