@@ -46,7 +46,7 @@ const GrantProposalsListPage: React.FC = () => {
   const fetchProposals = async () => {
     try {
       setLoading(true);
-      setProposals(await GrantProposalService.getInstance().getAll())
+      setProposals(await grantProposalService.getAll())
     } catch (error) {
       console.error("Error fetching grant proposals:", error);
       setProposals([]);
@@ -69,7 +69,7 @@ const GrantProposalsListPage: React.FC = () => {
     });
 
     Promise
-      .all(selectedProposals.map((proposal) => GrantProposalService.getInstance().deleteProposal(proposal)))
+      .all(selectedProposals.map((proposal) => grantProposalService.deleteProposal(proposal)))
       .then(() => {
         fetchProposals();
         notifications.success(LABELS.DELETE_SUCCESS);
@@ -117,8 +117,8 @@ const GrantProposalsListPage: React.FC = () => {
   async function handleDownload() {
     setLoading(true);
     const proposalId = selectedIds[0];
-    const proposal = await GrantProposalService.getInstance().getById(proposalId);
-    await GrantProposalService.getInstance().download(proposal, "markdown");
+    const proposal = await grantProposalService.getById(proposalId);
+    await grantProposalService.download(proposal, "markdown");
     setLoading(false);
   }
 
