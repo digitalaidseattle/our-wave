@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { authService, storageService } from "../App";
 import { DUPLICATE_RECIPE_NAME_ERROR, grantRecipeService } from "../services/grantRecipeService";
 import { GrantRecipe } from "../types";
+import { DUPLICATE_OUTPUT_FIELD_ERROR, DUPLICATE_PROJECT_CONTEXT_ERROR } from "../utils/recipeValidation";
 import { saveRecipe } from "./SaveRecipe";
 
 vi.mock("../App", () => ({
@@ -52,6 +53,44 @@ describe("saveRecipe", () => {
     expect(generatePromptSpy).not.toHaveBeenCalled();
     expect(insertSpy).not.toHaveBeenCalled();
     expect(updateSpy).not.toHaveBeenCalled();
+  });
+
+  it("blocks saving a recipe with duplicate output field names before service calls", async () => {
+    const recipe = {
+      description: "Unique Recipe",
+      contexts: [],
+      outputsWithWordCount: [
+        { name: "Summary", maxWords: 500, unit: "words" },
+        { name: " summary ", maxWords: 250, unit: "words" },
+      ],
+    } as unknown as GrantRecipe;
+
+    const descriptionExistsSpy = vi.spyOn(grantRecipeService, "descriptionExists");
+    const generatePromptSpy = vi.spyOn(grantRecipeService, "generatePromptWithInputs");
+
+    await expect(saveRecipe(recipe)).rejects.toThrow(DUPLICATE_OUTPUT_FIELD_ERROR);
+
+    expect(descriptionExistsSpy).not.toHaveBeenCalled();
+    expect(generatePromptSpy).not.toHaveBeenCalled();
+  });
+
+  it("blocks saving a recipe with duplicate project context names before service calls", async () => {
+    const recipe = {
+      description: "Unique Recipe",
+      contexts: [
+        { type: "application/pdf", name: "Project.pdf", value: "" },
+        { type: "application/pdf", name: " project.pdf ", value: "" },
+      ],
+      outputsWithWordCount: [],
+    } as unknown as GrantRecipe;
+
+    const descriptionExistsSpy = vi.spyOn(grantRecipeService, "descriptionExists");
+    const generatePromptSpy = vi.spyOn(grantRecipeService, "generatePromptWithInputs");
+
+    await expect(saveRecipe(recipe)).rejects.toThrow(DUPLICATE_PROJECT_CONTEXT_ERROR);
+
+    expect(descriptionExistsSpy).not.toHaveBeenCalled();
+    expect(generatePromptSpy).not.toHaveBeenCalled();
   });
 
   it("saves a recipe when the description is unique", async () => {

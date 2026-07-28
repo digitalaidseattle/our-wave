@@ -25,7 +25,13 @@ import { generateProposal } from "../../transactions/GenerateProposal";
 import { saveRecipe } from "../../transactions/SaveRecipe";
 import { GrantOutput, GrantRecipe, Timestamp } from "../../types";
 import { DateUtils } from "../../utils/dateUtils";
-import { hasRecipeName } from "../../utils/recipeValidation";
+import {
+  DUPLICATE_OUTPUT_FIELD_ERROR,
+  DUPLICATE_PROJECT_CONTEXT_ERROR,
+  getDuplicateOutputFieldNameIndexes,
+  getDuplicateProjectContextNameIndexes,
+  hasRecipeName
+} from "../../utils/recipeValidation";
 import { GrantAiService } from "./grantAiService";
 import { GrantContextEditor } from "./GrantContextEditor";
 import { GrantInfoEditor } from "./GrantInfoEditor";
@@ -156,9 +162,13 @@ const GrantRecipesDetailPage: React.FC = () => {
   const isDescriptionMissing = !hasValidDescription;
   const isOutputFieldsIncomplete = !hasCompleteOutputFields;
   const isTemplateMissing = !hasValidTemplate;
-  const isSaveDisabled = loading || !dirty || isDescriptionMissing;
+  const duplicateOutputFieldIndexes = getDuplicateOutputFieldNameIndexes(recipe.outputsWithWordCount ?? []);
+  const duplicateProjectContextIndexes = getDuplicateProjectContextNameIndexes(recipe.contexts ?? []);
+  const hasDuplicateOutputFields = duplicateOutputFieldIndexes.size > 0;
+  const hasDuplicateProjectContexts = duplicateProjectContextIndexes.size > 0;
+  const isSaveDisabled = loading || !dirty || isDescriptionMissing || hasDuplicateOutputFields || hasDuplicateProjectContexts;
   const isCloneDisabled = loading || isDescriptionMissing;
-  const isGenerateDisabled = loading || isFileUploading || isDescriptionMissing || isOutputFieldsIncomplete || isTemplateMissing;
+  const isGenerateDisabled = loading || isFileUploading || isDescriptionMissing || isOutputFieldsIncomplete || isTemplateMissing || hasDuplicateOutputFields || hasDuplicateProjectContexts;
   const descriptionError = duplicateDescriptionError
     ?? (descriptionTouched && isDescriptionMissing ? "Description is required." : undefined);
 
@@ -215,6 +225,14 @@ const GrantRecipesDetailPage: React.FC = () => {
       notifications.error("Please name your recipe before saving.");
       return;
     }
+    if (hasDuplicateOutputFields) {
+      notifications.error(DUPLICATE_OUTPUT_FIELD_ERROR);
+      return;
+    }
+    if (hasDuplicateProjectContexts) {
+      notifications.error(DUPLICATE_PROJECT_CONTEXT_ERROR);
+      return;
+    }
     const isNewRecipe = !recipe.id;
     setLoading(true);
     saveRecipe(recipe)
@@ -269,6 +287,14 @@ const GrantRecipesDetailPage: React.FC = () => {
     if (!hasCompleteOutputFields) {
       markInvalidOutputFieldsTouched();
       notifications.error("Please complete output fields before generating.");
+      return;
+    }
+    if (hasDuplicateOutputFields) {
+      notifications.error(DUPLICATE_OUTPUT_FIELD_ERROR);
+      return;
+    }
+    if (hasDuplicateProjectContexts) {
+      notifications.error(DUPLICATE_PROJECT_CONTEXT_ERROR);
       return;
     }
     if (!hasValidTemplate) {
@@ -474,11 +500,13 @@ const GrantRecipesDetailPage: React.FC = () => {
                         onChange={handleGrantContextsChange}
                         onEdit={() => setDirty(true)}
                         onUploadingChange={setIsFileUploading}
+                        duplicateContextIndexes={duplicateProjectContextIndexes}
                       />
                       <GrantOutputEditor
                         fields={recipe.outputsWithWordCount}
                         onChange={handleGrantOutputChange}
                         touchedFields={outputFieldTouched}
+                        duplicateFieldIndexes={duplicateOutputFieldIndexes}
                         onFieldBlur={handleOutputFieldBlur}
                         onEdit={() => setDirty(true)}
                       />
