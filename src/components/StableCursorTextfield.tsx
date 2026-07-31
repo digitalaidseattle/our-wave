@@ -11,9 +11,14 @@ export const StableCursorTextField = ({
     onChange,
     onBlur,
     onEdit,
+    onDraftChange,
     ...props
-}: React.ComponentProps<typeof TextField> & { onEdit?: () => void }) => {
+}: React.ComponentProps<typeof TextField> & {
+    onEdit?: () => void,
+    onDraftChange?: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void
+}) => {
     const [localValue, setLocalValue] = useState<unknown>('');
+    const hasLocalEditRef = React.useRef(false);
 
     useEffect(() => {
         setLocalValue(value);
@@ -21,12 +26,15 @@ export const StableCursorTextField = ({
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         setLocalValue(e.target.value);
+        hasLocalEditRef.current = true;
         onEdit?.();
+        onDraftChange?.(e);
     };
 
     const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        if (localValue !== value) {
+        if (hasLocalEditRef.current || localValue !== value) {
             onChange?.(e as unknown as React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>);
+            hasLocalEditRef.current = false;
         }
         onBlur?.(e);
     };

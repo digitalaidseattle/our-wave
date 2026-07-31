@@ -20,12 +20,14 @@ import { RECIPE_STRINGS } from '../../constants/grantRecipe';
 export const GrantOutputEditor = ({
   fields,
   onChange,
+  onDraftChange,
   touchedFields = {},
   onFieldBlur,
   onEdit
 }: {
   fields: GrantOutput[],
   onChange: (updated: GrantOutput[]) => void,
+  onDraftChange?: (updated: GrantOutput[]) => void,
   touchedFields?: Record<string, boolean>,
   onFieldBlur?: (index: number, field: 'name' | 'maxWords') => void,
   onEdit?: () => void
@@ -43,6 +45,12 @@ export const GrantOutputEditor = ({
     const newFields = [...outputFields];
     newFields[index] = { ...newFields[index], [field]: value };
     onChange(newFields);
+  };
+
+  const handleOutputFieldDraftChange = (index: number, field: 'name' | 'maxWords', value: string | number) => {
+    const newFields = [...outputFields];
+    newFields[index] = { ...newFields[index], [field]: value };
+    (onDraftChange ?? onChange)(newFields);
   };
 
   const handleOutputUnitToggle = (index: number) => {
@@ -104,6 +112,7 @@ export const GrantOutputEditor = ({
                 helperText={Boolean(touchedFields[`name-${index}`]) && field.name.trim().length === 0 ? "Field name is required." : " "}
                 onBlur={() => onFieldBlur?.(index, 'name')}
                 onEdit={onEdit}
+                onDraftChange={(e) => handleOutputFieldDraftChange(index, 'name', e.target.value)}
                 onChange={(e) => handleOutputFieldChange(index, 'name', e.target.value)}
               />
               <StableCursorTextField
@@ -115,6 +124,7 @@ export const GrantOutputEditor = ({
                 helperText={Boolean(touchedFields[`maxWords-${index}`]) && Number(field.maxWords) <= 0 ? "Enter a value greater than 0." : " "}
                 onBlur={() => onFieldBlur?.(index, 'maxWords')}
                 onEdit={onEdit}
+                onDraftChange={(e) => handleOutputFieldDraftChange(index, 'maxWords', parseInt(e.target.value) || 0)}
                 onChange={(e) => handleOutputFieldChange(index, 'maxWords', parseInt(e.target.value) || 0)}
               />
               <ButtonGroup variant="contained" aria-label="Basic button group">

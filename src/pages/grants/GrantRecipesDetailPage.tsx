@@ -307,6 +307,11 @@ const GrantRecipesDetailPage: React.FC = () => {
     }
   }
 
+  function handleGrantOutputDraftChange(updated: GrantOutput[]): void {
+    setRecipe({ ...recipe, outputsWithWordCount: updated });
+    setDirty(true);
+  }
+
   function handleOutputFieldBlur(index: number, field: 'name' | 'maxWords'): void {
     const touchedKey = `${field}-${index}`;
     const nextTouched = {
@@ -465,6 +470,7 @@ const GrantRecipesDetailPage: React.FC = () => {
                       <GrantOutputEditor
                         fields={recipe.outputsWithWordCount}
                         onChange={handleGrantOutputChange}
+                        onDraftChange={handleGrantOutputDraftChange}
                         touchedFields={outputFieldTouched}
                         onFieldBlur={handleOutputFieldBlur}
                         onEdit={() => setDirty(true)}

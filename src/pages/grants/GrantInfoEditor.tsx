@@ -122,6 +122,7 @@ export const GrantInfoEditor = ({
               helperText={showDescriptionError ? "Description is required." : " "}
               onBlur={onDescriptionBlur}
               onEdit={onEdit}
+              onDraftChange={(evt) => handleDescriptionChange(evt.target.value)}
               onChange={(evt) => handleDescriptionChange(evt.target.value)} />
           </Grid>
           <Grid size={2}><Typography>Tags</Typography></Grid>
