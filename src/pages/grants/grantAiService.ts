@@ -74,22 +74,24 @@ class GrantAiService {
 
     async createParts(contexts: GrantContext[]): Promise<Part[]> {
         const parts = await Promise.all(contexts.map(async (gc, idx) => {
-            if (gc.type === 'url') {
-                if (!gc.value && gc.name) {
-                    const html = await urlContextService.fetchPageText(gc.name);
-                    return createPartFromText(html);
+            switch (gc.type) {
+                case 'url':
+                    return gc.value ? this.createPartFromURL(gc.value) : null;
+                case 'text':
+                    return gc.value ? createPartFromText(gc.value) : null;
+                default: {
+                    // Any other type is a file MIME type (e.g. application/pdf)
+                    const uri = await storageService.getDownloadURL(`${CLOUD_FOLDER}/${gc.name}`);
+                    return createPartFromUri(uri, contexts[idx].type);
                 }
-                return gc.value ? createPartFromText(gc.value) : null;
             }
-
-            if (gc.type === 'text') {
-                return gc.value ? createPartFromText(gc.value) : null;
-            }
-
-            const uri = await storageService.getDownloadURL(`${CLOUD_FOLDER}/${gc.name}`);
-            return createPartFromUri(uri, contexts[idx].type);
         }));
         return parts.filter((part): part is Part => part !== null);
+    }
+
+    async createPartFromURL(value: string): Promise<Part> {
+        const html = await urlContextService.fetchPageText(value);
+        return createPartFromText(html);
     }
 
     createSchema(schemaParams: string[]): any {
