@@ -9,8 +9,8 @@ import { authService } from "../App";
 import { GrantAiService } from "../pages/grants/grantAiService";
 import { GrantProposalService } from "../services/grantProposalService";
 import { grantRecipeService } from "../services/grantRecipeService";
-import { GrantProposal, GrantRecipe } from "../types";
 import { requireRecipeName, requireUniqueRecipeConfigFields } from "../utils/recipeValidation";
+import { GrantProposal, GrantRecipe } from "../types";
 
 export async function generateProposal(recipe: GrantRecipe): Promise<GrantProposal> {
     requireRecipeName(recipe, "generate a proposal");
