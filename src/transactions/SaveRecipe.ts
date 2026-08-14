@@ -6,7 +6,7 @@
  */
 
 import { authService, storageService } from "../App";
-import { grantRecipeService } from "../services/grantRecipeService";
+import { DUPLICATE_RECIPE_NAME_ERROR, grantRecipeService } from "../services/grantRecipeService";
 import { GrantContext, GrantRecipe } from "../types";
 import { requireRecipeName } from "../utils/recipeValidation";
 
@@ -51,11 +51,18 @@ export async function saveRecipe(recipe: GrantRecipe): Promise<GrantRecipe> {
 
     return authService.getUser()
         .then((async user => {
+            const description = recipe.description.trim();
+            const hasDuplicateDescription = await grantRecipeService.descriptionExists(description, recipe.id);
+            if (hasDuplicateDescription) {
+                throw new Error(DUPLICATE_RECIPE_NAME_ERROR);
+            }
+
             const prompt = await grantRecipeService.generatePromptWithInputs(recipe);
             const contexts = await organizeContextsFiles(recipe);
 
             const newRecipe = {
                 ...recipe,
+                description,
                 contexts: contexts,
                 prompt: prompt
             }

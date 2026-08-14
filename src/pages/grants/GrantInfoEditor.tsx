@@ -64,13 +64,13 @@ const TagButton = ({ onChange }: { onChange: (newValue: string | null) => void }
 export const GrantInfoEditor = ({
   recipe,
   onChange,
-  showDescriptionError = false,
+  descriptionError,
   onDescriptionBlur,
   onEdit
 }: {
   recipe: GrantRecipe,
   onChange: (updated: GrantRecipe) => void,
-  showDescriptionError?: boolean,
+  descriptionError?: string,
   onDescriptionBlur?: () => void,
   onEdit?: () => void
 }) => {
@@ -118,8 +118,8 @@ export const GrantInfoEditor = ({
               placeholder="Name your recipe"
               autoFocus
               required
-              error={showDescriptionError}
-              helperText={showDescriptionError ? "Description is required." : " "}
+              error={Boolean(descriptionError)}
+              helperText={descriptionError ?? " "}
               onBlur={onDescriptionBlur}
               onEdit={onEdit}
               onChange={(evt) => handleDescriptionChange(evt.target.value)} />

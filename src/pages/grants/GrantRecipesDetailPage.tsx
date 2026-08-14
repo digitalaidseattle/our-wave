@@ -19,7 +19,7 @@ import { HelpTopicContext } from "../../components/HelpTopicContext";
 import { LoadingOverlay } from "../../components/LoadingOverlay";
 import { SplitButton } from "../../components/SplitButton";
 import { StableCursorTextField } from "../../components/StableCursorTextfield";
-import { grantRecipeService } from "../../services/grantRecipeService";
+import { DUPLICATE_RECIPE_NAME_ERROR, grantRecipeService } from "../../services/grantRecipeService";
 import { cloneRecipe } from "../../transactions/CloneRecipe";
 import { generateProposal } from "../../transactions/GenerateProposal";
 import { saveRecipe } from "../../transactions/SaveRecipe";
@@ -131,6 +131,7 @@ const GrantRecipesDetailPage: React.FC = () => {
   const [hasCompleteOutputFields, setHasCompleteOutputFields] = useState<boolean>(false);
   const [hasValidTemplate, setHasValidTemplate] = useState<boolean>(false);
   const [descriptionTouched, setDescriptionTouched] = useState<boolean>(false);
+  const [duplicateDescriptionError, setDuplicateDescriptionError] = useState<string | null>(null);
   const [templateTouched, setTemplateTouched] = useState<boolean>(false);
   const [outputFieldTouched, setOutputFieldTouched] = useState<Record<string, boolean>>({});
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
@@ -158,6 +159,8 @@ const GrantRecipesDetailPage: React.FC = () => {
   const isSaveDisabled = loading || !dirty || isDescriptionMissing;
   const isCloneDisabled = loading || isDescriptionMissing;
   const isGenerateDisabled = loading || isFileUploading || isDescriptionMissing || isOutputFieldsIncomplete || isTemplateMissing;
+  const descriptionError = duplicateDescriptionError
+    ?? (descriptionTouched && isDescriptionMissing ? "Description is required." : undefined);
 
   const actionMessages: string[] = [];
   if (!loading && hasValidDescription && !dirty) {
@@ -185,6 +188,7 @@ const GrantRecipesDetailPage: React.FC = () => {
           setRecipe(found);
           setDirty(false);
           setDescriptionTouched(false);
+          setDuplicateDescriptionError(null);
           setTemplateTouched(false);
           setOutputFieldTouched({});
         });
@@ -192,6 +196,7 @@ const GrantRecipesDetailPage: React.FC = () => {
       // Initialize new recipe with default blank fields
       setRecipe(grantRecipeService.empty());
       setDescriptionTouched(false);
+      setDuplicateDescriptionError(null);
       setTemplateTouched(false);
       setOutputFieldTouched({});
     }
@@ -224,6 +229,11 @@ const GrantRecipesDetailPage: React.FC = () => {
       })
       .catch(err => {
         console.error(err)
+        if (err instanceof Error && err.message === DUPLICATE_RECIPE_NAME_ERROR) {
+          setDescriptionTouched(true);
+          setDuplicateDescriptionError(DUPLICATE_RECIPE_NAME_ERROR);
+          return;
+        }
         notifications.error(`Could not save this recipe. ${err.message}`)
       })
       .finally(() => setLoading(false))
@@ -344,6 +354,9 @@ const GrantRecipesDetailPage: React.FC = () => {
   }
 
   function handleInfoChange(updated: GrantRecipe): void {
+    if (updated.description !== recipe.description) {
+      setDuplicateDescriptionError(null);
+    }
     setRecipe(updated);
     setDirty(true);
   }
@@ -442,7 +455,7 @@ const GrantRecipesDetailPage: React.FC = () => {
                       <GrantInfoEditor
                         recipe={recipe}
                         onChange={handleInfoChange}
-                        showDescriptionError={descriptionTouched && isDescriptionMissing}
+                        descriptionError={descriptionError}
                         onDescriptionBlur={() => setDescriptionTouched(true)}
                         onEdit={() => setDirty(true)}
                       />
