@@ -8,7 +8,7 @@
 import { authService, storageService } from "../App";
 import { DUPLICATE_RECIPE_NAME_ERROR, grantRecipeService } from "../services/grantRecipeService";
 import { GrantContext, GrantRecipe } from "../types";
-import { requireRecipeName } from "../utils/recipeValidation";
+import { requireRecipeName, requireUniqueRecipeConfigFields } from "../utils/recipeValidation";
 
 const GLOUD_FOLDER = import.meta.env.VITE_FIREBASE_STORAGE_FOLDER;
 
@@ -48,6 +48,7 @@ async function organizeContextsFiles(recipe: GrantRecipe): Promise<GrantContext[
 
 export async function saveRecipe(recipe: GrantRecipe): Promise<GrantRecipe> {
     requireRecipeName(recipe, "save");
+    requireUniqueRecipeConfigFields(recipe);
 
     return authService.getUser()
         .then((async user => {

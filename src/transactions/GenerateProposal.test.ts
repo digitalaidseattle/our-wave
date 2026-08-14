@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { GrantProposal, GrantRecipe } from "../types";
+import { DUPLICATE_OUTPUT_FIELD_ERROR, DUPLICATE_PROJECT_CONTEXT_ERROR } from "../utils/recipeValidation";
 
 const mocks = vi.hoisted(() => ({
   getUser: vi.fn(),
@@ -106,5 +107,31 @@ describe("generateProposal", () => {
     await expect(generateProposal({ ...namedRecipe(), outputsWithWordCount: [] })).rejects.toThrow(
       "Recipe is missing output fields"
     );
+  });
+
+  it("rejects duplicate output field names before saving or calling AI", async () => {
+    await expect(generateProposal({
+      ...namedRecipe(),
+      outputsWithWordCount: [
+        { name: "Summary", maxWords: 3, unit: "words" },
+        { name: " summary ", maxWords: 10, unit: "characters" },
+      ],
+    })).rejects.toThrow(DUPLICATE_OUTPUT_FIELD_ERROR);
+
+    expect(mocks.recipeUpdate).not.toHaveBeenCalled();
+    expect(mocks.parameterizedQuery).not.toHaveBeenCalled();
+  });
+
+  it("rejects duplicate project context names before saving or calling AI", async () => {
+    await expect(generateProposal({
+      ...namedRecipe(),
+      contexts: [
+        { type: "application/pdf", name: "Project.pdf", value: "" },
+        { type: "application/pdf", name: " project.pdf ", value: "" },
+      ],
+    })).rejects.toThrow(DUPLICATE_PROJECT_CONTEXT_ERROR);
+
+    expect(mocks.recipeUpdate).not.toHaveBeenCalled();
+    expect(mocks.parameterizedQuery).not.toHaveBeenCalled();
   });
 });
