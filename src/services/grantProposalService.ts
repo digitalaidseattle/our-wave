@@ -1,5 +1,6 @@
 import type { Identifier, User } from "@digitalaidseattle/core";
 import { FirestoreService } from "@digitalaidseattle/firebase";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import { authService } from "../App";
 import { FIRESTORE_COLLECTIONS } from "../constants/firestoreCollections";
 import type { GrantProposal } from "../types";
@@ -96,6 +97,15 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
 
   async download(proposal: GrantProposal, downloadType: SUPPORTED_DOWNLOAD_TYPE): Promise<void> {
     return this.proposalExporter.run(proposal, downloadType);
+  }
+
+  async proposalNameExists(name: string): Promise<boolean> {
+    const q = query(
+      collection(this.db, FIRESTORE_COLLECTIONS.grantProposals),
+      where("name", "==", name)
+    );
+    const snapshot = await getDocs(q);
+    return !snapshot.empty;
   }
 
   async deleteProposal(proposal: Pick<GrantProposal, "id" | "grantRecipeId">): Promise<void> {
