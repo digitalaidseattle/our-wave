@@ -47,13 +47,6 @@ const LABELS = {
   COPY_ALL_TOOLTIP: "Copy the entire proposal with headings and sections preserved.",
 };
 
-function countWords(text: string): number {
-  return text.trim() ? text.trim().split(/\s+/).length : 0;
-}
-
-function countCharacters(text: string): number {
-  return text.length;
-}
 
 const GrantProposalsDetailPage: React.FC = () => {
   const notifications = useNotifications();
@@ -108,12 +101,30 @@ const GrantProposalsDetailPage: React.FC = () => {
   }, [id, setLoading]);
 
   useEffect(() => {
-    setOutputs(recipe?.outputsWithWordCount ?? []);
-  }, [recipe]);
+    // TODO when all proposals have outputs, the recipe check may be removed.
+    if (proposal && recipe) {
+      setOutputs(proposal.outputs ?? recipe.outputsWithWordCount ?? []);
+    }
+  }, [recipe, proposal]);
 
   useEffect(() => {
-    setRating(proposal?.rating ?? 0);
-  }, [proposal?.rating]);
+    if (proposal) {
+      setRating(proposal.rating ?? 0);
+    }
+  }, [proposal]);
+
+  function countWords(text: string): number {
+    if (text) {
+      return text.trim() ? text.trim().split(/\s+/).length : 0;
+    }
+    console.warn('countWords: Text not available', proposal?.name)
+    return 0;
+  }
+
+  function countCharacters(text: string): number {
+    return text? text.length : 0;
+  }
+
 
   const responses: {
     name: string;

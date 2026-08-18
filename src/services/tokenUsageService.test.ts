@@ -15,6 +15,7 @@ const buildProposal = (overrides: Partial<GrantProposal>): GrantProposal => ({
   totalTokenCount: 0,
   model: "",
   ...overrides,
+  outputs: []
 });
 
 describe("tokenUsageService", () => {
