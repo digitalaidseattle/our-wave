@@ -173,7 +173,7 @@ const GrantRecipesDetailPage: React.FC = () => {
   const isCloneDisabled = loading || isDescriptionMissing;
   const isGenerateDisabled = loading || isFileUploading || isDescriptionMissing || isOutputFieldsIncomplete || isTemplateMissing || hasDuplicateOutputFields || hasDuplicateProjectContexts;
   const descriptionError = duplicateDescriptionError
-    ?? (descriptionTouched && isDescriptionMissing ? "Description is required." : undefined);
+    ?? (descriptionTouched && isDescriptionMissing ? "Title is required." : undefined);
 
   const actionMessages: string[] = [];
   if (!loading && hasValidDescription && !dirty) {
