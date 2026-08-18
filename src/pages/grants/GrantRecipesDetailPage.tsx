@@ -43,7 +43,7 @@ const HELP_DRAWER_WIDTH = 300;
 const HELP_TITLE = "Our Wave";
 const HELP_DICTIONARY = {
   "Info": "Change the description for easier tracking in the application.  A rating change can aid in selecting better recipes.  Tags can help categorize recipes.",
-  "Contexts": "Information about your organization and project that will be included in the project conext.",
+  "Contexts": "Information about your organization and project that will be included in the project context.",
   "Template": "This template is filled with text and combined with the output parameters.",
   "Prompt": "This prompt template is filled with text using the input and output parameters.",
   "Outputs": "Guidance for output constraints.",
