@@ -1,11 +1,14 @@
 import type { Identifier, User } from "@digitalaidseattle/core";
 import { FirestoreService } from "@digitalaidseattle/firebase";
+import { collection, getDocs, limit, query, QueryConstraint, where } from "firebase/firestore";
 import Handlebars from "handlebars";
 import { authService } from "../App";
 import { FIRESTORE_COLLECTIONS } from "../constants/firestoreCollections";
 import type { GrantRecipe } from "../types";
 import { requireRecipeName } from "../utils/recipeValidation";
 import { SettingsService } from "./settingsService";
+
+export const DUPLICATE_RECIPE_NAME_ERROR = "Duplicate recipe name already exists.";
 
 class GrantRecipeService extends FirestoreService<GrantRecipe> {
 
@@ -56,12 +59,16 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
     }
 
     const now = new Date();
+    const description = entity.description.trim();
+
+    await this.assertUniqueDescription(description);
 
     // Compile prompt from template before saving
     const prompt = await this.generatePromptWithInputs(entity);
 
     const cleaned = {
       ...entity,
+      description,
       contexts: (entity.contexts ?? []).map(gc => {
         const clone = { ...gc }
         delete clone.file;
@@ -110,9 +117,13 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
       throw new Error("No valid user found.");
     }
 
+    const description = updatedFields.description.trim();
+
+    await this.assertUniqueDescription(description, entityId);
 
     const cleaned = {
       ...updatedFields,
+      description,
       contexts: (updatedFields.contexts ?? []).map(gc => {
         const clone = { ...gc }
         delete clone.file;
@@ -162,6 +173,43 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
       ...recipe,
       prompt,
     };
+  }
+
+  async queryByConstraints(...constraints: QueryConstraint[]): Promise<GrantRecipe[]> {
+    const querySnapshot = await getDocs(query(
+      collection(this.db, this.collectionName),
+      ...constraints
+    ));
+
+    return querySnapshot.docs.map(doc => ({
+      ...doc.data(),
+      id: doc.id,
+    } as GrantRecipe));
+  }
+
+  async findByDescription(description: string): Promise<GrantRecipe[]> {
+    return this.queryByConstraints(
+      where("description", "==", description.trim()),
+      limit(2)
+    );
+  }
+
+  async descriptionExists(description: string, currentRecipeId?: Identifier | null): Promise<boolean> {
+    if (description.trim().length === 0) {
+      return false;
+    }
+
+    const recipes = await this.findByDescription(description);
+    const currentId = currentRecipeId == null ? null : String(currentRecipeId);
+
+    return recipes.some(recipe => String(recipe.id) !== currentId);
+  }
+
+  async assertUniqueDescription(description: string, currentRecipeId?: Identifier | null): Promise<void> {
+    const hasDuplicateDescription = await this.descriptionExists(description, currentRecipeId);
+    if (hasDuplicateDescription) {
+      throw new Error(DUPLICATE_RECIPE_NAME_ERROR);
+    }
   }
 }
 

@@ -7,13 +7,14 @@
 
 import { authService } from "../App";
 import { GrantAiService } from "../pages/grants/grantAiService";
-import { grantProposalService } from "../services/grantProposalService";
+import { GrantProposalService } from "../services/grantProposalService";
 import { grantRecipeService } from "../services/grantRecipeService";
 import { GrantProposal, GrantRecipe } from "../types";
-import { requireRecipeName } from "../utils/recipeValidation";
+import { requireRecipeName, requireUniqueRecipeConfigFields } from "../utils/recipeValidation";
 
 export async function generateProposal(recipe: GrantRecipe): Promise<GrantProposal> {
     requireRecipeName(recipe, "generate a proposal");
+    requireUniqueRecipeConfigFields(recipe);
 
     const grantAiService = GrantAiService.getInstance();
 
@@ -56,7 +57,7 @@ export async function generateProposal(recipe: GrantRecipe): Promise<GrantPropos
 
 
     const proposal = {
-        ...grantProposalService.empty(),
+        ...GrantProposalService.getInstance().empty(),
         name: `${savedRecipe.description} (${(savedRecipe.lastSubmitted as Date).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })})`,
         grantRecipeId: String(savedRecipe.id),
         structuredResponse: JSON.parse(response.text!),
@@ -65,7 +66,7 @@ export async function generateProposal(recipe: GrantRecipe): Promise<GrantPropos
         model: recipe.modelType
     };
 
-    return grantProposalService.insert(proposal,
+    return GrantProposalService.getInstance().insert(proposal,
         undefined,
         undefined,
         user);

@@ -32,7 +32,7 @@ import { LoadingContext } from '@digitalaidseattle/core';
 import LoadingButton from '../../components/LoadingButton';
 import { DateUtils } from '../../utils/dateUtils';
 import { DASHBOARD_STRINGS } from '../../constants/dashboard';
-import { grantProposalService } from '../../services/grantProposalService';
+import { GrantProposalService } from '../../services/grantProposalService';
 import TokenUsageMonthlyChart from './TokenUsageMonthlyChart';
 import {
   tokenUsageService,
@@ -197,7 +197,7 @@ const TokenUsageCard = () => {
   useEffect(() => {
     let active = true;
 
-    grantProposalService.getAll()
+    GrantProposalService.getInstance().getAll()
       .then((proposals) => {
         if (!active) return;
 

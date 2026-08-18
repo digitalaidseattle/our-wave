@@ -16,17 +16,20 @@ import { HelpTopicContext } from '../../components/HelpTopicContext';
 import { StableCursorTextField } from '../../components/StableCursorTextfield';
 import type { GrantOutput } from "../../types";
 import { RECIPE_STRINGS } from '../../constants/grantRecipe';
+import { DUPLICATE_OUTPUT_FIELD_ERROR } from '../../utils/recipeValidation';
 
 export const GrantOutputEditor = ({
   fields,
   onChange,
   touchedFields = {},
+  duplicateFieldIndexes = new Set<number>(),
   onFieldBlur,
   onEdit
 }: {
   fields: GrantOutput[],
   onChange: (updated: GrantOutput[]) => void,
   touchedFields?: Record<string, boolean>,
+  duplicateFieldIndexes?: Set<number>,
   onFieldBlur?: (index: number, field: 'name' | 'maxWords') => void,
   onEdit?: () => void
 }) => {
@@ -62,6 +65,16 @@ export const GrantOutputEditor = ({
     onChange(outputFields.filter((_, i) => i !== index));
   };
 
+  const getOutputNameError = (field: GrantOutput, index: number): string | undefined => {
+    if (Boolean(touchedFields[`name-${index}`]) && field.name.trim().length === 0) {
+      return "Field name is required.";
+    }
+    if (duplicateFieldIndexes.has(index)) {
+      return DUPLICATE_OUTPUT_FIELD_ERROR;
+    }
+    return undefined;
+  };
+
   return (
     <Card>
       <CardHeader title={<>
@@ -86,8 +99,11 @@ export const GrantOutputEditor = ({
 
       <CardContent>
         <Stack spacing={2} sx={{ mt: 2 }}>
-          {outputFields.map((field, index) => (
-            <Stack direction="row" spacing={2} key={index} alignItems="center">
+          {outputFields.map((field, index) => {
+            const outputNameError = getOutputNameError(field, index);
+
+            return (
+              <Stack direction="row" spacing={2} key={index} alignItems="center">
               <Button
                 color="error"
                 aria-label="remove output field"
@@ -100,8 +116,8 @@ export const GrantOutputEditor = ({
                 fullWidth={true}
                 value={field.name}
                 required
-                error={Boolean(touchedFields[`name-${index}`]) && field.name.trim().length === 0}
-                helperText={Boolean(touchedFields[`name-${index}`]) && field.name.trim().length === 0 ? "Field name is required." : " "}
+                error={Boolean(outputNameError)}
+                helperText={outputNameError ?? " "}
                 onBlur={() => onFieldBlur?.(index, 'name')}
                 onEdit={onEdit}
                 onChange={(e) => handleOutputFieldChange(index, 'name', e.target.value)}
@@ -128,8 +144,9 @@ export const GrantOutputEditor = ({
                 >Characters</Button>
               </ButtonGroup>
 
-            </Stack>
-          ))}
+              </Stack>
+            );
+          })}
         </Stack>
       </CardContent>
     </Card>

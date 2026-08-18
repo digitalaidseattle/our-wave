@@ -35,7 +35,7 @@ import {
   SUPPORTED_DOWNLOAD_TYPE,
   createProposalClipboardPlainText,
 } from "../../services/ProposalExporter";
-import { grantProposalService } from "../../services/grantProposalService";
+import { GrantProposalService } from "../../services/grantProposalService";
 import { grantRecipeService } from "../../services/grantRecipeService";
 
 import type { GrantOutput, GrantProposal, GrantRecipe } from "../../types";
@@ -78,7 +78,7 @@ const GrantProposalsDetailPage: React.FC = () => {
       setLoading(true);
 
       try {
-        const proposalData = await grantProposalService.getById(proposalId);
+        const proposalData = await GrantProposalService.getInstance().getById(proposalId);
         setProposal(proposalData);
 
         const recipeId = proposalData?.grantRecipeId;
@@ -169,7 +169,7 @@ const GrantProposalsDetailPage: React.FC = () => {
   function handleNameChange(text: string): void {
     if (!proposal?.id) return;
 
-    grantProposalService
+    GrantProposalService.getInstance()
       .update(proposal.id, { name: text })
       .then((updated) => setProposal({ ...proposal, ...updated }))
       .catch((err) =>
@@ -180,7 +180,7 @@ const GrantProposalsDetailPage: React.FC = () => {
   function handleDownload(type: SUPPORTED_DOWNLOAD_TYPE): void {
     if (!proposal) return;
 
-    grantProposalService
+    GrantProposalService.getInstance()
       .download(proposal, type)
       .catch((err) =>
         notifications.error("Failed to download proposal", `${err instanceof Error ? err.message : LABELS.UNKNOWN_ERROR}`)
@@ -196,7 +196,7 @@ const GrantProposalsDetailPage: React.FC = () => {
 
     if (!proposal?.id) return;
 
-    grantProposalService
+    GrantProposalService.getInstance()
       .update(proposal.id, { rating: value })
       .then((updated) => setProposal({ ...proposal, ...updated }))
       .catch((err) =>
@@ -221,7 +221,7 @@ const GrantProposalsDetailPage: React.FC = () => {
       setLoading(true);
       setIsDeleting(true);
 
-      await grantProposalService.deleteProposal(proposal);
+      await GrantProposalService.getInstance().deleteProposal(proposal);
 
       notifications.success(LABELS.DELETE_SUCCESS);
       setOpenDeleteDialog(false);

@@ -6,9 +6,9 @@
  */
 
 import { authService, storageService } from "../App";
-import { grantRecipeService } from "../services/grantRecipeService";
+import { DUPLICATE_RECIPE_NAME_ERROR, grantRecipeService } from "../services/grantRecipeService";
 import { GrantContext, GrantRecipe } from "../types";
-import { requireRecipeName } from "../utils/recipeValidation";
+import { requireRecipeName, requireUniqueRecipeConfigFields } from "../utils/recipeValidation";
 
 const GLOUD_FOLDER = import.meta.env.VITE_FIREBASE_STORAGE_FOLDER;
 
@@ -48,14 +48,22 @@ async function organizeContextsFiles(recipe: GrantRecipe): Promise<GrantContext[
 
 export async function saveRecipe(recipe: GrantRecipe): Promise<GrantRecipe> {
     requireRecipeName(recipe, "save");
+    requireUniqueRecipeConfigFields(recipe);
 
     return authService.getUser()
         .then((async user => {
+            const description = recipe.description.trim();
+            const hasDuplicateDescription = await grantRecipeService.descriptionExists(description, recipe.id);
+            if (hasDuplicateDescription) {
+                throw new Error(DUPLICATE_RECIPE_NAME_ERROR);
+            }
+
             const prompt = await grantRecipeService.generatePromptWithInputs(recipe);
             const contexts = await organizeContextsFiles(recipe);
 
             const newRecipe = {
                 ...recipe,
+                description,
                 contexts: contexts,
                 prompt: prompt
             }
