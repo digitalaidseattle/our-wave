@@ -173,9 +173,7 @@ const GrantProposalsDetailPage: React.FC = () => {
       .update(proposal.id, { name: text })
       .then((updated) => setProposal({ ...proposal, ...updated }))
       .catch((err) =>
-        notifications.error(
-          `Failed to save name: ${err instanceof Error ? err.message : LABELS.UNKNOWN_ERROR}`
-        )
+        notifications.error("Failed to save name", `${err instanceof Error ? err.message : LABELS.UNKNOWN_ERROR}`)
       );
   }
 
@@ -185,9 +183,7 @@ const GrantProposalsDetailPage: React.FC = () => {
     GrantProposalService.getInstance()
       .download(proposal, type)
       .catch((err) =>
-        notifications.error(
-          `Failed to download proposal: ${err instanceof Error ? err.message : LABELS.UNKNOWN_ERROR}`
-        )
+        notifications.error("Failed to download proposal", `${err instanceof Error ? err.message : LABELS.UNKNOWN_ERROR}`)
       )
       .finally(() => {
         setAnchorEl(null);
@@ -204,9 +200,7 @@ const GrantProposalsDetailPage: React.FC = () => {
       .update(proposal.id, { rating: value })
       .then((updated) => setProposal({ ...proposal, ...updated }))
       .catch((err) =>
-        notifications.error(
-          `Failed to save rating: ${err instanceof Error ? err.message : LABELS.UNKNOWN_ERROR}`
-        )
+        notifications.error("Failed to save rating", `${err instanceof Error ? err.message : LABELS.UNKNOWN_ERROR}`)
       );
   }
 
