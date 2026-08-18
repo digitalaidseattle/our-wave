@@ -27,6 +27,9 @@ const SUPPORTED_FILE_TYPES = [
     "text/markdown"
 ];
 
+const LABEL_UPLOAD_TITLE = "Select files";
+const LABEL_UPLOAD_SUBTITLE = "Supported types are: .txt, .pdf, .html, .json, .md";
+
 interface ContextRowProps {
     index: number;
     context: GrantContext;
@@ -259,6 +262,8 @@ export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ onChange
                     ))}
                 </Stack>
                 <FileUploadDialog
+                    title={LABEL_UPLOAD_TITLE}
+                    subtitle={LABEL_UPLOAD_SUBTITLE}
                     open={showUploadDialog}
                     onChange={(files) => { handleFileSelection(files) }}
                 />
