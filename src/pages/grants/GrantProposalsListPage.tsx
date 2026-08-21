@@ -15,7 +15,7 @@ import {
 import { useContext, useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { LoadingOverlay } from "../../components/LoadingOverlay";
-import { grantProposalService } from "../../services/grantProposalService";
+import { GrantProposalService } from "../../services/grantProposalService";
 
 import type { GrantProposal, Timestamp } from "../../types";
 import { DateUtils } from "../../utils/dateUtils";
@@ -24,6 +24,7 @@ import { PROPOSAL_LABELS } from "../../constants/labels";
 const LABELS = PROPOSAL_LABELS;
 
 const GrantProposalsListPage: React.FC = () => {
+  const grantProposalService = GrantProposalService.getInstance();
   const notifications = useNotifications();
 
   const navigate = useNavigate();
