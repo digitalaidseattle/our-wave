@@ -47,16 +47,34 @@ describe("tokenUsageService", () => {
 
   it("builds monthly usage points for the requested window", () => {
     const points = tokenUsageService.summarizeMonthlyUsage([
-      buildProposal({ id: "1", createdAt: new Date(2026, 2, 10, 12, 0, 0), totalTokenCount: 100 }),
-      buildProposal({ id: "2", createdAt: new Date(2026, 3, 15, 12, 0, 0), totalTokenCount: 200 }),
-      buildProposal({ id: "3", createdAt: new Date(2026, 4, 1, 12, 0, 0), totalTokenCount: 300 }),
-      buildProposal({ id: "4", createdAt: new Date(2026, 4, 20, 12, 0, 0), totalTokenCount: 50 }),
+      buildProposal({ id: "1", createdAt: new Date(2026, 2, 10, 12, 0, 0), totalTokenCount: 100, model: "gemini-2.5-flash" }),
+      buildProposal({ id: "2", createdAt: new Date(2026, 3, 15, 12, 0, 0), totalTokenCount: 200, model: "gemini-2.5-flash-lite" }),
+      buildProposal({ id: "3", createdAt: new Date(2026, 4, 1, 12, 0, 0), totalTokenCount: 300, model: "gemini-2.5-flash" }),
+      buildProposal({ id: "4", createdAt: new Date(2026, 4, 20, 12, 0, 0), totalTokenCount: 50, model: "gemini-2.5-flash-lite" }),
     ], 3, new Date(2026, 4, 21, 12, 0, 0));
 
     expect(points).toEqual([
-      { monthKey: "2026-03", monthLabel: "Mar 2026", tokensUsed: 100 },
-      { monthKey: "2026-04", monthLabel: "Apr 2026", tokensUsed: 200 },
-      { monthKey: "2026-05", monthLabel: "May 2026", tokensUsed: 350 },
+      {
+        monthKey: "2026-03",
+        monthLabel: "Mar 2026",
+        tokensUsed: 100,
+        modelTokens: { "gemini-2.5-flash": 100 },
+      },
+      {
+        monthKey: "2026-04",
+        monthLabel: "Apr 2026",
+        tokensUsed: 200,
+        modelTokens: { "gemini-2.5-flash-lite": 200 },
+      },
+      {
+        monthKey: "2026-05",
+        monthLabel: "May 2026",
+        tokensUsed: 350,
+        modelTokens: {
+          "gemini-2.5-flash": 300,
+          "gemini-2.5-flash-lite": 50,
+        },
+      },
     ]);
   });
 });
