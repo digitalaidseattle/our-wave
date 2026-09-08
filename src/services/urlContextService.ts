@@ -33,7 +33,7 @@ export class UrlContextService {
 
   /**
    * Fetches the page at `url` and returns raw HTML text.
-   * Routes through /api/fetch-url proxy to avoid CORS restrictions.
+   * Routes through /api/fetch-url to avoid browser CORS restrictions.
    * Throws if the URL is invalid, the fetch fails, or the response is not OK.
    */
   async fetchPageText(url: string): Promise<string> {
