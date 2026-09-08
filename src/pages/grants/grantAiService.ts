@@ -74,16 +74,24 @@ class GrantAiService {
 
     async createParts(contexts: GrantContext[]): Promise<Part[]> {
         const parts = await Promise.all(contexts.map(async (gc, idx) => {
-            switch (gc.type) {
-                case 'url':
-                    return gc.value ? this.createPartFromURL(gc.value) : null;
-                case 'text':
-                    return gc.value ? createPartFromText(gc.value) : null;
-                default: {
-                    // Any other type is a file MIME type (e.g. application/pdf)
-                    const uri = await storageService.getDownloadURL(`${CLOUD_FOLDER}/${gc.name}`);
-                    return createPartFromUri(uri, contexts[idx].type);
+            try {
+                switch (gc.type) {
+                    case 'url':
+                        return gc.value ? this.createPartFromURL(gc.value) : null;
+                    case 'text':
+                        return gc.value ? createPartFromText(gc.value) : null;
+                    default: {
+                        // Any other type is a file MIME type (e.g. application/pdf)
+                        const uri = await storageService.getDownloadURL(`${CLOUD_FOLDER}/${gc.name}`);
+                        return createPartFromUri(uri, contexts[idx].type);
+                    }
                 }
+            } catch (error) {
+                if (gc.type === 'url' && gc.value) {
+                    const detail = error instanceof Error ? error.message : String(error);
+                    throw new Error(`Failed to fetch project context URL "${gc.value}": ${detail}`);
+                }
+                throw error;
             }
         }));
         return parts.filter((part): part is Part => part !== null);
