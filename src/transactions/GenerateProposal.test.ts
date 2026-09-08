@@ -87,6 +87,10 @@ describe("generateProposal", () => {
         grantRecipeId: "recipe-123",
         structuredResponse: { Summary: "Summary text", Notes: "Notes text" },
         totalTokenCount: 42,
+        outputs: [
+          { name: "Summary", maxWords: 3, unit: "words" },
+          { name: "Notes", maxWords: 10, unit: "characters" },
+        ]
       }),
       undefined,
       undefined,
