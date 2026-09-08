@@ -18,6 +18,7 @@
 import { createPartFromText, createPartFromUri, createUserContent, GoogleGenAI, Part } from "@google/genai";
 import { storageService } from "../../App";
 import { StorageFile } from "../../services/OurWaveStorageService";
+import { urlContextService } from "../../services/urlContextService";
 import { GrantContext } from "../../types";
 import { SettingsService } from "../../services/settingsService";
 
@@ -62,7 +63,7 @@ class GrantAiService {
      */
     async query(prompt: string, modelType?: string, contexts?: GrantContext[]): Promise<any> {
         const ai = this.requireAi();
-        const parts = this.createParts(contexts ?? []);
+        const parts = await this.createParts(contexts ?? []);
         return await ai.models.generateContent({
             model: modelType ?? this.getDefaultModel(),
             contents: createUserContent([
@@ -71,17 +72,26 @@ class GrantAiService {
         });
     }
 
-    createParts(contexts: GrantContext[]): Part[] {
-        const parts: Part[] = [];
-        contexts.forEach(async (gc, idx) => {
-            if (gc.type === 'text') {
-                parts.push(createPartFromText(gc.value!));
-            } else {
-                const uri = await storageService.getDownloadURL(`${CLOUD_FOLDER}/${gc.name}`);
-                parts.push(createPartFromUri(uri, contexts[idx].type));
+    async createParts(contexts: GrantContext[]): Promise<Part[]> {
+        const parts = await Promise.all(contexts.map(async (gc, idx) => {
+            switch (gc.type) {
+                case 'url':
+                    return gc.value ? this.createPartFromURL(gc.value) : null;
+                case 'text':
+                    return gc.value ? createPartFromText(gc.value) : null;
+                default: {
+                    // Any other type is a file MIME type (e.g. application/pdf)
+                    const uri = await storageService.getDownloadURL(`${CLOUD_FOLDER}/${gc.name}`);
+                    return createPartFromUri(uri, contexts[idx].type);
+                }
             }
-        });
-        return parts;
+        }));
+        return parts.filter((part): part is Part => part !== null);
+    }
+
+    async createPartFromURL(value: string): Promise<Part> {
+        const html = await urlContextService.fetchPageText(value);
+        return createPartFromText(html);
     }
 
     createSchema(schemaParams: string[]): any {
@@ -106,7 +116,7 @@ class GrantAiService {
         contexts?: GrantContext[],
     ): Promise<any> {
         const ai = this.requireAi();
-        const parts = this.createParts(contexts ?? []);
+        const parts = await this.createParts(contexts ?? []);
         console.log('parameterizedQuery parts:', parts);
         const responseSchema = this.createSchema(schemaParams);
         return await ai.models.generateContent({

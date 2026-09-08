@@ -138,4 +138,5 @@ describe("generateProposal", () => {
     expect(mocks.recipeUpdate).not.toHaveBeenCalled();
     expect(mocks.parameterizedQuery).not.toHaveBeenCalled();
   });
+
 });
