@@ -1,5 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { hasRecipeName, hasUniqueRecipeName, isValidRecipe, requireRecipeName } from "./recipeValidation";
+import {
+  DUPLICATE_OUTPUT_FIELD_ERROR,
+  DUPLICATE_PROJECT_CONTEXT_ERROR,
+  getDuplicateOutputFieldNameIndexes,
+  getDuplicateProjectContextNameIndexes,
+  hasRecipeName,
+  hasUniqueOutputFieldNames,
+  hasUniqueProjectContextNames,
+  hasUniqueRecipeName,
+  isValidRecipe,
+  requireRecipeName,
+  requireUniqueOutputFieldNames,
+  requireUniqueProjectContextNames
+} from "./recipeValidation";
 
 describe("recipe name validation", () => {
   it.each(["", "   ", "\n\t"])("rejects an empty recipe name", description => {
@@ -33,5 +46,40 @@ describe("recipe name validation", () => {
     expect(isValidRecipe({ id: "recipe-2", description: " " }, recipes)).toBe(false);
     expect(isValidRecipe({ id: "recipe-2", description: "Community grant" }, recipes)).toBe(false);
     expect(isValidRecipe({ id: "recipe-2", description: "Operating support" }, recipes)).toBe(true);
+  });
+});
+
+describe("recipe configurable field validation", () => {
+  it("detects duplicate output field names case-insensitively", () => {
+    const duplicates = getDuplicateOutputFieldNameIndexes([
+      { name: "Summary" },
+      { name: "Budget" },
+      { name: " summary " },
+      { name: "" },
+      { name: " " },
+    ]);
+
+    expect([...duplicates]).toEqual([0, 2]);
+    expect(hasUniqueOutputFieldNames([{ name: "Summary" }, { name: "Budget" }])).toBe(true);
+    expect(hasUniqueOutputFieldNames([{ name: "Summary" }, { name: "summary" }])).toBe(false);
+    expect(() => requireUniqueOutputFieldNames([{ name: "Summary" }, { name: "summary" }])).toThrow(
+      DUPLICATE_OUTPUT_FIELD_ERROR
+    );
+  });
+
+  it("detects duplicate project context names case-insensitively and ignores blanks", () => {
+    const duplicates = getDuplicateProjectContextNameIndexes([
+      { name: "project.pdf" },
+      { name: null },
+      { name: " PROJECT.pdf " },
+      { name: "" },
+    ]);
+
+    expect([...duplicates]).toEqual([0, 2]);
+    expect(hasUniqueProjectContextNames([{ name: "notes.txt" }, { name: null }])).toBe(true);
+    expect(hasUniqueProjectContextNames([{ name: "notes.txt" }, { name: "NOTES.txt" }])).toBe(false);
+    expect(() => requireUniqueProjectContextNames([{ name: "notes.txt" }, { name: "NOTES.txt" }])).toThrow(
+      DUPLICATE_PROJECT_CONTEXT_ERROR
+    );
   });
 });

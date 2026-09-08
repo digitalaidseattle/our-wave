@@ -19,13 +19,19 @@ import { HelpTopicContext } from "../../components/HelpTopicContext";
 import { LoadingOverlay } from "../../components/LoadingOverlay";
 import { SplitButton } from "../../components/SplitButton";
 import { StableCursorTextField } from "../../components/StableCursorTextfield";
-import { grantRecipeService } from "../../services/grantRecipeService";
+import { DUPLICATE_RECIPE_NAME_ERROR, grantRecipeService } from "../../services/grantRecipeService";
 import { cloneRecipe } from "../../transactions/CloneRecipe";
 import { generateProposal } from "../../transactions/GenerateProposal";
 import { saveRecipe } from "../../transactions/SaveRecipe";
 import { GrantOutput, GrantRecipe, Timestamp } from "../../types";
 import { DateUtils } from "../../utils/dateUtils";
-import { hasRecipeName } from "../../utils/recipeValidation";
+import {
+  DUPLICATE_OUTPUT_FIELD_ERROR,
+  DUPLICATE_PROJECT_CONTEXT_ERROR,
+  getDuplicateOutputFieldNameIndexes,
+  getDuplicateProjectContextNameIndexes,
+  hasRecipeName
+} from "../../utils/recipeValidation";
 import { GrantAiService } from "./grantAiService";
 import { GrantContextEditor } from "./GrantContextEditor";
 import { GrantInfoEditor } from "./GrantInfoEditor";
@@ -37,11 +43,14 @@ const HELP_DRAWER_WIDTH = 300;
 const HELP_TITLE = "Our Wave";
 const HELP_DICTIONARY = {
   "Info": "Change the description for easier tracking in the application.  A rating change can aid in selecting better recipes.  Tags can help categorize recipes.",
-  "Contexts": "Information about your organization and project that will be included in the project conext.",
+  "Contexts": "Information about your organization and project that will be included in the project context.",
   "Template": "This template is filled with text and combined with the output parameters.",
   "Prompt": "This prompt template is filled with text using the input and output parameters.",
   "Outputs": "Guidance for output constraints.",
 }
+const LOADING_MESSAGES = [
+  "AI-generated content may contain inaccuracies or hallucinations.",
+  "Please review all generated content before use."];
 
 export const TextEditor = ({
   title,
@@ -131,6 +140,7 @@ const GrantRecipesDetailPage: React.FC = () => {
   const [hasCompleteOutputFields, setHasCompleteOutputFields] = useState<boolean>(false);
   const [hasValidTemplate, setHasValidTemplate] = useState<boolean>(false);
   const [descriptionTouched, setDescriptionTouched] = useState<boolean>(false);
+  const [duplicateDescriptionError, setDuplicateDescriptionError] = useState<string | null>(null);
   const [templateTouched, setTemplateTouched] = useState<boolean>(false);
   const [outputFieldTouched, setOutputFieldTouched] = useState<Record<string, boolean>>({});
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
@@ -155,9 +165,15 @@ const GrantRecipesDetailPage: React.FC = () => {
   const isDescriptionMissing = !hasValidDescription;
   const isOutputFieldsIncomplete = !hasCompleteOutputFields;
   const isTemplateMissing = !hasValidTemplate;
-  const isSaveDisabled = loading || !dirty || isDescriptionMissing;
+  const duplicateOutputFieldIndexes = getDuplicateOutputFieldNameIndexes(recipe.outputsWithWordCount ?? []);
+  const duplicateProjectContextIndexes = getDuplicateProjectContextNameIndexes(recipe.contexts ?? []);
+  const hasDuplicateOutputFields = duplicateOutputFieldIndexes.size > 0;
+  const hasDuplicateProjectContexts = duplicateProjectContextIndexes.size > 0;
+  const isSaveDisabled = loading || !dirty || isDescriptionMissing || hasDuplicateOutputFields || hasDuplicateProjectContexts;
   const isCloneDisabled = loading || isDescriptionMissing;
-  const isGenerateDisabled = loading || isFileUploading || isDescriptionMissing || isOutputFieldsIncomplete || isTemplateMissing;
+  const isGenerateDisabled = loading || isFileUploading || isDescriptionMissing || isOutputFieldsIncomplete || isTemplateMissing || hasDuplicateOutputFields || hasDuplicateProjectContexts;
+  const descriptionError = duplicateDescriptionError
+    ?? (descriptionTouched && isDescriptionMissing ? "Title is required." : undefined);
 
   const actionMessages: string[] = [];
   if (!loading && hasValidDescription && !dirty) {
@@ -185,6 +201,7 @@ const GrantRecipesDetailPage: React.FC = () => {
           setRecipe(found);
           setDirty(false);
           setDescriptionTouched(false);
+          setDuplicateDescriptionError(null);
           setTemplateTouched(false);
           setOutputFieldTouched({});
         });
@@ -192,6 +209,7 @@ const GrantRecipesDetailPage: React.FC = () => {
       // Initialize new recipe with default blank fields
       setRecipe(grantRecipeService.empty());
       setDescriptionTouched(false);
+      setDuplicateDescriptionError(null);
       setTemplateTouched(false);
       setOutputFieldTouched({});
     }
@@ -210,6 +228,14 @@ const GrantRecipesDetailPage: React.FC = () => {
       notifications.error("Please name your recipe before saving.");
       return;
     }
+    if (hasDuplicateOutputFields) {
+      notifications.error(DUPLICATE_OUTPUT_FIELD_ERROR);
+      return;
+    }
+    if (hasDuplicateProjectContexts) {
+      notifications.error(DUPLICATE_PROJECT_CONTEXT_ERROR);
+      return;
+    }
     const isNewRecipe = !recipe.id;
     setLoading(true);
     saveRecipe(recipe)
@@ -224,7 +250,12 @@ const GrantRecipesDetailPage: React.FC = () => {
       })
       .catch(err => {
         console.error(err)
-        notifications.error(`Could not save this recipe. ${err.message}`)
+        if (err instanceof Error && err.message === DUPLICATE_RECIPE_NAME_ERROR) {
+          setDescriptionTouched(true);
+          setDuplicateDescriptionError(DUPLICATE_RECIPE_NAME_ERROR);
+          return;
+        }
+        notifications.error(`Could not save this recipe.`, `${err.message}`)
       })
       .finally(() => setLoading(false))
   }
@@ -245,7 +276,7 @@ const GrantRecipesDetailPage: React.FC = () => {
       })
       .catch(err => {
         console.error(err)
-        notifications.error(`Could not clone this recipe. ${err.message}`)
+        notifications.error(`Could not clone this recipe.`, `${err.message}`)
       })
       .finally(() => setLoading(false))
   }
@@ -259,6 +290,14 @@ const GrantRecipesDetailPage: React.FC = () => {
     if (!hasCompleteOutputFields) {
       markInvalidOutputFieldsTouched();
       notifications.error("Please complete output fields before generating.");
+      return;
+    }
+    if (hasDuplicateOutputFields) {
+      notifications.error(DUPLICATE_OUTPUT_FIELD_ERROR);
+      return;
+    }
+    if (hasDuplicateProjectContexts) {
+      notifications.error(DUPLICATE_PROJECT_CONTEXT_ERROR);
       return;
     }
     if (!hasValidTemplate) {
@@ -278,9 +317,7 @@ const GrantRecipesDetailPage: React.FC = () => {
         .catch((err: unknown) => {
           console.error(err);
           const errorMessage = err instanceof Error ? err.message : "Unknown error";
-          notifications.error(
-            `Could not generate a proposal for this recipe. ${errorMessage}`
-          )
+          notifications.error(`Could not generate a proposal for this recipe.`, `${errorMessage}`)
         })
         .finally(() => {
           setLoading(false);
@@ -344,6 +381,9 @@ const GrantRecipesDetailPage: React.FC = () => {
   }
 
   function handleInfoChange(updated: GrantRecipe): void {
+    if (updated.description !== recipe.description) {
+      setDuplicateDescriptionError(null);
+    }
     setRecipe(updated);
     setDirty(true);
   }
@@ -402,13 +442,13 @@ const GrantRecipesDetailPage: React.FC = () => {
     if (recipe.id) {
       grantRecipeService.update(recipe.id, { ...recipe, rating: value })
         .then(updated => setRecipe(updated))
-        .catch(err => notifications.error(`Failed to save rating: ${err instanceof Error ? err.message : 'Unknown error'}`));
+        .catch(err => notifications.error(`Failed to save rating.`, `${err instanceof Error ? err.message : undefined}`));
     }
   }
 
   return (recipe &&
     <>
-      <LoadingOverlay />
+      <LoadingOverlay messages={LOADING_MESSAGES} />
       <HelpTopicContext.Provider value={{ helpTopic, setHelpTopic }} >
         <GrantRecipeContext.Provider value={{ recipe, setRecipe }} >
           <Breadcrumbs aria-label="breadcrumbs">
@@ -442,7 +482,7 @@ const GrantRecipesDetailPage: React.FC = () => {
                       <GrantInfoEditor
                         recipe={recipe}
                         onChange={handleInfoChange}
-                        showDescriptionError={descriptionTouched && isDescriptionMissing}
+                        descriptionError={descriptionError}
                         onDescriptionBlur={() => setDescriptionTouched(true)}
                         onEdit={() => setDirty(true)}
                       />
@@ -461,11 +501,13 @@ const GrantRecipesDetailPage: React.FC = () => {
                         onChange={handleGrantContextsChange}
                         onEdit={() => setDirty(true)}
                         onUploadingChange={setIsFileUploading}
+                        duplicateContextIndexes={duplicateProjectContextIndexes}
                       />
                       <GrantOutputEditor
                         fields={recipe.outputsWithWordCount}
                         onChange={handleGrantOutputChange}
                         touchedFields={outputFieldTouched}
+                        duplicateFieldIndexes={duplicateOutputFieldIndexes}
                         onFieldBlur={handleOutputFieldBlur}
                         onEdit={() => setDirty(true)}
                       />

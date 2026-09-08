@@ -5,7 +5,7 @@
  *
  */
 import { CheckCircleOutlined, DeleteOutlined, InfoCircleOutlined, PlusOutlined } from '@ant-design/icons';
-import { Box, Button, Card, CardContent, CardHeader, CircularProgress, FormControl, IconButton, Stack, Toolbar, Tooltip, Typography } from "@mui/material";
+import { Box, Button, Card, CardContent, CardHeader, CircularProgress, FormControl, FormHelperText, IconButton, Stack, Toolbar, Tooltip, Typography } from "@mui/material";
 import React, { useContext, useEffect, useState } from 'react';
 
 import { useHelp, useNotifications } from '@digitalaidseattle/core';
@@ -17,6 +17,7 @@ import { StableCursorTextField } from '../../components/StableCursorTextfield';
 import { GrantContext, GrantRecipe } from '../../types';
 import { GrantAiService } from './grantAiService';
 import { RECIPE_STRINGS } from '../../constants/grantRecipe';
+import { DUPLICATE_PROJECT_CONTEXT_ERROR } from '../../utils/recipeValidation';
 
 const SUPPORTED_FILE_TYPES = [
     "text/plain",
@@ -26,6 +27,9 @@ const SUPPORTED_FILE_TYPES = [
     "text/markdown"
 ];
 
+const LABEL_UPLOAD_TITLE = "Select files";
+const LABEL_UPLOAD_SUBTITLE = "Supported types are: .txt, .pdf, .html, .json, .md";
+
 interface ContextRowProps {
     index: number;
     context: GrantContext;
@@ -33,8 +37,9 @@ interface ContextRowProps {
     onDelete: (index: number) => void
     onEdit?: () => void;
     isDone?: boolean;
+    isDuplicate?: boolean;
 }
-const ContextRow = ({ index, context, onChange, onDelete, onEdit, isDone }: ContextRowProps) => {
+const ContextRow = ({ index, context, onChange, onDelete, onEdit, isDone, isDuplicate }: ContextRowProps) => {
 
     function handleTextChange(e: React.ChangeEvent<HTMLInputElement>): void {
         onChange(index, { ...context, value: e.target.value });
@@ -68,8 +73,8 @@ const ContextRow = ({ index, context, onChange, onDelete, onEdit, isDone }: Cont
                     maxRows={3}
                 />}
             {(SUPPORTED_FILE_TYPES.includes(context.type)) &&
-                <>
-                    <FormControl fullWidth={true} sx={{ border: '1px solid', borderBlockColor: isDone ? 'success.main' : 'grey', padding: 2, borderRadius: 1, pr: 1, display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 1 }}>
+                <Box sx={{ flex: 1 }}>
+                    <FormControl fullWidth={true} error={isDuplicate} sx={{ border: '1px solid', borderColor: isDuplicate ? 'error.main' : isDone ? 'success.main' : 'grey', padding: 2, borderRadius: 1, pr: 1, display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 1 }}>
                         <Typography>File: {context.name}</Typography>
                         {isDone && (
                             <Tooltip title="Upload complete">
@@ -77,7 +82,10 @@ const ContextRow = ({ index, context, onChange, onDelete, onEdit, isDone }: Cont
                             </Tooltip>
                         )}
                     </FormControl>
-                </>
+                    <FormHelperText error sx={{ ml: 0 }}>
+                        {isDuplicate ? DUPLICATE_PROJECT_CONTEXT_ERROR : " "}
+                    </FormHelperText>
+                </Box>
             }
             <Typography variant="body2" sx={{ alignSelf: 'center', minWidth: 80 }}>
                 {context.tokenCount !== undefined
@@ -92,9 +100,10 @@ type GrantContextEditorProps = {
     onChange: (recipe: GrantRecipe) => void;
     onEdit?: () => void;
     onUploadingChange?: (isUploading: boolean) => void;
+    duplicateContextIndexes?: Set<number>;
 };
 
-export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ onChange, onEdit, onUploadingChange }) => {
+export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ onChange, onEdit, onUploadingChange, duplicateContextIndexes = new Set<number>() }) => {
     const grantAiService = GrantAiService.getInstance();
     const notifications = useNotifications();
 
@@ -231,7 +240,8 @@ export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ onChange
                             onChange={udpateContext}
                             onDelete={removeContext}
                             onEdit={onEdit}
-                            isDone={!!context.name && doneFileNames.has(context.name)} />
+                            isDone={!!context.name && doneFileNames.has(context.name)}
+                            isDuplicate={duplicateContextIndexes.has(idx)} />
                     ))}
                     {Array.from(uploadingFileNames).map(name => (
                         <Stack
@@ -252,6 +262,8 @@ export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ onChange
                     ))}
                 </Stack>
                 <FileUploadDialog
+                    title={LABEL_UPLOAD_TITLE}
+                    subtitle={LABEL_UPLOAD_SUBTITLE}
                     open={showUploadDialog}
                     onChange={(files) => { handleFileSelection(files) }}
                 />

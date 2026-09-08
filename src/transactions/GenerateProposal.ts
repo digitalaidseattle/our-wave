@@ -9,13 +9,15 @@ import { authService } from "../App";
 import { GrantAiService } from "../pages/grants/grantAiService";
 import { GrantProposalService } from "../services/grantProposalService";
 import { grantRecipeService } from "../services/grantRecipeService";
+import { requireRecipeName, requireUniqueRecipeConfigFields } from "../utils/recipeValidation";
 import { GrantProposal, GrantRecipe } from "../types";
-import { requireRecipeName } from "../utils/recipeValidation";
 
 export async function generateProposal(recipe: GrantRecipe): Promise<GrantProposal> {
     requireRecipeName(recipe, "generate a proposal");
+    requireUniqueRecipeConfigFields(recipe);
 
     const grantAiService = GrantAiService.getInstance();
+    const grantProposalService = GrantProposalService.getInstance();
 
     const outputs = recipe.outputsWithWordCount ?? [];
     if (outputs.length === 0) {
@@ -54,18 +56,18 @@ export async function generateProposal(recipe: GrantRecipe): Promise<GrantPropos
         recipe.contexts,
     );
 
-
     const proposal = {
-        ...GrantProposalService.getInstance().empty(),
+        ...grantProposalService.empty(),
         name: `${savedRecipe.description} (${(savedRecipe.lastSubmitted as Date).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })})`,
         grantRecipeId: String(savedRecipe.id),
         structuredResponse: JSON.parse(response.text!),
         rating: null,
         totalTokenCount: response.usageMetadata ? response.usageMetadata.totalTokenCount : null,
-        model: recipe.modelType
+        model: recipe.modelType,
+        outputs: JSON.parse(JSON.stringify(recipe.outputsWithWordCount))
     };
 
-    return GrantProposalService.getInstance().insert(proposal,
+    return grantProposalService.insert(proposal,
         undefined,
         undefined,
         user);

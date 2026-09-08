@@ -47,13 +47,6 @@ const LABELS = {
   COPY_ALL_TOOLTIP: "Copy the entire proposal with headings and sections preserved.",
 };
 
-function countWords(text: string): number {
-  return text.trim() ? text.trim().split(/\s+/).length : 0;
-}
-
-function countCharacters(text: string): number {
-  return text.length;
-}
 
 const GrantProposalsDetailPage: React.FC = () => {
   const notifications = useNotifications();
@@ -108,12 +101,30 @@ const GrantProposalsDetailPage: React.FC = () => {
   }, [id, setLoading]);
 
   useEffect(() => {
-    setOutputs(recipe?.outputsWithWordCount ?? []);
-  }, [recipe]);
+    // TODO when all proposals have outputs, the recipe check may be removed.
+    if (proposal && recipe) {
+      setOutputs(proposal.outputs ?? recipe.outputsWithWordCount ?? []);
+    }
+  }, [recipe, proposal]);
 
   useEffect(() => {
-    setRating(proposal?.rating ?? 0);
-  }, [proposal?.rating]);
+    if (proposal) {
+      setRating(proposal.rating ?? 0);
+    }
+  }, [proposal]);
+
+  function countWords(text: string): number {
+    if (text) {
+      return text.trim() ? text.trim().split(/\s+/).length : 0;
+    }
+    console.warn('countWords: Text not available', proposal?.name)
+    return 0;
+  }
+
+  function countCharacters(text: string): number {
+    return text? text.length : 0;
+  }
+
 
   const responses: {
     name: string;
@@ -173,9 +184,7 @@ const GrantProposalsDetailPage: React.FC = () => {
       .update(proposal.id, { name: text })
       .then((updated) => setProposal({ ...proposal, ...updated }))
       .catch((err) =>
-        notifications.error(
-          `Failed to save name: ${err instanceof Error ? err.message : LABELS.UNKNOWN_ERROR}`
-        )
+        notifications.error("Failed to save name", `${err instanceof Error ? err.message : LABELS.UNKNOWN_ERROR}`)
       );
   }
 
@@ -185,9 +194,7 @@ const GrantProposalsDetailPage: React.FC = () => {
     GrantProposalService.getInstance()
       .download(proposal, type)
       .catch((err) =>
-        notifications.error(
-          `Failed to download proposal: ${err instanceof Error ? err.message : LABELS.UNKNOWN_ERROR}`
-        )
+        notifications.error("Failed to download proposal", `${err instanceof Error ? err.message : LABELS.UNKNOWN_ERROR}`)
       )
       .finally(() => {
         setAnchorEl(null);
@@ -204,9 +211,7 @@ const GrantProposalsDetailPage: React.FC = () => {
       .update(proposal.id, { rating: value })
       .then((updated) => setProposal({ ...proposal, ...updated }))
       .catch((err) =>
-        notifications.error(
-          `Failed to save rating: ${err instanceof Error ? err.message : LABELS.UNKNOWN_ERROR}`
-        )
+        notifications.error("Failed to save rating", `${err instanceof Error ? err.message : LABELS.UNKNOWN_ERROR}`)
       );
   }
 
