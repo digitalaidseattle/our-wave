@@ -18,6 +18,7 @@ import { GrantContext, GrantRecipe } from '../../types';
 import { GrantAiService } from './grantAiService';
 import { RECIPE_STRINGS } from '../../constants/grantRecipe';
 import { DUPLICATE_PROJECT_CONTEXT_ERROR } from '../../utils/recipeValidation';
+import { urlContextService } from '../../services/urlContextService';
 
 const SUPPORTED_FILE_TYPES = [
     "text/plain",
@@ -61,17 +62,23 @@ const ContextRow = ({ index, context, onChange, onDelete, onEdit, isDone, isDupl
                 onClick={() => onDelete(index)}>
                 <DeleteOutlined />
             </Button>
-            {(context.type === 'text') &&
-                <StableCursorTextField
-                    fullWidth={true}
-                    value={context.value}
-                    placeholder='Enter context information here'
-                    onChange={handleTextChange}
-                    onEdit={onEdit}
-                    multiline={true}
-                    minRows={1}
-                    maxRows={3}
-                />}
+            {(context.type === 'text' || context.type === 'url') && (() => {
+                const isUrlInvalid = context.type === 'url' && !!context.value && !urlContextService.isValidUrl(context.value);
+                return (
+                    <StableCursorTextField
+                        fullWidth={true}
+                        value={context.value}
+                        placeholder={context.type === 'url' ? 'Enter URL link here' : 'Enter context information here'}
+                        onChange={handleTextChange}
+                        onEdit={onEdit}
+                        multiline={context.type !== 'url'}
+                        minRows={1}
+                        maxRows={3}
+                        error={isUrlInvalid}
+                        helperText={isUrlInvalid ? 'Please enter a valid http or https URL.' : ''}
+                    />
+                );
+            })()}
             {(SUPPORTED_FILE_TYPES.includes(context.type)) &&
                 <Box sx={{ flex: 1 }}>
                     <FormControl fullWidth={true} error={isDuplicate} sx={{ border: '1px solid', borderColor: isDuplicate ? 'error.main' : isDone ? 'success.main' : 'grey', padding: 2, borderRadius: 1, pr: 1, display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 1 }}>
@@ -210,6 +217,13 @@ export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ onChange
                 subheader={RECIPE_STRINGS.projectContextsSubtext}
                 action={
                     <Toolbar disableGutters={true} sx={{ gap: 1 }} >
+                        <Button
+                            variant="outlined"
+                            onClick={() => addContexts([{ type: "url", value: "", name: null, tokenCount: 0 }])}
+                            startIcon={<PlusOutlined />}
+                            sx={{ alignSelf: 'flex-start' }}>
+                            URL
+                        </Button>
                         <Button
                             variant="outlined"
                             onClick={() => setShowUploadDialog(true)}
