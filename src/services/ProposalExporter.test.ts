@@ -1,13 +1,12 @@
-import { describe, expect, it, vi, afterEach } from "vitest";
-import type { GrantProposal } from "../types";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import type { GrantOutput, GrantProposal } from "../types";
 import {
-  createMarkdownContent,
-  createProposalClipboardPlainText,
   ProposalExporter,
+  TextExporter,
   type SUPPORTED_DOWNLOAD_TYPE,
 } from "./ProposalExporter";
 
-const buildProposal = (): GrantProposal => ({
+const buildProposal = (overrides: Partial<GrantProposal> = {}): GrantProposal => ({
   id: "proposal-1",
   createdAt: new Date(2026, 4, 10, 12, 0, 0),
   createdBy: "tester@example.com",
@@ -22,8 +21,14 @@ const buildProposal = (): GrantProposal => ({
   },
   totalTokenCount: 123,
   model: "gemini-2.5-flash",
-  outputs: []
+  outputs: [
+    { name: "Summary", maxWords: 200, unit: "words" },
+    { name: "Impact", maxWords: 100, unit: "words" }
+  ],
+  ...overrides
 });
+
+const buildOutput = (name: string): GrantOutput => ({ name, maxWords: 100, unit: "words" });
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -43,10 +48,56 @@ async function readBlobBuffer(blob: Blob): Promise<Buffer> {
   });
 }
 
+describe("getProposalSections", () => {
+  const exporter = new TextExporter();
+
+  it("maps outputs to sections in output order using structuredResponse values", () => {
+    const proposal = buildProposal();
+
+    expect(exporter.getProposalSections(proposal)).toEqual([
+      { name: "Summary", value: proposal.structuredResponse!.Summary },
+      { name: "Impact", value: proposal.structuredResponse!.Impact }
+    ]);
+  });
+
+  it("orders sections by outputs, not by structuredResponse key order", () => {
+    const proposal = buildProposal({
+      outputs: [buildOutput("Impact"), buildOutput("Summary")]
+    });
+
+    expect(exporter.getProposalSections(proposal).map((section) => section.name)).toEqual(["Impact", "Summary"]);
+  });
+
+  it("returns no sections when there are no outputs, even if structuredResponse has data", () => {
+    const proposal = buildProposal({ outputs: [] });
+
+    expect(exporter.getProposalSections(proposal)).toEqual([]);
+  });
+
+  it("returns undefined for an output with no matching structuredResponse entry", () => {
+    const proposal = buildProposal({
+      outputs: [buildOutput("Summary"), buildOutput("Budget")]
+    });
+
+    expect(exporter.getProposalSections(proposal)).toEqual([
+      { name: "Summary", value: proposal.structuredResponse!.Summary },
+      { name: "Budget", value: undefined }
+    ]);
+  });
+
+  it("throws if structuredResponse is missing while outputs are present", () => {
+    const proposal = buildProposal({ structuredResponse: undefined });
+
+    expect(() => exporter.getProposalSections(proposal)).toThrow();
+  });
+});
+
 describe("ProposalExporter", () => {
   it("builds markdown content with structured proposal sections", () => {
+    const exporter = new TextExporter();
+
     const proposal = buildProposal();
-    const markdown = createMarkdownContent(proposal);
+    const markdown = exporter.createMarkdownContent(proposal);
 
     expect(markdown).toContain("# Community Garden Proposal");
     expect(markdown).toContain("## Summary");
@@ -55,8 +106,9 @@ describe("ProposalExporter", () => {
   });
 
   it("builds clipboard plain text with visible structure", () => {
+    const exporter = new TextExporter();
     const proposal = buildProposal();
-    const plainText = createProposalClipboardPlainText(proposal);
+    const plainText = exporter.createContent(proposal);
 
     expect(plainText).toContain("Community Garden Proposal");
     expect(plainText).toContain("Summary");
