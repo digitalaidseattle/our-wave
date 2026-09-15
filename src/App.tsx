@@ -25,12 +25,16 @@ import "./App.css";
 import { FirebaseAuthService } from './services/FirebaseAuthService';
 import { OurWaveStorageService } from './services/OurWaveStorageService';
 import { firebaseClient } from '@digitalaidseattle/firebase';
+import { Configuration } from './services/Configuration';
+import { GrantAiService } from './services/gemini/GeminiService';
 
 // ==============================|| APP - THEME, ROUTER, LOCAL  ||============================== //
 
 const router = createBrowserRouter(routes);
 export const authService = new FirebaseAuthService();
 export const storageService = new OurWaveStorageService(firebaseClient);
+
+Configuration.props({ aiService: new GrantAiService() });
 
 const App: React.FC = () => {
   return (

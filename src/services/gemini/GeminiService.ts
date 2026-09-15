@@ -1,30 +1,20 @@
 /**
- * Institution AI Service
- * This service interacts with the AI backend to generate content related to institutions.
- * It uses the Firebase AI SDK to create a generative model that can respond to prompts
- * about institutions, such as listing philanthropic organizations in a specific area.  
+ * GeminiService.ts
+ *
+ *  @copyright 2026 Digital Aid Seattle
  * 
- * Provision Firebase application  in Google Cloud
- * <ol>
- * <li>Go to the Google Cloud Console.</li>
- * <li>Select an existing project.</li>
- * <li>Navigate to the "APIs & Services" page.</li>
- * <li>Click on "Credential".</li>
- * <li>Edit API (the key should match the API key in the .env file).</li>
- * <li>Enable the "Generative Language API" and "Firebase AI Logic API" restrictions.</li>
- * </ol>
- */
+*/
 
 import { createPartFromText, createPartFromUri, createUserContent, GoogleGenAI, Part } from "@google/genai";
+import { SettingsService } from "../settingsService";
+import { AiResponse, GrantContext } from "../../types";
 import { storageService } from "../../App";
-import { StorageFile } from "../../services/OurWaveStorageService";
-import { urlContextService } from "../../services/urlContextService";
-import { GrantContext } from "../../types";
-import { SettingsService } from "../../services/settingsService";
+import { UrlContextService } from "../urlContextService";
+import { StorageFile } from "@digitalaidseattle/core";
 
 const CLOUD_FOLDER = import.meta.env.VITE_FIREBASE_STORAGE_FOLDER;
 
-class GrantAiService {
+class GrantAiService implements GrantAiService {
 
     static DEFAULT_MODEL = "gemini-flash-latest";
     static instance: GrantAiService;
@@ -61,15 +51,19 @@ class GrantAiService {
      * Runs a basic text generation request.
      * This is for prompts where we just want the model to return a text response.
      */
-    async query(prompt: string, modelType?: string, contexts?: GrantContext[]): Promise<any> {
+    async query(prompt: string, modelType?: string, contexts?: GrantContext[]): Promise<AiResponse> {
         const ai = this.requireAi();
         const parts = await this.createParts(contexts ?? []);
-        return await ai.models.generateContent({
+        const response = await ai.models.generateContent({
             model: modelType ?? this.getDefaultModel(),
             contents: createUserContent([
                 prompt, ...parts
             ]),
         });
+        return {
+            content: response.text!,
+            tokenCount: response.usageMetadata ? response.usageMetadata.totalTokenCount : undefined
+        }
     }
 
     async createParts(contexts: GrantContext[]): Promise<Part[]> {
@@ -90,7 +84,7 @@ class GrantAiService {
     }
 
     async createPartFromURL(value: string): Promise<Part> {
-        const html = await urlContextService.fetchPageText(value);
+        const html = await UrlContextService.getInstance().fetchPageText(value);
         return createPartFromText(html);
     }
 
@@ -109,17 +103,16 @@ class GrantAiService {
      * You give it a list of field names (like ["Summary", "Budget"]),
      * and the AI will return a JSON object with those fields filled in.
      */
-    async parameterizedQuery(
+    async structuredQuery(
         prompt: string,
         schemaParams: string[],
         modelType?: string,
         contexts?: GrantContext[],
-    ): Promise<any> {
+    ): Promise<AiResponse> {
         const ai = this.requireAi();
         const parts = await this.createParts(contexts ?? []);
-        console.log('parameterizedQuery parts:', parts);
         const responseSchema = this.createSchema(schemaParams);
-        return await ai.models.generateContent({
+        const response = await ai.models.generateContent({
             model: modelType ?? this.getDefaultModel(),
             contents: [prompt, ...parts],
             config: {
@@ -127,6 +120,10 @@ class GrantAiService {
                 responseJsonSchema: responseSchema,
             },
         });
+        return ({
+            content: JSON.parse(response.text!),
+            tokenCount: response.usageMetadata ? response.usageMetadata.totalTokenCount : undefined,
+        })
     }
 
     async calcTokenCount(model: string, content: string): Promise<number> {
@@ -142,7 +139,6 @@ class GrantAiService {
     async calcFileTokenCount(model: string, file: File): Promise<number | null> {
         try {
             const ai = this.requireAi();
-            console.log("Calculating token count for file:", file);
             const uploaded = await ai.files.upload({
                 file: file,
                 config: { mimeType: file.type },
