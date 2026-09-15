@@ -108,7 +108,7 @@ describe("ProposalExporter", () => {
   it("builds clipboard plain text with visible structure", () => {
     const exporter = new TextExporter();
     const proposal = buildProposal();
-    const plainText = exporter.createContent(proposal);
+    const plainText = exporter.createTextContent(proposal);
 
     expect(plainText).toContain("Community Garden Proposal");
     expect(plainText).toContain("Summary");
