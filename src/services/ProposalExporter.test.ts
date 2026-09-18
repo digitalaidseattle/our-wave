@@ -21,7 +21,8 @@ const buildProposal = (): GrantProposal => ({
     Impact: "1. Increase food access\n2. Improve community ties"
   },
   totalTokenCount: 123,
-  model: "gemini-2.5-flash"
+  model: "gemini-2.5-flash",
+  outputs: []
 });
 
 afterEach(() => {

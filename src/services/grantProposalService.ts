@@ -37,7 +37,8 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
       rating: null,
       structuredResponse: undefined,
       totalTokenCount: null,
-      model: ""
+      model: "",
+      outputs: []
     };
   }
 
