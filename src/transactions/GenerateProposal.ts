@@ -11,17 +11,11 @@ import { GrantProposalService } from "../services/grantProposalService";
 import { grantRecipeService } from "../services/grantRecipeService";
 import { GrantProposal, GrantRecipe } from "../types";
 import { requireRecipeName, requireUniqueRecipeConfigFields } from "../utils/recipeValidation";
+import dayjs from "dayjs";
 
 // Format: "6/22 2:27:09 PM"
 function formatProposalDate(date: Date): string {
-    const month = date.getMonth() + 1;
-    const day = date.getDate();
-    const hours = date.getHours();
-    const minutes = String(date.getMinutes()).padStart(2, "0");
-    const seconds = String(date.getSeconds()).padStart(2, "0");
-    const ampm = hours >= 12 ? "PM" : "AM";
-    const hour12 = hours % 12 || 12;
-    return `${month}/${day} ${hour12}:${minutes}:${seconds} ${ampm}`;
+    return dayjs(date).format("M/D h:mm:ss A");
 }
 
 export async function generateProposal(recipe: GrantRecipe): Promise<GrantProposal> {
