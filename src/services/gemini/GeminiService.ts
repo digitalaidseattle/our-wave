@@ -11,33 +11,30 @@ import { AiResponse, GrantContext } from "../../types";
 import { storageService } from "../../App";
 import { UrlContextService } from "../urlContextService";
 import { StorageFile } from "@digitalaidseattle/core";
+import { GrantAiService } from "../grantAiService";
 
 const CLOUD_FOLDER = import.meta.env.VITE_FIREBASE_STORAGE_FOLDER;
 
-class GrantAiService implements GrantAiService {
+export class GeminiService implements GrantAiService {
 
     static DEFAULT_MODEL = "gemini-flash-latest";
-    static instance: GrantAiService;
+    static instance: GeminiService;
 
     static getInstance() {
-        if (!GrantAiService.instance) {
-            GrantAiService.instance = new GrantAiService();
+        if (!GeminiService.instance) {
+            GeminiService.instance = new GeminiService();
         }
-        return GrantAiService.instance;
+        return GeminiService.instance;
     }
 
     // Lazy initialize so missing key does not crash page render.
     private ai?: GoogleGenAI;
-    private models: string[] = [];
 
     constructor() {
         const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
         if (apiKey) {
             this.ai = new GoogleGenAI({ apiKey });
         }
-        SettingsService.getInstance()
-            .getSettings()
-            .then(settings => this.models = settings.models ?? [])
     }
 
     private requireAi(): GoogleGenAI {
@@ -54,8 +51,9 @@ class GrantAiService implements GrantAiService {
     async query(prompt: string, modelType?: string, contexts?: GrantContext[]): Promise<AiResponse> {
         const ai = this.requireAi();
         const parts = await this.createParts(contexts ?? []);
+        const model = modelType ?? await this.getDefaultModel();
         const response = await ai.models.generateContent({
-            model: modelType ?? this.getDefaultModel(),
+            model: model,
             contents: createUserContent([
                 prompt, ...parts
             ]),
@@ -112,8 +110,10 @@ class GrantAiService implements GrantAiService {
         const ai = this.requireAi();
         const parts = await this.createParts(contexts ?? []);
         const responseSchema = this.createSchema(schemaParams);
+        const model = modelType ?? await this.getDefaultModel();
+
         const response = await ai.models.generateContent({
-            model: modelType ?? this.getDefaultModel(),
+            model: model,
             contents: [prompt, ...parts],
             config: {
                 responseMimeType: "application/json",
@@ -181,14 +181,16 @@ class GrantAiService implements GrantAiService {
         }
     }
 
-    getModels() {
-        return this.models;
+    async getModels(): Promise<string[]> {
+        return SettingsService.getInstance()
+            .getSettings()
+            .then(settings => settings.models ?? [])
     }
 
-    getDefaultModel() {
-        return this.models.length === 0 ? GrantAiService.DEFAULT_MODEL : this.models[0];
+    async getDefaultModel(): Promise<string> {
+        return SettingsService.getInstance()
+            .getSettings()
+            .then(settings => settings.models ? settings.models[0] : GeminiService.DEFAULT_MODEL)
     }
 
 }
-
-export { GrantAiService };

@@ -177,10 +177,21 @@ const GrantRecipesDetailPage: React.FC = () => {
   const descriptionError = duplicateDescriptionError
     ?? (descriptionTouched && isDescriptionMissing ? "Title is required." : undefined);
 
+  const [models, setModels] = useState<string[]>([]);
+
   const actionMessages: string[] = [];
   if (!loading && hasValidDescription && !dirty) {
     actionMessages.push("Make a change to enable Save.");
   }
+
+  useEffect(() => {
+
+    if (grantAiService) {
+      grantAiService.getModels()
+        .then(mds => setModels(mds));
+    }
+  }, [grantAiService]);
+
 
   useEffect(() => {
     const outputs = recipe?.outputsWithWordCount ?? [];
@@ -538,7 +549,7 @@ const GrantRecipesDetailPage: React.FC = () => {
                       <Tooltip title='Click to generate.'>
                         <Box>
                           <SplitButton
-                            options={grantAiService.getModels().map(m => ({ label: `Generate with ${m}`, value: m }))}
+                            options={models.map(m => ({ label: `Generate with ${m}`, value: m }))}
                             disabled={isGenerateDisabled}
                             onClick={(model: string) => handleGenerate(model)} />
                         </Box>

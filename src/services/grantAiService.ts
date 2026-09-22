@@ -21,9 +21,9 @@ export interface GrantAiService {
 
     calcStorageFileTokenCount(model: string, file: StorageFile): Promise<number>;
 
-    getModels(): string[];
+    getModels(): Promise<string[]>;
 
-    getDefaultModel(): string
+    getDefaultModel(): Promise<string>;
 
 }
 
