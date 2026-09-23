@@ -159,7 +159,7 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
       outputs: recipe.outputsWithWordCount.map(output => ({
         ...output,
         upperBound: output.maxWords,
-        lowerBound: lowerBoundPercentage * output.maxWords
+        lowerBound: Math.round(lowerBoundPercentage * output.maxWords)
       }))
     });
   }

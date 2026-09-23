@@ -1,5 +1,9 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { GrantRecipe } from "../types";
+
+const { getSettingsMock } = vi.hoisted(() => ({
+  getSettingsMock: vi.fn(),
+}));
 
 vi.mock("../App", () => ({
   authService: { getUser: vi.fn() },
@@ -8,10 +12,7 @@ vi.mock("../App", () => ({
 vi.mock("./settingsService", () => ({
   SettingsService: {
     getInstance: () => ({
-      getSettings: vi.fn().mockResolvedValue({
-        outputTemplate: "",
-        lowerBoundPercentage: 0.5,
-      }),
+      getSettings: getSettingsMock,
     }),
   },
 }));
@@ -19,6 +20,13 @@ vi.mock("./settingsService", () => ({
 import { grantRecipeService } from "./grantRecipeService";
 
 describe("grantRecipeService", () => {
+  beforeEach(() => {
+    getSettingsMock.mockResolvedValue({
+      outputTemplate: "",
+      lowerBoundPercentage: 0.5,
+    });
+  });
+
   it("generates a prompt with output word-count bounds", async () => {
     const recipe = {
       template: "Write {{#each outputs}}{{name}} {{lowerBound}}-{{upperBound}}{{/each}}",
@@ -29,6 +37,23 @@ describe("grantRecipeService", () => {
 
     await expect(grantRecipeService.generatePromptWithInputs(recipe)).resolves.toBe(
       "Write Summary 100-200"
+    );
+  });
+
+  it("rounds the lower bound to avoid floating-point artifacts", async () => {
+    getSettingsMock.mockResolvedValue({
+      outputTemplate: "",
+      lowerBoundPercentage: 0.8,
+    });
+    const recipe = {
+      template: "Write {{#each outputs}}{{name}} {{lowerBound}}-{{upperBound}}{{/each}}",
+      outputsWithWordCount: [
+        { name: "Executive summary", maxWords: 333, unit: "words" },
+      ],
+    } as GrantRecipe;
+
+    await expect(grantRecipeService.generatePromptWithInputs(recipe)).resolves.toBe(
+      "Write Executive summary 266-333"
     );
   });
 
