@@ -19,8 +19,11 @@ import { HelpTopicContext } from "../../components/HelpTopicContext";
 import { LoadingOverlay } from "../../components/LoadingOverlay";
 import { SplitButton } from "../../components/SplitButton";
 import { StableCursorTextField } from "../../components/StableCursorTextfield";
+import { RECIPE_STRINGS } from '../../constants/grantRecipe';
+import { Configuration } from "../../services/Configuration";
 import { DUPLICATE_RECIPE_NAME_ERROR, grantRecipeService } from "../../services/grantRecipeService";
 import { cloneRecipe } from "../../transactions/CloneRecipe";
+import { deleteRecipe } from "../../transactions/DeleteRecipe";
 import { generateProposal } from "../../transactions/GenerateProposal";
 import { saveRecipe } from "../../transactions/SaveRecipe";
 import { GrantOutput, GrantRecipe, Timestamp } from "../../types";
@@ -32,12 +35,9 @@ import {
   getDuplicateProjectContextNameIndexes,
   hasRecipeName
 } from "../../utils/recipeValidation";
-import { GrantAiService } from "./grantAiService";
 import { GrantContextEditor } from "./GrantContextEditor";
 import { GrantInfoEditor } from "./GrantInfoEditor";
 import { GrantOutputEditor } from "./GrantOutputEditor";
-import { RECIPE_STRINGS } from '../../constants/grantRecipe';
-import { deleteRecipe } from "../../transactions/DeleteRecipe";
 
 const HELP_DRAWER_WIDTH = 300;
 const HELP_TITLE = "Our Wave";
@@ -126,6 +126,8 @@ export const PlainTextCard = ({ title, value, helpTopic }: { title: string, valu
 }
 
 const GrantRecipesDetailPage: React.FC = () => {
+  const grantAiService = Configuration.getInstance().aiService;
+
   const { id } = useParams<string>();
   const notifications = useNotifications();
   const navigate = useNavigate();
@@ -175,10 +177,21 @@ const GrantRecipesDetailPage: React.FC = () => {
   const descriptionError = duplicateDescriptionError
     ?? (descriptionTouched && isDescriptionMissing ? "Title is required." : undefined);
 
+  const [models, setModels] = useState<string[]>([]);
+
   const actionMessages: string[] = [];
   if (!loading && hasValidDescription && !dirty) {
     actionMessages.push("Make a change to enable Save.");
   }
+
+  useEffect(() => {
+
+    if (grantAiService) {
+      grantAiService.getModels()
+        .then(mds => setModels(mds));
+    }
+  }, [grantAiService]);
+
 
   useEffect(() => {
     const outputs = recipe?.outputsWithWordCount ?? [];
@@ -536,7 +549,7 @@ const GrantRecipesDetailPage: React.FC = () => {
                       <Tooltip title='Click to generate.'>
                         <Box>
                           <SplitButton
-                            options={GrantAiService.getInstance().getModels().map(m => ({ label: `Generate with ${m}`, value: m }))}
+                            options={models.map(m => ({ label: `Generate with ${m}`, value: m }))}
                             disabled={isGenerateDisabled}
                             onClick={(model: string) => handleGenerate(model)} />
                         </Box>

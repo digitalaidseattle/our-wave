@@ -53,5 +53,3 @@ export class UrlContextService {
     return response.text();
   }
 }
-
-export const urlContextService = UrlContextService.getInstance();
