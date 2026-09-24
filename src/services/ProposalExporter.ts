@@ -20,59 +20,6 @@ type ProposalSection = {
     value: string;
 };
 
-function getProposalSections(proposal: GrantProposal): ProposalSection[] {
-    return Object.entries(proposal.structuredResponse ?? {}).map(([name, value]) => ({
-        name,
-        value,
-    }));
-}
-
-export function createMarkdownContent(proposal: GrantProposal): string {
-    let data = `# ${proposal.name}\n\n`;
-
-    getProposalSections(proposal).forEach((entry) => {
-        data += `## ${entry.name}\n\n`;
-        data += `${entry.value}\n\n`;
-    });
-
-    return data;
-}
-
-export function createProposalClipboardPlainText(proposal: GrantProposal): string {
-    const sections = getProposalSections(proposal);
-    const lines = [proposal.name, ""];
-
-    sections.forEach((section) => {
-        lines.push(section.name, "", section.value, "");
-    });
-
-    return lines.join("\n").trimEnd();
-}
-
-function parseExportBlocks(content: string): ExportBlock[] {
-    return content.split("\n").map((line) => {
-        const trimmed = line.trim();
-
-        if (!trimmed) {
-            return { type: "blank", text: "" };
-        }
-
-        if (trimmed.startsWith("## ")) {
-            return { type: "heading2", text: trimmed.replace(/^##\s+/, "") };
-        }
-
-        if (trimmed.startsWith("# ")) {
-            return { type: "heading1", text: trimmed.replace(/^#\s+/, "") };
-        }
-
-        if (/^[-*]\s+/.test(trimmed) || /^\d+\.\s+/.test(trimmed)) {
-            return { type: "bullet", text: trimmed.replace(/^([-*]|\d+\.)\s+/, "") };
-        }
-
-        return { type: "paragraph", text: trimmed };
-    });
-}
-
 abstract class AbstractExporter {
     async run(proposal: GrantProposal): Promise<void> {
         const blob = await this.createDownloadBlob(proposal);
@@ -87,32 +34,93 @@ abstract class AbstractExporter {
 
     abstract getDownloadExtension(): string;
     abstract createDownloadBlob(proposal: GrantProposal): Promise<Blob>;
+
+    getProposalSections(proposal: GrantProposal): ProposalSection[] {
+        console.log(proposal)
+        return proposal.outputs.map(output => {
+            return ({
+                name: output.name,
+                value: proposal.structuredResponse![output.name]
+            })
+        });
+    }
+
+    createMarkdownContent(proposal: GrantProposal): string {
+        let data = `# ${proposal.name}\n\n`;
+
+        this.getProposalSections(proposal).forEach((entry) => {
+            data += `## ${entry.name}\n\n`;
+            data += `${entry.value}\n\n`;
+        });
+
+        return data;
+    }
+
+
+    createTextContent(proposal: GrantProposal): string {
+        const sections = this.getProposalSections(proposal);
+        const lines = [proposal.name, ""];
+
+        sections.forEach((section) => {
+            lines.push(section.name, "", section.value, "");
+        });
+
+        return lines.join("\n").trimEnd();
+    }
+
+    parseExportBlocks(content: string): ExportBlock[] {
+        return content.split("\n").map((line) => {
+            const trimmed = line.trim();
+
+            if (!trimmed) {
+                return { type: "blank", text: "" };
+            }
+
+            if (trimmed.startsWith("## ")) {
+                return { type: "heading2", text: trimmed.replace(/^##\s+/, "") };
+            }
+
+            if (trimmed.startsWith("# ")) {
+                return { type: "heading1", text: trimmed.replace(/^#\s+/, "") };
+            }
+
+            if (/^[-*]\s+/.test(trimmed) || /^\d+\.\s+/.test(trimmed)) {
+                return { type: "bullet", text: trimmed.replace(/^([-*]|\d+\.)\s+/, "") };
+            }
+
+            return { type: "paragraph", text: trimmed };
+        });
+    }
 }
 
-
-class TextExporter extends AbstractExporter {
+export class TextExporter extends AbstractExporter {
     getDownloadExtension(): string {
         return 'txt';
     }
     async createDownloadBlob(proposal: GrantProposal): Promise<Blob> {
-        return new Blob([createProposalClipboardPlainText(proposal)], { type: 'text/plain;charset=utf-8' });
+        return new Blob([this.createTextContent(proposal)], { type: 'text/plain;charset=utf-8' });
     }
+
+
 }
 
-class MarkdownExporter extends AbstractExporter {
+export class MarkdownExporter extends AbstractExporter {
     getDownloadExtension(): string {
         return 'md';
     }
+
     async createDownloadBlob(proposal: GrantProposal): Promise<Blob> {
-        return new Blob([createMarkdownContent(proposal)], { type: 'text/markdown' });
+        return new Blob([this.createMarkdownContent(proposal)], { type: 'text/markdown' });
     }
 }
 
 
-class JsonExporter extends AbstractExporter {
+
+export class JsonExporter extends AbstractExporter {
     getDownloadExtension(): string {
         return 'json';
     }
+
     async createDownloadBlob(proposal: GrantProposal): Promise<Blob> {
         return new Blob([JSON.stringify(
             {
@@ -123,13 +131,13 @@ class JsonExporter extends AbstractExporter {
     }
 }
 
-class DocxExporter extends AbstractExporter {
+export class DocxExporter extends AbstractExporter {
     getDownloadExtension(): string {
         return "docx";
     }
 
     async createDownloadBlob(proposal: GrantProposal): Promise<Blob> {
-        const blocks = parseExportBlocks(createMarkdownContent(proposal));
+        const blocks = this.parseExportBlocks(this.createMarkdownContent(proposal));
         const paragraphs = blocks.map((block) => {
             switch (block.type) {
                 case "heading1":
@@ -168,14 +176,14 @@ class DocxExporter extends AbstractExporter {
     }
 }
 
-class PdfExporter extends AbstractExporter {
+export class PdfExporter extends AbstractExporter {
     getDownloadExtension(): string {
         return "pdf";
     }
 
     async createDownloadBlob(proposal: GrantProposal): Promise<Blob> {
         const pdf = new jsPDF({ unit: "pt", format: "letter" });
-        const blocks = parseExportBlocks(createMarkdownContent(proposal));
+        const blocks = this.parseExportBlocks(this.createMarkdownContent(proposal));
         const pageWidth = pdf.internal.pageSize.getWidth();
         const pageHeight = pdf.internal.pageSize.getHeight();
         const margin = 54;
