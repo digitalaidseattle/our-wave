@@ -10,6 +10,12 @@ import { GrantAiService } from "../pages/grants/grantAiService";
 import { GrantProposalService } from "../services/grantProposalService";
 import { grantRecipeService } from "../services/grantRecipeService";
 import { requireRecipeName, requireUniqueRecipeConfigFields } from "../utils/recipeValidation";
+import dayjs from "dayjs";
+
+// Format: "6/22 2:27:09 PM"
+function formatProposalDate(date: Date): string {
+    return dayjs(date).format("M/D h:mm:ss A");
+}
 import { GrantProposal, GrantRecipe } from "../types";
 
 export async function generateProposal(recipe: GrantRecipe): Promise<GrantProposal> {
@@ -56,10 +62,20 @@ export async function generateProposal(recipe: GrantRecipe): Promise<GrantPropos
         recipe.contexts,
     );
 
+
+    // Build a unique proposal name using recipe description + generation timestamp.
+    // Try once — if the name already exists, fail fast.
+    const recipeId = String(savedRecipe.id);
+    const proposalName = `${savedRecipe.description} ${formatProposalDate(new Date())}`;
+
+    if (await GrantProposalService.getInstance().proposalNameExists(proposalName)) {
+        throw new Error(`A proposal named "${proposalName}" already exists. Please try again in a moment.`);
+    }
+
     const proposal = {
-        ...grantProposalService.empty(),
-        name: `${savedRecipe.description} (${(savedRecipe.lastSubmitted as Date).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })})`,
-        grantRecipeId: String(savedRecipe.id),
+        ...GrantProposalService.getInstance().empty(),
+        name: proposalName,
+        grantRecipeId: recipeId,
         structuredResponse: JSON.parse(response.text!),
         rating: null,
         totalTokenCount: response.usageMetadata ? response.usageMetadata.totalTokenCount : null,
