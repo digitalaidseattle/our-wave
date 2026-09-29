@@ -14,6 +14,7 @@ import { LoadingContext, useHelp, useNotifications } from "@digitalaidseattle/co
 import { ConfirmationDialog } from "@digitalaidseattle/mui";
 
 import { GrantRecipeContext } from "../../components/GrantRecipeContext";
+import { DeleteConfirmationDialog } from "../../components/DeleteConfirmationDialog";
 import { HelpDrawer } from "../../components/HelpDrawer";
 import { HelpTopicContext } from "../../components/HelpTopicContext";
 import { LoadingOverlay } from "../../components/LoadingOverlay";
@@ -558,7 +559,7 @@ const GrantRecipesDetailPage: React.FC = () => {
                   </CardActions>
 
                   {/* Delete Confirmation Dialog */}
-                  <ConfirmationDialog
+                  <DeleteConfirmationDialog
                     title="Delete Recipe?"
                     message={`Are you sure you want to delete "${recipe?.description}"? This action cannot be undone. Any proposals generated from this recipe will remain, but they won't be able to regenerate.`}
                     open={openDeleteDialog}

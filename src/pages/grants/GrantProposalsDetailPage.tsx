@@ -8,7 +8,7 @@ import { NavLink, useNavigate, useParams } from "react-router-dom";
 
 import { DownloadOutlined, EditOutlined, HomeOutlined } from "@ant-design/icons";
 import { LoadingContext, useNotifications } from "@digitalaidseattle/core";
-import { Clipboard, ConfirmationDialog } from "@digitalaidseattle/mui";
+import { Clipboard } from "@digitalaidseattle/mui";
 import DeleteIcon from "@mui/icons-material/Delete";
 import {
   Box,
@@ -29,6 +29,7 @@ import {
 import Markdown from "react-markdown";
 
 import { PROPOSAL_LABELS } from "../../constants/labels";
+import { DeleteConfirmationDialog } from "../../components/DeleteConfirmationDialog";
 import { LoadingOverlay } from "../../components/LoadingOverlay";
 import { TextEdit } from "../../components/TextEdit";
 import {
@@ -393,7 +394,7 @@ const GrantProposalsDetailPage: React.FC = () => {
           </Card>
         </Stack>
       )}
-      <ConfirmationDialog
+      <DeleteConfirmationDialog
         title="Delete Proposal?"
         message={`Are you sure you want to delete "${proposal?.name || "this proposal"}"? This action cannot be undone.`}
         open={openDeleteDialog}
