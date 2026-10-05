@@ -1,28 +1,29 @@
 /**
- *  CreateRecipe.ts
+ *  GenerateProposal.ts
  *
  *  @copyright 2024 Digital Aid Seattle
  *
  */
 
+import dayjs from "dayjs";
+
 import { authService } from "../App";
-import { GrantAiService } from "../pages/grants/grantAiService";
+import { Configuration } from "../services/Configuration";
 import { GrantProposalService } from "../services/grantProposalService";
 import { grantRecipeService } from "../services/grantRecipeService";
 import { requireRecipeName, requireUniqueRecipeConfigFields } from "../utils/recipeValidation";
-import dayjs from "dayjs";
+import { GrantProposal, GrantRecipe } from "../types";
 
 // Format: "6/22 2:27:09 PM"
 function formatProposalDate(date: Date): string {
     return dayjs(date).format("M/D h:mm:ss A");
 }
-import { GrantProposal, GrantRecipe } from "../types";
 
 export async function generateProposal(recipe: GrantRecipe): Promise<GrantProposal> {
     requireRecipeName(recipe, "generate a proposal");
     requireUniqueRecipeConfigFields(recipe);
 
-    const grantAiService = GrantAiService.getInstance();
+    const grantAiService = Configuration.getInstance().aiService;
     const grantProposalService = GrantProposalService.getInstance();
 
     const outputs = recipe.outputsWithWordCount ?? [];
@@ -55,7 +56,7 @@ export async function generateProposal(recipe: GrantRecipe): Promise<GrantPropos
 
     // Ask AI for structured JSON using output field names as keys
     const schemaParams = outputs.map((o) => o.name);
-    const response = await grantAiService.parameterizedQuery(
+    const response = await grantAiService.structuredQuery(
         recipe.prompt,
         schemaParams,
         recipe.modelType,
@@ -72,13 +73,14 @@ export async function generateProposal(recipe: GrantRecipe): Promise<GrantPropos
         throw new Error(`A proposal named "${proposalName}" already exists. Please try again in a moment.`);
     }
 
+    
     const proposal = {
         ...GrantProposalService.getInstance().empty(),
         name: proposalName,
         grantRecipeId: recipeId,
-        structuredResponse: JSON.parse(response.text!),
+        structuredResponse: response.content as { [key: string]: string },
         rating: null,
-        totalTokenCount: response.usageMetadata ? response.usageMetadata.totalTokenCount : null,
+        totalTokenCount: response.tokenCount ?? null,
         model: recipe.modelType,
         outputs: JSON.parse(JSON.stringify(recipe.outputsWithWordCount))
     };
