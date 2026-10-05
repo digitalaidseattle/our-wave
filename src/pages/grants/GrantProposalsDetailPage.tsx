@@ -34,7 +34,7 @@ import { LoadingOverlay } from "../../components/LoadingOverlay";
 import { TextEdit } from "../../components/TextEdit";
 import {
   SUPPORTED_DOWNLOAD_TYPE,
-  createProposalClipboardPlainText,
+  TextExporter,
 } from "../../services/ProposalExporter";
 import { GrantProposalService } from "../../services/grantProposalService";
 import { grantRecipeService } from "../../services/grantRecipeService";
@@ -61,6 +61,8 @@ const GrantProposalsDetailPage: React.FC = () => {
   const [recipe, setRecipe] = useState<GrantRecipe | null>(null);
   const [outputs, setOutputs] = useState<GrantOutput[]>([]);
   const [rating, setRating] = useState<number>(0);
+  const [clipboardText, setClipboardText] = useState<string>("");
+
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -105,7 +107,11 @@ const GrantProposalsDetailPage: React.FC = () => {
     // TODO when all proposals have outputs, the recipe check may be removed.
     if (proposal && recipe) {
       setOutputs(proposal.outputs ?? recipe.outputsWithWordCount ?? []);
+
+      const exporter = new TextExporter();
+      setClipboardText(exporter.createTextContent(proposal));
     }
+
   }, [recipe, proposal]);
 
   useEffect(() => {
@@ -123,7 +129,7 @@ const GrantProposalsDetailPage: React.FC = () => {
   }
 
   function countCharacters(text: string): number {
-    return text? text.length : 0;
+    return text ? text.length : 0;
   }
 
 
@@ -307,7 +313,7 @@ const GrantProposalsDetailPage: React.FC = () => {
                   </Tooltip>
                   <Tooltip title={LABELS.COPY_ALL_TOOLTIP}>
                     <Box>
-                      <Clipboard text={createProposalClipboardPlainText(proposal)} />
+                      <Clipboard text={clipboardText} />
                     </Box>
                   </Tooltip>
                   <Menu
