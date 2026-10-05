@@ -13,6 +13,7 @@ export const DASHBOARD_STRINGS = {
   thisMonthTokensUsed: "This month tokens used",
   currentMonthByModel: "Current month by model",
   allTimeTokensUsed: "All time tokens used",
+  allTimeByModel: "All time by model",
   unspecifiedModel: "Unspecified model",
   loadingTokenUsage: "Loading...",
 };
