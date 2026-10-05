@@ -1,23 +1,23 @@
 /**
- *  CreateRecipe.ts
+ *  GenerateProposal.ts
  *
  *  @copyright 2024 Digital Aid Seattle
  *
  */
+
+import dayjs from "dayjs";
 
 import { authService } from "../App";
 import { Configuration } from "../services/Configuration";
 import { GrantProposalService } from "../services/grantProposalService";
 import { grantRecipeService } from "../services/grantRecipeService";
 import { requireRecipeName, requireUniqueRecipeConfigFields } from "../utils/recipeValidation";
-import dayjs from "dayjs";
+import { GrantProposal, GrantRecipe } from "../types";
 
 // Format: "6/22 2:27:09 PM"
 function formatProposalDate(date: Date): string {
     return dayjs(date).format("M/D h:mm:ss A");
 }
-import { GrantProposal, GrantRecipe } from "../types";
-import { requireRecipeName, requireUniqueRecipeConfigFields } from "../utils/recipeValidation";
 
 export async function generateProposal(recipe: GrantRecipe): Promise<GrantProposal> {
     requireRecipeName(recipe, "generate a proposal");
@@ -73,11 +73,12 @@ export async function generateProposal(recipe: GrantRecipe): Promise<GrantPropos
         throw new Error(`A proposal named "${proposalName}" already exists. Please try again in a moment.`);
     }
 
+    
     const proposal = {
         ...GrantProposalService.getInstance().empty(),
-        name: `${savedRecipe.description} (${(savedRecipe.lastSubmitted as Date).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })})`,
-        grantRecipeId: String(savedRecipe.id),
-        structuredResponse: JSON.parse(response.text!),
+        name: proposalName,
+        grantRecipeId: recipeId,
+        structuredResponse: response.content as { [key: string]: string },
         rating: null,
         totalTokenCount: response.tokenCount ?? null,
         model: recipe.modelType,
