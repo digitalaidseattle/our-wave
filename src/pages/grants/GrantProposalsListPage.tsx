@@ -4,6 +4,7 @@ import {
   Box, Breadcrumbs, Button, Card, CardContent, CardHeader,
   IconButton, Rating, Toolbar, Tooltip, Typography
 } from "@mui/material";
+import { DeleteConfirmationDialog } from "../../components/DeleteConfirmationDialog";
 import {
   DataGrid,
   GridColDef,
@@ -34,6 +35,7 @@ const GrantProposalsListPage: React.FC = () => {
   const [proposals, setProposals] = useState<GrantProposal[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 10 });
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
 
   function getCreatedAtSortValue(createdAt: GrantProposal["createdAt"]): number {
     return createdAt instanceof Date ? createdAt.getTime() : (createdAt as Timestamp).seconds;
@@ -56,13 +58,15 @@ const GrantProposalsListPage: React.FC = () => {
   };
 
   const handleDelete = () => {
-    // Confirm deletion
-    const confirmed = window.confirm(LABELS.DELETE_CONFIRMATION);
+    setOpenDeleteDialog(true);
+  }
 
-    if (!confirmed) {
-      return;
-    }
+  const handleDeleteCancel = () => {
+    setOpenDeleteDialog(false);
+  }
 
+  const handleDeleteConfirm = () => {
+    setOpenDeleteDialog(false);
     setLoading(true);
     const selectedProposals = proposals.filter((proposal) => {
       return proposal.id != null && selectedIds.includes(String(proposal.id));
@@ -244,6 +248,13 @@ const GrantProposalsListPage: React.FC = () => {
           />
         </CardContent>
       </Card >
+      <DeleteConfirmationDialog
+        title={LABELS.DELETE_PROPOSALS}
+        message={LABELS.DELETE_CONFIRMATION}
+        open={openDeleteDialog}
+        handleConfirm={handleDeleteConfirm}
+        handleCancel={handleDeleteCancel}
+      />
     </>
   );
 };

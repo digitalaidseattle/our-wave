@@ -42,13 +42,7 @@ import {
 import { isValidRecipe } from '../../utils/recipeValidation';
 
 const numberFormatter = new Intl.NumberFormat();
-const compactNumberFormatter = new Intl.NumberFormat(undefined, {
-  maximumFractionDigits: 1,
-  notation: "compact",
-});
-
 const formatTokenCount = (value: number) => numberFormatter.format(Math.round(value));
-const formatCompactTokenCount = (value: number) => compactNumberFormatter.format(Math.round(value));
 
 const tokenUsageColors = ["#6ea6ef", "#73b863", "#d9a941", "#e8524d", "#b694f6", "#4db6ac"];
 
@@ -187,7 +181,7 @@ const CreateRecipeCard = () => {
 }
 
 const TokenUsageCard = () => {
-  const [currentMonthUsage, setCurrentMonthUsage] = useState<TokenUsageSummary>({
+  const [allTimeUsage, setAllTimeUsage] = useState<TokenUsageSummary>({
     totalTokensUsed: 0,
     modelSummaries: [],
   });
@@ -202,15 +196,14 @@ const TokenUsageCard = () => {
         if (!active) return;
 
         const now = new Date();
-        const currentMonthProposals = tokenUsageService.filterToMonth(proposals, now);
 
-        setCurrentMonthUsage(tokenUsageService.summarizeByModel(currentMonthProposals));
+        setAllTimeUsage(tokenUsageService.summarizeByModel(proposals));
         setMonthlyUsage(tokenUsageService.summarizeMonthlyUsage(proposals, 6, now));
       })
       .catch((error) => {
         console.error("Error loading token usage:", error);
         if (active) {
-          setCurrentMonthUsage({
+          setAllTimeUsage({
             totalTokensUsed: 0,
             modelSummaries: [],
           });
@@ -237,7 +230,7 @@ const TokenUsageCard = () => {
             <Typography variant="body2" color="text.secondary">
               {loading
                 ? DASHBOARD_STRINGS.loadingTokenUsage
-                : `${formatCompactTokenCount(currentMonthUsage.totalTokensUsed)} this month`}
+                : `${formatTokenCount(allTimeUsage.totalTokensUsed)} tokens all time`}
             </Typography>
           </Stack>
 
@@ -247,7 +240,7 @@ const TokenUsageCard = () => {
             </Typography>
           )}
 
-          {!loading && currentMonthUsage.modelSummaries.length === 0 && monthlyUsage.every((point) => point.tokensUsed === 0) && (
+          {!loading && allTimeUsage.modelSummaries.length === 0 && monthlyUsage.every((point) => point.tokensUsed === 0) && (
             <Typography variant="body2" color="text.secondary">
               No token usage yet
             </Typography>
@@ -258,16 +251,16 @@ const TokenUsageCard = () => {
               <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
                 {DASHBOARD_STRINGS.monthlyTokenUsage}
               </Typography>
-              <TokenUsageMonthlyChart points={monthlyUsage} />
+              <TokenUsageMonthlyChart points={monthlyUsage} colors={tokenUsageColors} />
             </Box>
           )}
 
-          {!loading && currentMonthUsage.modelSummaries.length > 0 && (
+          {!loading && allTimeUsage.modelSummaries.length > 0 && (
             <Stack spacing={2.25}>
               <Typography variant="subtitle2" color="text.secondary">
-                {DASHBOARD_STRINGS.currentMonthByModel}
+                {DASHBOARD_STRINGS.allTimeByModel}
               </Typography>
-              {currentMonthUsage.modelSummaries.map((summary, index) => {
+              {allTimeUsage.modelSummaries.map((summary, index) => {
                 const barColor = tokenUsageColors[index % tokenUsageColors.length];
 
                 return (
@@ -298,19 +291,15 @@ const TokenUsageCard = () => {
                             {summary.model}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
-                            {summary.totalUsagePercent.toFixed(1)}% of this month&apos;s usage
+                            {summary.totalUsagePercent.toFixed(1)}% of all-time usage
                           </Typography>
                         </Stack>
                         <Stack
                           direction="row"
-                          spacing={1.5}
-                          alignItems="baseline"
-                          sx={{ flexWrap: "wrap", justifyContent: { xs: "flex-start", sm: "flex-end" } }}
+                          alignItems="center"
+                          sx={{ justifyContent: { xs: "flex-start", sm: "flex-end" } }}
                         >
                           <Typography variant="body2" fontWeight={700} color="text.primary">
-                            {formatCompactTokenCount(summary.tokensUsed)}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
                             {formatTokenCount(summary.tokensUsed)} tokens
                           </Typography>
                         </Stack>
@@ -318,7 +307,7 @@ const TokenUsageCard = () => {
                       <LinearProgress
                         variant="determinate"
                         value={summary.totalUsagePercent}
-                        aria-label={`${summary.model} share of current month token usage`}
+                        aria-label={`${summary.model} share of all-time token usage`}
                         sx={{
                           height: 12,
                           borderRadius: 1,
@@ -336,11 +325,6 @@ const TokenUsageCard = () => {
             </Stack>
           )}
 
-          {!loading && currentMonthUsage.totalTokensUsed > 0 && (
-            <Typography variant="caption" color="text.secondary">
-              {DASHBOARD_STRINGS.thisMonthTokensUsed}: {formatTokenCount(currentMonthUsage.totalTokensUsed)}
-            </Typography>
-          )}
         </Stack>
       </CardContent>
     </Card>
