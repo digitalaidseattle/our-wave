@@ -5,7 +5,9 @@ import { useContext, useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 
 import { LoadingContext, useNotifications } from "@digitalaidseattle/core";
+import { DeleteConfirmationDialog } from "../../components/DeleteConfirmationDialog";
 import { LoadingOverlay } from "../../components/LoadingOverlay";
+import { RECIPE_LABELS } from "../../constants/labels";
 import { grantRecipeService } from "../../services/grantRecipeService";
 import { cloneRecipe } from "../../transactions/CloneRecipe";
 import { createRecipe } from "../../transactions/CreateRecipe";
@@ -25,6 +27,7 @@ const GrantRecipesListPage: React.FC = () => {
   const [recipes, setRecipes] = useState<GrantRecipe[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 10 });
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
 
   const [openConfirmationDialog, setOpenConfirmationDialog] = useState<boolean>(false);
 
@@ -52,17 +55,26 @@ const GrantRecipesListPage: React.FC = () => {
   };
 
   const handleDelete = () => {
+    setOpenDeleteDialog(true);
+  }
+
+  const handleDeleteCancel = () => {
+    setOpenDeleteDialog(false);
+  }
+
+  const handleDeleteConfirm = () => {
+    setOpenDeleteDialog(false);
     setLoading(true);
     Promise
       .all(selectedIds.map(id => deleteRecipe(id)))
       .then(() => {
         setOpenConfirmationDialog(false);
         fetchRecipes();
-        notifications.success("Recipes deleted!");
+        notifications.success(RECIPE_LABELS.DELETE_SUCCESS)
       })
       .catch(error => {
         console.error("Error deleting recipe:", error);
-        notifications.error("Failed to delete the recipe:", `${error instanceof Error ? error.message : undefined}`);
+        notifications.error(RECIPE_LABELS.DELETE_FAILURE, `${error instanceof Error ? error.message : undefined}`);
       })
       .finally(() => setLoading(false));
   }
@@ -264,11 +276,13 @@ const GrantRecipesListPage: React.FC = () => {
           />
         </CardContent>
       </Card>
-      <ConfirmationDialog
-        message={DELETE_MESSAGE}
-        open={openConfirmationDialog}
-        handleConfirm={handleDelete}
-        handleCancel={() => setOpenConfirmationDialog(false)} />
+      <DeleteConfirmationDialog
+        title={RECIPE_LABELS.DELETE_PROPOSALS}
+        message={RECIPE_LABELS.DELETE_CONFIRMATION}
+        open={openDeleteDialog}
+        handleConfirm={handleDeleteConfirm}
+        handleCancel={handleDeleteCancel}
+      />
     </>
   );
 };

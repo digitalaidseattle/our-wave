@@ -1,22 +1,29 @@
 /**
- *  CreateRecipe.ts
+ *  GenerateProposal.ts
  *
  *  @copyright 2024 Digital Aid Seattle
  *
  */
 
+import dayjs from "dayjs";
+
 import { authService } from "../App";
-import { GrantAiService } from "../pages/grants/grantAiService";
+import { Configuration } from "../services/Configuration";
 import { GrantProposalService } from "../services/grantProposalService";
 import { grantRecipeService } from "../services/grantRecipeService";
 import { requireRecipeName, requireUniqueRecipeConfigFields } from "../utils/recipeValidation";
 import { GrantProposal, GrantRecipe } from "../types";
 
+// Format: "6/22 2:27:09 PM"
+function formatProposalDate(date: Date): string {
+    return dayjs(date).format("M/D h:mm:ss A");
+}
+
 export async function generateProposal(recipe: GrantRecipe): Promise<GrantProposal> {
     requireRecipeName(recipe, "generate a proposal");
     requireUniqueRecipeConfigFields(recipe);
 
-    const grantAiService = GrantAiService.getInstance();
+    const grantAiService = Configuration.getInstance().aiService;
     const grantProposalService = GrantProposalService.getInstance();
 
     const outputs = recipe.outputsWithWordCount ?? [];
@@ -49,20 +56,31 @@ export async function generateProposal(recipe: GrantRecipe): Promise<GrantPropos
 
     // Ask AI for structured JSON using output field names as keys
     const schemaParams = outputs.map((o) => o.name);
-    const response = await grantAiService.parameterizedQuery(
+    const response = await grantAiService.structuredQuery(
         recipe.prompt,
         schemaParams,
         recipe.modelType,
         recipe.contexts,
     );
 
+
+    // Build a unique proposal name using recipe description + generation timestamp.
+    // Try once — if the name already exists, fail fast.
+    const recipeId = String(savedRecipe.id);
+    const proposalName = `${savedRecipe.description} ${formatProposalDate(new Date())}`;
+
+    if (await GrantProposalService.getInstance().proposalNameExists(proposalName)) {
+        throw new Error(`A proposal named "${proposalName}" already exists. Please try again in a moment.`);
+    }
+
+    
     const proposal = {
-        ...grantProposalService.empty(),
-        name: `${savedRecipe.description} (${(savedRecipe.lastSubmitted as Date).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })})`,
-        grantRecipeId: String(savedRecipe.id),
-        structuredResponse: JSON.parse(response.text!),
+        ...GrantProposalService.getInstance().empty(),
+        name: proposalName,
+        grantRecipeId: recipeId,
+        structuredResponse: response.content as { [key: string]: string },
         rating: null,
-        totalTokenCount: response.usageMetadata ? response.usageMetadata.totalTokenCount : null,
+        totalTokenCount: response.tokenCount ?? null,
         model: recipe.modelType,
         outputs: JSON.parse(JSON.stringify(recipe.outputsWithWordCount))
     };
