@@ -15,9 +15,6 @@ import { deleteRecipe } from "../../transactions/DeleteRecipe";
 import type { GrantRecipe, Timestamp } from "../../types";
 import { DateUtils } from "../../utils/dateUtils";
 import { hasRecipeName } from "../../utils/recipeValidation";
-import { ConfirmationDialog } from "@digitalaidseattle/mui";
-
-const DELETE_MESSAGE = "Are you sure you want to delete the selected recipes? This action cannot be undone."
 
 const GrantRecipesListPage: React.FC = () => {
   const notifications = useNotifications();
@@ -29,7 +26,6 @@ const GrantRecipesListPage: React.FC = () => {
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 10 });
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
 
-  const [openConfirmationDialog, setOpenConfirmationDialog] = useState<boolean>(false);
 
   useEffect(() => {
     fetchRecipes();
@@ -54,10 +50,6 @@ const GrantRecipesListPage: React.FC = () => {
     }
   };
 
-  const handleDelete = () => {
-    setOpenDeleteDialog(true);
-  }
-
   const handleDeleteCancel = () => {
     setOpenDeleteDialog(false);
   }
@@ -68,7 +60,6 @@ const GrantRecipesListPage: React.FC = () => {
     Promise
       .all(selectedIds.map(id => deleteRecipe(id)))
       .then(() => {
-        setOpenConfirmationDialog(false);
         fetchRecipes();
         notifications.success(RECIPE_LABELS.DELETE_SUCCESS)
       })
@@ -215,7 +206,7 @@ const GrantRecipesListPage: React.FC = () => {
         <Tooltip title="Delete Recipes">
           <Box>
             <IconButton color="error"
-              onClick={() => setOpenConfirmationDialog(true)}
+              onClick={() => setOpenDeleteDialog(true)}
               disabled={selectedIds.length === 0} >
               <DeleteOutlined />
             </IconButton>
@@ -277,7 +268,7 @@ const GrantRecipesListPage: React.FC = () => {
         </CardContent>
       </Card>
       <DeleteConfirmationDialog
-        title={RECIPE_LABELS.DELETE_PROPOSALS}
+        title={RECIPE_LABELS.DELETE_RECIPES}
         message={RECIPE_LABELS.DELETE_CONFIRMATION}
         open={openDeleteDialog}
         handleConfirm={handleDeleteConfirm}
