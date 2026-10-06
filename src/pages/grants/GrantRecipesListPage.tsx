@@ -26,6 +26,7 @@ const GrantRecipesListPage: React.FC = () => {
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 10 });
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
 
+
   useEffect(() => {
     fetchRecipes();
   }, []);
@@ -48,10 +49,6 @@ const GrantRecipesListPage: React.FC = () => {
       navigate(`/grant-recipes/${params.row.id}`);
     }
   };
-
-  const handleDelete = () => {
-    setOpenDeleteDialog(true);
-  }
 
   const handleDeleteCancel = () => {
     setOpenDeleteDialog(false);
@@ -209,7 +206,7 @@ const GrantRecipesListPage: React.FC = () => {
         <Tooltip title="Delete Recipes">
           <Box>
             <IconButton color="error"
-              onClick={handleDelete}
+              onClick={() => setOpenDeleteDialog(true)}
               disabled={selectedIds.length === 0} >
               <DeleteOutlined />
             </IconButton>
@@ -271,7 +268,7 @@ const GrantRecipesListPage: React.FC = () => {
         </CardContent>
       </Card>
       <DeleteConfirmationDialog
-        title={RECIPE_LABELS.DELETE_PROPOSALS}
+        title={RECIPE_LABELS.DELETE_RECIPES}
         message={RECIPE_LABELS.DELETE_CONFIRMATION}
         open={openDeleteDialog}
         handleConfirm={handleDeleteConfirm}
