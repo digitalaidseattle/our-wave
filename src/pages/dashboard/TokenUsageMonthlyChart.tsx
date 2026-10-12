@@ -6,6 +6,7 @@ import type { MonthlyTokenUsagePoint } from "../../services/tokenUsageService";
 
 type TokenUsageMonthlyChartProps = {
   points: MonthlyTokenUsagePoint[];
+  colors: string[];
 };
 
 const numberFormatter = new Intl.NumberFormat(undefined, {
@@ -16,6 +17,7 @@ const numberFormatter = new Intl.NumberFormat(undefined, {
 const baseOptions: ApexOptions = {
   chart: {
     type: "bar",
+    stacked: true,
     toolbar: { show: false },
   },
   plotOptions: {
@@ -46,20 +48,41 @@ const baseOptions: ApexOptions = {
     strokeDashArray: 4,
   },
   legend: {
-    show: false,
+    show: true,
+    position: "top",
+    horizontalAlign: "left",
+    fontFamily: "'Public Sans', sans-serif",
+    markers: {
+      size: 12,
+      shape: "square",
+    },
+    itemMargin: {
+      horizontal: 12,
+      vertical: 4,
+    },
   },
 };
 
-const TokenUsageMonthlyChart = ({ points }: TokenUsageMonthlyChartProps) => {
+const TokenUsageMonthlyChart = ({ points, colors }: TokenUsageMonthlyChartProps) => {
   const theme = useTheme();
   const line = theme.palette.divider;
   const secondary = theme.palette.text.secondary;
   const [options, setOptions] = useState<ApexOptions>(baseOptions);
+  const models = Array.from(
+    points.reduce((modelSet, point) => {
+      Object.keys(point.modelTokens).forEach((model) => modelSet.add(model));
+      return modelSet;
+    }, new Set<string>())
+  ).sort((modelA, modelB) => {
+    const modelATokens = points.reduce((total, point) => total + (point.modelTokens[modelA] ?? 0), 0);
+    const modelBTokens = points.reduce((total, point) => total + (point.modelTokens[modelB] ?? 0), 0);
+    return modelBTokens - modelATokens;
+  });
 
   useEffect(() => {
     setOptions({
       ...baseOptions,
-      colors: [theme.palette.primary.main],
+      colors,
       xaxis: {
         ...baseOptions.xaxis,
         categories: points.map((point) => point.monthLabel),
@@ -87,15 +110,19 @@ const TokenUsageMonthlyChart = ({ points }: TokenUsageMonthlyChartProps) => {
           formatter: (value: number) => `${numberFormatter.format(value)} tokens`,
         },
       },
+      legend: {
+        ...baseOptions.legend,
+        labels: {
+          colors: secondary,
+        },
+      },
     });
-  }, [line, points, secondary, theme]);
+  }, [colors, line, points, secondary]);
 
-  const series = [
-    {
-      name: "Tokens Used",
-      data: points.map((point) => point.tokensUsed),
-    },
-  ];
+  const series = models.map((model) => ({
+    name: model,
+    data: points.map((point) => point.modelTokens[model] ?? 0),
+  }));
 
   return <ReactApexChart options={options} series={series} type="bar" height={260} />;
 };
