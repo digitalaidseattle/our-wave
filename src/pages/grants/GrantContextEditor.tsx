@@ -9,17 +9,18 @@ import { Box, Button, Card, CardContent, CardHeader, CircularProgress, FormContr
 import React, { useContext, useEffect, useState } from 'react';
 
 import { useHelp, useNotifications } from '@digitalaidseattle/core';
-import { geminiService } from '../../api/geminiService';
 import { FileUploadDialog } from '../../components/FileUploadDialog';
 import { GrantRecipeContext } from '../../components/GrantRecipeContext';
 import { HelpTopicContext } from '../../components/HelpTopicContext';
 import { StableCursorTextField } from '../../components/StableCursorTextfield';
-import { GrantContext, GrantRecipe } from '../../types';
-import { GrantAiService } from './grantAiService';
 import { RECIPE_STRINGS } from '../../constants/grantRecipe';
+import { Configuration } from '../../services/Configuration';
+import { GrantContext, GrantRecipe } from '../../types';
 import { DUPLICATE_PROJECT_CONTEXT_ERROR } from '../../utils/recipeValidation';
-import { urlContextService } from '../../services/urlContextService';
+import { UrlContextService } from '../../services/urlContextService';
 import { getContextTokenLabel } from './contextTokenUtils';
+
+const urlContextService = UrlContextService.getInstance();
 
 const SUPPORTED_FILE_TYPES = [
     "text/plain",
@@ -151,7 +152,7 @@ type GrantContextEditorProps = {
 };
 
 export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ onChange, onEdit, onUploadingChange, duplicateContextIndexes = new Set<number>() }) => {
-    const grantAiService = GrantAiService.getInstance();
+    const grantAiService = Configuration.getInstance().aiService;
     const notifications = useNotifications();
 
     const { setHelpTopic } = useContext(HelpTopicContext);
@@ -180,7 +181,7 @@ export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ onChange
             if (revised.value && urlContextService.isValidUrl(revised.value)) {
                 try {
                     const pageText = await urlContextService.fetchPageText(revised.value);
-                    const tokenCount = await geminiService.calcTokenCount(recipe.modelType, pageText);
+                    const tokenCount = await grantAiService.calcTokenCount(recipe.modelType, pageText);
                     revisedContexts[index] = { ...revised, tokenCount };
                 } catch (err) {
                     // Firestore rejects literal `undefined` field values, so omit tokenCount entirely
@@ -198,7 +199,7 @@ export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ onChange
             return;
         }
 
-        const tokenCount = await geminiService.calcTokenCount(recipe.modelType, revised.value || '');
+        const tokenCount = await grantAiService.calcTokenCount(recipe.modelType, revised.value || '');
         revisedContexts[index] = { ...revised, tokenCount };
         onChange({ ...recipe, contexts: revisedContexts });
     }
@@ -248,7 +249,7 @@ export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ onChange
             if (TEXT_READABLE_TYPES.includes(file.type)) {
                 try {
                     const text = await file.text();
-                    tokenCount = await geminiService.calcTokenCount(recipe.modelType, text);
+                    tokenCount = await grantAiService.calcTokenCount(recipe.modelType, text);
                 } catch (err) {
                     console.error("Error calculating token count for text file", err);
                     tokenCount = null;
