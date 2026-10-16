@@ -5,14 +5,13 @@
  *
  */
 import { CheckCircleOutlined, DeleteOutlined, InfoCircleOutlined, PlusOutlined } from '@ant-design/icons';
-import { Box, Button, Card, CardContent, CardHeader, CircularProgress, FormControl, FormHelperText, IconButton, Stack, Toolbar, Tooltip, Typography } from "@mui/material";
-import React, { useContext, useEffect, useState } from 'react';
+import { Box, Button, Card, CardContent, CardHeader, CircularProgress, FormControl, FormHelperText, IconButton, Stack, TextField, Toolbar, Tooltip, Typography } from "@mui/material";
+import React, { useContext, useEffect, useRef, useState } from 'react';
 
 import { useHelp, useNotifications } from '@digitalaidseattle/core';
 import { FileUploadDialog } from '../../components/FileUploadDialog';
 import { GrantRecipeContext } from '../../components/GrantRecipeContext';
 import { HelpTopicContext } from '../../components/HelpTopicContext';
-import { StableCursorTextField } from '../../components/StableCursorTextfield';
 import { RECIPE_STRINGS } from '../../constants/grantRecipe';
 import { Configuration } from '../../services/Configuration';
 import { GrantContext, GrantRecipe } from '../../types';
@@ -34,14 +33,15 @@ interface ContextRowProps {
     context: GrantContext;
     onChange: (index: number, param: GrantContext) => void
     onDelete: (index: number) => void
-    onEdit?: () => void;
+    onBlur: (context: GrantContext) => void;
     isDone?: boolean;
     isDuplicate?: boolean;
 }
-const ContextRow = ({ index, context, onChange, onDelete, onEdit, isDone, isDuplicate }: ContextRowProps) => {
 
-    function handleTextChange(e: React.ChangeEvent<HTMLInputElement>): void {
-        onChange(index, { ...context, value: e.target.value });
+const ContextRow = ({ index, context, onChange, onDelete, onBlur, isDone, isDuplicate }: ContextRowProps) => {
+
+    function handleTextChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void {
+        onChange(index, { ...context, value: e.target.value, tokenCount: undefined });
     }
 
     return (
@@ -61,12 +61,12 @@ const ContextRow = ({ index, context, onChange, onDelete, onEdit, isDone, isDupl
                 <DeleteOutlined />
             </Button>
             {(context.type === 'text') &&
-                <StableCursorTextField
+                <TextField
                     fullWidth={true}
-                    value={context.value}
+                    defaultValue={context.value ?? ""}
                     placeholder='Enter context information here'
                     onChange={handleTextChange}
-                    onEdit={onEdit}
+                    onBlur={() => onBlur(context)}
                     multiline={true}
                     minRows={1}
                     maxRows={3}
@@ -97,44 +97,59 @@ const ContextRow = ({ index, context, onChange, onDelete, onEdit, isDone, isDupl
 
 type GrantContextEditorProps = {
     onChange: (recipe: GrantRecipe) => void;
-    onEdit?: () => void;
     onUploadingChange?: (isUploading: boolean) => void;
     duplicateContextIndexes?: Set<number>;
 };
 
-export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ onChange, onEdit, onUploadingChange, duplicateContextIndexes = new Set<number>() }) => {
+export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ onChange, onUploadingChange, duplicateContextIndexes = new Set<number>() }) => {
     const grantAiService = Configuration.getInstance().aiService;
     const notifications = useNotifications();
 
     const { setHelpTopic } = useContext(HelpTopicContext);
     const { setShowHelp } = useHelp();
     const { recipe } = useContext(GrantRecipeContext);
-    const [contexts, setContexts] = React.useState<GrantContext[]>([]);
+    const contexts = recipe.contexts ?? [];
+    const latestRecipe = useRef(recipe);
+    latestRecipe.current = recipe;
+    const mounted = useRef(true);
+    useEffect(() => {
+        mounted.current = true;
+        return () => { mounted.current = false; };
+    }, []);
+    const [rowVersion, setRowVersion] = useState(0);
     const [uploadingFileNames, setUploadingFileNames] = useState<Set<string>>(new Set());
     const [doneFileNames, setDoneFileNames] = useState<Set<string>>(new Set());
 
     const [showUploadDialog, setShowUploadDialog] = useState<boolean>(false);
-    useEffect(() => {
-        setContexts(recipe ? recipe.contexts : []);
-    }, [recipe]);
 
     async function addContexts(newContexts: GrantContext[]) {
         const revised = [...(contexts ?? []), ...newContexts]
         onChange({ ...recipe, contexts: revised });
     }
 
-    async function udpateContext(index: number, revised: GrantContext) {
+    function updateContext(index: number, revised: GrantContext) {
         const revisedContexts = contexts.slice();
         revisedContexts[index] = revised;
         onChange({ ...recipe, contexts: revisedContexts });
+    }
 
-        const tokenCount = await grantAiService.calcTokenCount(recipe.modelType, revised.value || '');
-        revisedContexts[index] = { ...revised, tokenCount };
-        onChange({ ...recipe, contexts: revisedContexts });
+    // Count on blur rather than issuing an AI request for every keystroke.
+    async function countContextTokens(context: GrantContext) {
+        const modelType = recipe.modelType;
+        const tokenCount = await grantAiService.calcTokenCount(modelType, context.value || '');
+        const current = latestRecipe.current;
+        const index = current.contexts.indexOf(context);
+        // Ignore results for text that was edited, removed, or loaded from another recipe.
+        if (!mounted.current || index < 0 || current.modelType !== modelType) return;
+        const revisedContexts = current.contexts.slice();
+        revisedContexts[index] = { ...context, tokenCount: tokenCount ?? undefined };
+        onChange({ ...current, contexts: revisedContexts });
     }
 
     function removeContext(index: number) {
         const removed = contexts[index];
+        // Index keys must be reset when deletion shifts the remaining uncontrolled fields.
+        setRowVersion(version => version + 1);
         const revised = contexts.filter((_, i) => i !== index);
         onChange({ ...recipe, contexts: revised });
         if (removed?.name) {
@@ -233,12 +248,12 @@ export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ onChange
                 <Stack gap={2}>
                     {(contexts ?? []).map((context, idx) => (
                         <ContextRow
-                            key={idx}
+                            key={`${rowVersion}-${idx}`}
                             index={idx}
                             context={context}
-                            onChange={udpateContext}
+                            onChange={updateContext}
+                            onBlur={countContextTokens}
                             onDelete={removeContext}
-                            onEdit={onEdit}
                             isDone={!!context.name && doneFileNames.has(context.name)}
                             isDuplicate={duplicateContextIndexes.has(idx)} />
                     ))}
