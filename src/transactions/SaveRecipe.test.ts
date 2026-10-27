@@ -115,4 +115,41 @@ describe("saveRecipe", () => {
       user
     );
   });
+
+  it("keeps an uploaded file context attached instead of dropping it", async () => {
+    const user = { email: "email@me.com" } as User;
+    const file = new File(["content"], "proposal.pdf", { type: "application/pdf" });
+    const recipe = {
+      id: "recipe-1",
+      description: "Unique Recipe",
+      contexts: [
+        { type: "application/pdf", name: "proposal.pdf", value: null, file, tokenCount: 42 },
+      ],
+    } as unknown as GrantRecipe;
+    const updated = { ...recipe } as GrantRecipe;
+
+    vi.spyOn(authService, "getUser").mockResolvedValue(user);
+    vi.spyOn(grantRecipeService, "descriptionExists").mockResolvedValue(false);
+    vi.spyOn(grantRecipeService, "generatePromptWithInputs").mockResolvedValue("prompt");
+    vi.mocked(storageService.upload).mockResolvedValue("https://storage.example/proposal.pdf");
+    const updateSpy = vi.spyOn(grantRecipeService, "update").mockResolvedValue(updated);
+
+    await saveRecipe(recipe);
+
+    expect(updateSpy).toHaveBeenCalledWith(
+      "recipe-1",
+      expect.objectContaining({
+        contexts: [
+          expect.objectContaining({
+            name: "proposal.pdf",
+            tokenCount: 42,
+            fileUrl: "https://storage.example/proposal.pdf",
+          }),
+        ],
+      }),
+      undefined,
+      undefined,
+      user
+    );
+  });
 });
