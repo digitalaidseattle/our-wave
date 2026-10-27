@@ -4,20 +4,23 @@
  *  @copyright 2025 Digital Aid Seattle
  *
  */
-import { CheckCircleOutlined, DeleteOutlined, InfoCircleOutlined, PlusOutlined } from '@ant-design/icons';
-import { Box, Button, Card, CardContent, CardHeader, CircularProgress, FormControl, FormHelperText, IconButton, Stack, Toolbar, Tooltip, Typography } from "@mui/material";
+import { CheckCircleOutlined, DeleteOutlined, FileOutlined, FontSizeOutlined, InfoCircleOutlined, LinkOutlined, PlusOutlined } from '@ant-design/icons';
+import { Box, Button, Card, CardContent, CardHeader, CircularProgress, FormControl, FormHelperText, IconButton, InputAdornment, Stack, Toolbar, Tooltip, Typography } from "@mui/material";
 import React, { useContext, useEffect, useState } from 'react';
 
 import { useHelp, useNotifications } from '@digitalaidseattle/core';
-import { geminiService } from '../../api/geminiService';
 import { FileUploadDialog } from '../../components/FileUploadDialog';
 import { GrantRecipeContext } from '../../components/GrantRecipeContext';
 import { HelpTopicContext } from '../../components/HelpTopicContext';
 import { StableCursorTextField } from '../../components/StableCursorTextfield';
-import { GrantContext, GrantRecipe } from '../../types';
-import { GrantAiService } from './grantAiService';
 import { RECIPE_STRINGS } from '../../constants/grantRecipe';
+import { Configuration } from '../../services/Configuration';
+import { GrantContext, GrantRecipe } from '../../types';
 import { DUPLICATE_PROJECT_CONTEXT_ERROR } from '../../utils/recipeValidation';
+import { UrlContextService } from '../../services/urlContextService';
+import { getContextTokenLabel } from './contextTokenUtils';
+
+const urlContextService = UrlContextService.getInstance();
 
 const SUPPORTED_FILE_TYPES = [
     "text/plain",
@@ -29,6 +32,56 @@ const SUPPORTED_FILE_TYPES = [
 
 const LABEL_UPLOAD_TITLE = "Select files";
 const LABEL_UPLOAD_SUBTITLE = "Supported types are: .txt, .pdf, .html, .json, .md";
+
+interface ContextFieldProps {
+    value: string | null;
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    onEdit?: () => void;
+}
+
+const UrlContextField = ({ value, onChange, onEdit }: ContextFieldProps) => {
+    const isUrlInvalid = !!value && !urlContextService.isValidUrl(value);
+    return (
+        <StableCursorTextField
+            fullWidth={true}
+            value={value}
+            placeholder='Enter URL link here'
+            onChange={onChange}
+            onEdit={onEdit}
+            minRows={1}
+            maxRows={3}
+            error={isUrlInvalid}
+            helperText={isUrlInvalid ? 'Please enter a valid http or https URL.' : ''}
+            InputProps={{
+                startAdornment: (
+                    <InputAdornment position="start">
+                        <LinkOutlined aria-label="URL" title="URL" />
+                    </InputAdornment>
+                )
+            }}
+        />
+    );
+};
+
+const TextContextField = ({ value, onChange, onEdit }: ContextFieldProps) => (
+    <StableCursorTextField
+        fullWidth={true}
+        value={value}
+        placeholder='Enter context information here'
+        onChange={onChange}
+        onEdit={onEdit}
+        multiline
+        minRows={1}
+        maxRows={3}
+        InputProps={{
+            startAdornment: (
+                <InputAdornment position="start">
+                    <FontSizeOutlined aria-label="Text" title="Text" />
+                </InputAdornment>
+            )
+        }}
+    />
+);
 
 interface ContextRowProps {
     index: number;
@@ -61,20 +114,17 @@ const ContextRow = ({ index, context, onChange, onDelete, onEdit, isDone, isDupl
                 onClick={() => onDelete(index)}>
                 <DeleteOutlined />
             </Button>
-            {(context.type === 'text') &&
-                <StableCursorTextField
-                    fullWidth={true}
-                    value={context.value}
-                    placeholder='Enter context information here'
-                    onChange={handleTextChange}
-                    onEdit={onEdit}
-                    multiline={true}
-                    minRows={1}
-                    maxRows={3}
-                />}
+            {(context.type === 'text' || context.type === 'url') && (
+                <Box sx={{ flex: 1 }}>
+                    {context.type === 'url'
+                        ? <UrlContextField value={context.value} onChange={handleTextChange} onEdit={onEdit} />
+                        : <TextContextField value={context.value} onChange={handleTextChange} onEdit={onEdit} />}
+                </Box>
+            )}
             {(SUPPORTED_FILE_TYPES.includes(context.type)) &&
                 <Box sx={{ flex: 1 }}>
                     <FormControl fullWidth={true} error={isDuplicate} sx={{ border: '1px solid', borderColor: isDuplicate ? 'error.main' : isDone ? 'success.main' : 'grey', padding: 2, borderRadius: 1, pr: 1, display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 1 }}>
+                        <FileOutlined aria-label="File" title="File" />
                         <Typography>File: {context.name}</Typography>
                         {isDone && (
                             <Tooltip title="Upload complete">
@@ -88,9 +138,7 @@ const ContextRow = ({ index, context, onChange, onDelete, onEdit, isDone, isDupl
                 </Box>
             }
             <Typography variant="body2" sx={{ alignSelf: 'center', minWidth: 80 }}>
-                {context.tokenCount !== undefined
-                    ? `Tokens: ${context.tokenCount}`
-                    : `Tokens: ${RECIPE_STRINGS.tokenCountUnavailable}`}
+                {getContextTokenLabel(context)}
             </Typography>
         </Stack >
     )
@@ -104,7 +152,7 @@ type GrantContextEditorProps = {
 };
 
 export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ onChange, onEdit, onUploadingChange, duplicateContextIndexes = new Set<number>() }) => {
-    const grantAiService = GrantAiService.getInstance();
+    const grantAiService = Configuration.getInstance().aiService;
     const notifications = useNotifications();
 
     const { setHelpTopic } = useContext(HelpTopicContext);
@@ -129,7 +177,29 @@ export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ onChange
         revisedContexts[index] = revised;
         onChange({ ...recipe, contexts: revisedContexts });
 
-        const tokenCount = await geminiService.calcTokenCount(recipe.modelType, revised.value || '');
+        if (revised.type === 'url') {
+            if (revised.value && urlContextService.isValidUrl(revised.value)) {
+                try {
+                    const pageText = await urlContextService.fetchPageText(revised.value);
+                    const tokenCount = await grantAiService.calcTokenCount(recipe.modelType, pageText);
+                    revisedContexts[index] = { ...revised, tokenCount };
+                } catch (err) {
+                    // Firestore rejects literal `undefined` field values, so omit tokenCount entirely
+                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                    const { tokenCount: _tokenCount, ...withoutTokenCount } = revised;
+                    revisedContexts[index] = withoutTokenCount;
+                    notifications.error(`Could not fetch URL for token count preview: ${err instanceof Error ? err.message : String(err)}`);
+                }
+            } else {
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                const { tokenCount: _tokenCount, ...withoutTokenCount } = revised;
+                revisedContexts[index] = withoutTokenCount;
+            }
+            onChange({ ...recipe, contexts: revisedContexts });
+            return;
+        }
+
+        const tokenCount = await grantAiService.calcTokenCount(recipe.modelType, revised.value || '');
         revisedContexts[index] = { ...revised, tokenCount };
         onChange({ ...recipe, contexts: revisedContexts });
     }
@@ -179,7 +249,7 @@ export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ onChange
             if (TEXT_READABLE_TYPES.includes(file.type)) {
                 try {
                     const text = await file.text();
-                    tokenCount = await geminiService.calcTokenCount(recipe.modelType, text);
+                    tokenCount = await grantAiService.calcTokenCount(recipe.modelType, text);
                 } catch (err) {
                     console.error("Error calculating token count for text file", err);
                     tokenCount = null;
@@ -187,13 +257,17 @@ export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ onChange
             } else {
                 tokenCount = await grantAiService.calcFileTokenCount(recipe.modelType, file);
             }
-            return ({
+            const newContext: GrantContext = {
                 type: file.type,
                 value: "",
                 name: file.name,
-                tokenCount: tokenCount ?? undefined,
                 file: file
-            } as GrantContext);
+            };
+            // Firestore rejects literal `undefined` field values, so only set tokenCount when known
+            if (tokenCount !== null) {
+                newContext.tokenCount = tokenCount;
+            }
+            return newContext;
         }));
 
         // Add completed contexts, clear spinners, show done checkmarks for 2s
@@ -210,6 +284,13 @@ export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ onChange
                 subheader={RECIPE_STRINGS.projectContextsSubtext}
                 action={
                     <Toolbar disableGutters={true} sx={{ gap: 1 }} >
+                        <Button
+                            variant="outlined"
+                            onClick={() => addContexts([{ type: "url", value: "", name: null }])}
+                            startIcon={<PlusOutlined />}
+                            sx={{ alignSelf: 'flex-start' }}>
+                            URL
+                        </Button>
                         <Button
                             variant="outlined"
                             onClick={() => setShowUploadDialog(true)}

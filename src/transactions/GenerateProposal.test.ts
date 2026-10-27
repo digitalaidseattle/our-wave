@@ -1,24 +1,25 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { GrantProposal, GrantRecipe } from "../types";
 import { DUPLICATE_OUTPUT_FIELD_ERROR, DUPLICATE_PROJECT_CONTEXT_ERROR } from "../utils/recipeValidation";
 
 const mocks = vi.hoisted(() => ({
   getUser: vi.fn(),
-  parameterizedQuery: vi.fn(),
+  structuredQuery: vi.fn(),
   recipeInsert: vi.fn(),
   recipeUpdate: vi.fn(),
   proposalInsert: vi.fn(),
+  proposalNameExists: vi.fn(),
 }));
 
 vi.mock("../App", () => ({
   authService: { getUser: mocks.getUser },
 }));
 
-vi.mock("../pages/grants/grantAiService", () => ({
-  GrantAiService: class {
-    static getInstance() {
-      return { parameterizedQuery: mocks.parameterizedQuery };
-    }
+vi.mock("../services/Configuration", () => ({
+  Configuration: {
+    getInstance: () => ({
+      aiService: { structuredQuery: mocks.structuredQuery },
+    }),
   },
 }));
 
@@ -34,6 +35,7 @@ vi.mock("../services/grantProposalService", () => ({
     getInstance: vi.fn(() => ({
       empty: () => ({}),
       insert: mocks.proposalInsert,
+      proposalNameExists: mocks.proposalNameExists,
     })),
   },
 }));
@@ -64,7 +66,14 @@ const namedRecipe = (): GrantRecipe => ({
 
 describe("generateProposal", () => {
   beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 5, 22, 14, 27, 9)); // June 22 2026, 2:27:09 PM
     vi.clearAllMocks();
+    mocks.proposalNameExists.mockResolvedValue(false);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it("builds a proposal from the AI response", async () => {
@@ -73,15 +82,15 @@ describe("generateProposal", () => {
     const insertedProposal = { id: "proposal-1" } as GrantProposal;
     mocks.getUser.mockResolvedValue({ email: "tester@example.com" });
     mocks.recipeUpdate.mockResolvedValue(savedRecipe);
-    mocks.parameterizedQuery.mockResolvedValue({
-      text: JSON.stringify({ Summary: "Summary text", Notes: "Notes text" }),
-      usageMetadata: { totalTokenCount: 42 },
+    mocks.structuredQuery.mockResolvedValue({
+      content: { Summary: "Summary text", Notes: "Notes text" },
+      tokenCount: 42,
     });
     mocks.proposalInsert.mockResolvedValue(insertedProposal);
 
     await expect(generateProposal(recipe)).resolves.toBe(insertedProposal);
 
-    expect(mocks.parameterizedQuery).toHaveBeenCalledOnce();
+    expect(mocks.structuredQuery).toHaveBeenCalledOnce();
     expect(mocks.proposalInsert).toHaveBeenCalledWith(
       expect.objectContaining({
         grantRecipeId: "recipe-123",
@@ -104,7 +113,7 @@ describe("generateProposal", () => {
     );
 
     expect(mocks.recipeUpdate).not.toHaveBeenCalled();
-    expect(mocks.parameterizedQuery).not.toHaveBeenCalled();
+    expect(mocks.structuredQuery).not.toHaveBeenCalled();
   });
 
   it("rejects a recipe without output fields", async () => {
@@ -123,7 +132,7 @@ describe("generateProposal", () => {
     })).rejects.toThrow(DUPLICATE_OUTPUT_FIELD_ERROR);
 
     expect(mocks.recipeUpdate).not.toHaveBeenCalled();
-    expect(mocks.parameterizedQuery).not.toHaveBeenCalled();
+    expect(mocks.structuredQuery).not.toHaveBeenCalled();
   });
 
   it("rejects duplicate project context names before saving or calling AI", async () => {
@@ -136,7 +145,38 @@ describe("generateProposal", () => {
     })).rejects.toThrow(DUPLICATE_PROJECT_CONTEXT_ERROR);
 
     expect(mocks.recipeUpdate).not.toHaveBeenCalled();
-    expect(mocks.parameterizedQuery).not.toHaveBeenCalled();
+    expect(mocks.structuredQuery).not.toHaveBeenCalled();
   });
 
+  it("names proposal using recipe description and current date-time", async () => {
+    const recipe = namedRecipe();
+    const savedRecipe = { ...recipe, lastSubmitted: new Date() };
+    mocks.getUser.mockResolvedValue({ email: "tester@example.com" });
+    mocks.recipeUpdate.mockResolvedValue(savedRecipe);
+    mocks.structuredQuery.mockResolvedValue({
+      content: { Summary: "text" },
+      tokenCount: null,
+    });
+    mocks.proposalInsert.mockResolvedValue({ id: "p-1" });
+
+    await generateProposal(recipe);
+
+    const inserted = mocks.proposalInsert.mock.calls[0][0];
+    expect(inserted.name).toBe("Test recipe 6/22 2:27:09 PM");
+  });
+
+  it("throws when a proposal with the same name already exists", async () => {
+    const recipe = namedRecipe();
+    const savedRecipe = { ...recipe, lastSubmitted: new Date() };
+    mocks.getUser.mockResolvedValue({ email: "tester@example.com" });
+    mocks.recipeUpdate.mockResolvedValue(savedRecipe);
+    mocks.structuredQuery.mockResolvedValue({
+      content: { Summary: "text" },
+      tokenCount: null,
+    });
+    mocks.proposalNameExists.mockResolvedValue(true);
+
+    await expect(generateProposal(recipe)).rejects.toThrow(/already exists/);
+    expect(mocks.proposalInsert).not.toHaveBeenCalled();
+  });
 });
