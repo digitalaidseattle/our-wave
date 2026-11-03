@@ -9,11 +9,10 @@ import {
   Button, ButtonGroup,
   Card, CardContent, CardHeader,
   IconButton,
-  Stack
+  Stack, TextField
 } from "@mui/material";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useState } from "react";
 import { HelpTopicContext } from '../../components/HelpTopicContext';
-import { StableCursorTextField } from '../../components/StableCursorTextfield';
 import type { GrantOutput } from "../../types";
 import { RECIPE_STRINGS } from '../../constants/grantRecipe';
 import { DUPLICATE_OUTPUT_FIELD_ERROR } from '../../utils/recipeValidation';
@@ -24,23 +23,19 @@ export const GrantOutputEditor = ({
   touchedFields = {},
   duplicateFieldIndexes = new Set<number>(),
   onFieldBlur,
-  onEdit
 }: {
   fields: GrantOutput[],
   onChange: (updated: GrantOutput[]) => void,
   touchedFields?: Record<string, boolean>,
   duplicateFieldIndexes?: Set<number>,
   onFieldBlur?: (index: number, field: 'name' | 'maxWords') => void,
-  onEdit?: () => void
 }) => {
 
-  const [outputFields, setOutputFields] = useState<GrantOutput[]>(fields || []);
+  const outputFields = fields ?? [];
+  const [rowVersion, setRowVersion] = useState(0);
   const { setHelpTopic } = useContext(HelpTopicContext);
   const { setShowHelp } = useHelp();
 
-  useEffect(() => {
-    setOutputFields(fields || []);
-  }, [fields])
 
   const handleOutputFieldChange = (index: number, field: 'name' | 'maxWords', value: string | number) => {
     const newFields = [...outputFields];
@@ -62,6 +57,8 @@ export const GrantOutputEditor = ({
   };
 
   const handleRemoveOutputField = (index: number) => {
+    // Reset index-keyed DOM values after rows shift.
+    setRowVersion(version => version + 1);
     onChange(outputFields.filter((_, i) => i !== index));
   };
 
@@ -103,7 +100,7 @@ export const GrantOutputEditor = ({
             const outputNameError = getOutputNameError(field, index);
 
             return (
-              <Stack direction="row" spacing={2} key={index} alignItems="center">
+              <Stack direction="row" spacing={2} key={`${rowVersion}-${index}`} alignItems="center">
               <Button
                 color="error"
                 aria-label="remove output field"
@@ -111,26 +108,24 @@ export const GrantOutputEditor = ({
               >
                 <DeleteOutlined />
               </Button>
-              <StableCursorTextField
+              <TextField
                 label="Field"
                 fullWidth={true}
-                value={field.name}
+                defaultValue={field.name}
                 required
                 error={Boolean(outputNameError)}
                 helperText={outputNameError ?? " "}
                 onBlur={() => onFieldBlur?.(index, 'name')}
-                onEdit={onEdit}
                 onChange={(e) => handleOutputFieldChange(index, 'name', e.target.value)}
               />
-              <StableCursorTextField
+              <TextField
                 label={`Max ${field.unit === 'words' ? 'Words' : 'Characters'}`}
                 type="number"
-                value={field.maxWords}
+                defaultValue={field.maxWords}
                 required
                 error={Boolean(touchedFields[`maxWords-${index}`]) && Number(field.maxWords) <= 0}
                 helperText={Boolean(touchedFields[`maxWords-${index}`]) && Number(field.maxWords) <= 0 ? "Enter a value greater than 0." : " "}
                 onBlur={() => onFieldBlur?.(index, 'maxWords')}
-                onEdit={onEdit}
                 onChange={(e) => handleOutputFieldChange(index, 'maxWords', parseInt(e.target.value) || 0)}
               />
               <ButtonGroup variant="contained" aria-label="Basic button group">
