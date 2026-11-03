@@ -8,19 +8,22 @@ import { NavLink, useBeforeUnload, useBlocker, useNavigate, useParams } from "re
 
 import { HomeOutlined, InfoCircleOutlined } from "@ant-design/icons";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { Box, Breadcrumbs, Button, Card, CardActions, CardContent, CardHeader, Divider, IconButton, Rating, Stack, Tooltip, Typography } from "@mui/material";
+import { Box, Breadcrumbs, Button, Card, CardActions, CardContent, CardHeader, Divider, IconButton, Rating, Stack, TextField, Tooltip, Typography } from "@mui/material";
 
 import { LoadingContext, useHelp, useNotifications } from "@digitalaidseattle/core";
 import { ConfirmationDialog } from "@digitalaidseattle/mui";
 
 import { GrantRecipeContext } from "../../components/GrantRecipeContext";
+import { DeleteConfirmationDialog } from "../../components/DeleteConfirmationDialog";
 import { HelpDrawer } from "../../components/HelpDrawer";
 import { HelpTopicContext } from "../../components/HelpTopicContext";
 import { LoadingOverlay } from "../../components/LoadingOverlay";
 import { SplitButton } from "../../components/SplitButton";
-import { StableCursorTextField } from "../../components/StableCursorTextfield";
+import { RECIPE_STRINGS } from '../../constants/grantRecipe';
+import { Configuration } from "../../services/Configuration";
 import { DUPLICATE_RECIPE_NAME_ERROR, grantRecipeService } from "../../services/grantRecipeService";
 import { cloneRecipe } from "../../transactions/CloneRecipe";
+import { deleteRecipe } from "../../transactions/DeleteRecipe";
 import { generateProposal } from "../../transactions/GenerateProposal";
 import { saveRecipe } from "../../transactions/SaveRecipe";
 import { GrantOutput, GrantRecipe, Timestamp } from "../../types";
@@ -32,12 +35,9 @@ import {
   getDuplicateProjectContextNameIndexes,
   hasRecipeName
 } from "../../utils/recipeValidation";
-import { GrantAiService } from "./grantAiService";
 import { GrantContextEditor } from "./GrantContextEditor";
 import { GrantInfoEditor } from "./GrantInfoEditor";
 import { GrantOutputEditor } from "./GrantOutputEditor";
-import { RECIPE_STRINGS } from '../../constants/grantRecipe';
-import { deleteRecipe } from "../../transactions/DeleteRecipe";
 
 const HELP_DRAWER_WIDTH = 300;
 const HELP_TITLE = "Our Wave";
@@ -60,7 +60,6 @@ export const TextEditor = ({
   error = false,
   helperText,
   onBlur,
-  onEdit,
   subheader,
   helpTopic,
 }: {
@@ -71,7 +70,6 @@ export const TextEditor = ({
   error?: boolean,
   helperText?: string,
   onBlur?: () => void,
-  onEdit?: () => void,
   subheader?: string,
   helpTopic?: string,
 }) => {
@@ -88,14 +86,13 @@ export const TextEditor = ({
           onClick={() => { setHelpTopic(helpTopic ?? title); setShowHelp(true) }}
           color="primary"><InfoCircleOutlined /></IconButton>} />
       <CardContent>
-        <StableCursorTextField fullWidth={true}
-          value={value ?? ""}
+        <TextField fullWidth={true}
+          defaultValue={value ?? ""}
           onChange={(evt) => onChange(evt.target.value)}
           required={required}
           error={error}
           helperText={helperText ?? " "}
           onBlur={onBlur}
-          onEdit={onEdit}
           multiline={true}
           sx={{
             '& .MuiInputBase-input': {
@@ -126,6 +123,8 @@ export const PlainTextCard = ({ title, value, helpTopic }: { title: string, valu
 }
 
 const GrantRecipesDetailPage: React.FC = () => {
+  const grantAiService = Configuration.getInstance().aiService;
+
   const { id } = useParams<string>();
   const notifications = useNotifications();
   const navigate = useNavigate();
@@ -133,6 +132,7 @@ const GrantRecipesDetailPage: React.FC = () => {
   const allowNavigationRef = useRef(false);
 
   const [recipe, setRecipe] = useState<GrantRecipe>(grantRecipeService.empty());
+  const [formVersion, setFormVersion] = useState(0);
   const [lastUpdated, setLastUpdated] = useState<string>("");
   const [dirty, setDirty] = useState<boolean>(false);
   const { showHelp } = useHelp();
@@ -175,10 +175,21 @@ const GrantRecipesDetailPage: React.FC = () => {
   const descriptionError = duplicateDescriptionError
     ?? (descriptionTouched && isDescriptionMissing ? "Title is required." : undefined);
 
+  const [models, setModels] = useState<string[]>([]);
+
   const actionMessages: string[] = [];
   if (!loading && hasValidDescription && !dirty) {
     actionMessages.push("Make a change to enable Save.");
   }
+
+  useEffect(() => {
+
+    if (grantAiService) {
+      grantAiService.getModels()
+        .then(mds => setModels(mds));
+    }
+  }, [grantAiService]);
+
 
   useEffect(() => {
     const outputs = recipe?.outputsWithWordCount ?? [];
@@ -199,6 +210,7 @@ const GrantRecipesDetailPage: React.FC = () => {
       grantRecipeService.getById(id)
         .then(found => {
           setRecipe(found);
+          setFormVersion(version => version + 1);
           setDirty(false);
           setDescriptionTouched(false);
           setDuplicateDescriptionError(null);
@@ -208,6 +220,7 @@ const GrantRecipesDetailPage: React.FC = () => {
     } else {
       // Initialize new recipe with default blank fields
       setRecipe(grantRecipeService.empty());
+      setFormVersion(version => version + 1);
       setDescriptionTouched(false);
       setDuplicateDescriptionError(null);
       setTemplateTouched(false);
@@ -241,6 +254,7 @@ const GrantRecipesDetailPage: React.FC = () => {
     saveRecipe(recipe)
       .then(saved => {
         setRecipe(saved);
+        setFormVersion(version => version + 1);
         setDirty(false);
         if (isNewRecipe) {
           allowNavigationRef.current = true;
@@ -331,11 +345,17 @@ const GrantRecipesDetailPage: React.FC = () => {
     setRecipe(updatedRecipe);
     setDirty(true);
 
-    // Only save to database if recipe already has a real ID (not the temp 'test' ID)
+    // Compile the prompt without allowing a delayed result to replace newer edits.
     if (recipe.id !== 'test') {
       grantRecipeService.updatePrompt(updatedRecipe)
         .then(revised => {
-          setRecipe(revised);
+          setRecipe(current =>
+            current.id === updatedRecipe.id
+              && current.template === updatedRecipe.template
+              && current.outputsWithWordCount === updatedRecipe.outputsWithWordCount
+              ? { ...current, prompt: revised.prompt }
+              : current
+          );
         })
         .catch(err => {
           console.error('Failed to update prompt:', err);
@@ -404,7 +424,13 @@ const GrantRecipesDetailPage: React.FC = () => {
 
     grantRecipeService.updatePrompt(updatedRecipe)
       .then(revised => {
-        setRecipe(revised);
+        setRecipe(current =>
+            current.id === updatedRecipe.id
+              && current.template === updatedRecipe.template
+              && current.outputsWithWordCount === updatedRecipe.outputsWithWordCount
+              ? { ...current, prompt: revised.prompt }
+              : current
+          );
       })
   }
 
@@ -478,13 +504,12 @@ const GrantRecipesDetailPage: React.FC = () => {
                       flex: 1,
                       overflowY: "auto",
                     }}>
-                    <Stack gap={1}>
+                    <Stack gap={1} key={formVersion}>
                       <GrantInfoEditor
                         recipe={recipe}
                         onChange={handleInfoChange}
                         descriptionError={descriptionError}
                         onDescriptionBlur={() => setDescriptionTouched(true)}
-                        onEdit={() => setDirty(true)}
                       />
                       <TextEditor
                         title={RECIPE_STRINGS.templateTitle}
@@ -495,11 +520,9 @@ const GrantRecipesDetailPage: React.FC = () => {
                         error={templateTouched && isTemplateMissing}
                         helperText={templateTouched && isTemplateMissing ? "Template is required to generate." : " "}
                         onBlur={() => setTemplateTouched(true)}
-                        onEdit={() => setDirty(true)}
                       />
                       <GrantContextEditor
                         onChange={handleGrantContextsChange}
-                        onEdit={() => setDirty(true)}
                         onUploadingChange={setIsFileUploading}
                         duplicateContextIndexes={duplicateProjectContextIndexes}
                       />
@@ -509,7 +532,6 @@ const GrantRecipesDetailPage: React.FC = () => {
                         touchedFields={outputFieldTouched}
                         duplicateFieldIndexes={duplicateOutputFieldIndexes}
                         onFieldBlur={handleOutputFieldBlur}
-                        onEdit={() => setDirty(true)}
                       />
                       <PlainTextCard title={RECIPE_STRINGS.promptTitle} helpTopic="Prompt" value={recipe.prompt} />
                     </Stack>
@@ -536,7 +558,7 @@ const GrantRecipesDetailPage: React.FC = () => {
                       <Tooltip title='Click to generate.'>
                         <Box>
                           <SplitButton
-                            options={GrantAiService.getInstance().getModels().map(m => ({ label: `Generate with ${m}`, value: m }))}
+                            options={models.map(m => ({ label: `Generate with ${m}`, value: m }))}
                             disabled={isGenerateDisabled}
                             onClick={(model: string) => handleGenerate(model)} />
                         </Box>
@@ -558,7 +580,7 @@ const GrantRecipesDetailPage: React.FC = () => {
                   </CardActions>
 
                   {/* Delete Confirmation Dialog */}
-                  <ConfirmationDialog
+                  <DeleteConfirmationDialog
                     title="Delete Recipe?"
                     message={`Are you sure you want to delete "${recipe?.description}"? This action cannot be undone. Any proposals generated from this recipe will remain, but they won't be able to regenerate.`}
                     open={openDeleteDialog}

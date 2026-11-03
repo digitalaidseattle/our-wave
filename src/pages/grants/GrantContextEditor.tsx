@@ -4,20 +4,22 @@
  *  @copyright 2025 Digital Aid Seattle
  *
  */
-import { CheckCircleOutlined, DeleteOutlined, InfoCircleOutlined, PlusOutlined } from '@ant-design/icons';
-import { Box, Button, Card, CardContent, CardHeader, CircularProgress, FormControl, FormHelperText, IconButton, Stack, Toolbar, Tooltip, Typography } from "@mui/material";
-import React, { useContext, useEffect, useState } from 'react';
+import { CheckCircleOutlined, DeleteOutlined, FileOutlined, FontSizeOutlined, InfoCircleOutlined, LinkOutlined, PlusOutlined } from '@ant-design/icons';
+import { Box, Button, Card, CardContent, CardHeader, CircularProgress, FormControl, FormHelperText, IconButton, InputAdornment, Stack, TextField, Toolbar, Tooltip, Typography } from "@mui/material";
+import React, { useContext, useEffect, useRef, useState } from 'react';
 
 import { useHelp, useNotifications } from '@digitalaidseattle/core';
-import { geminiService } from '../../api/geminiService';
 import { FileUploadDialog } from '../../components/FileUploadDialog';
 import { GrantRecipeContext } from '../../components/GrantRecipeContext';
 import { HelpTopicContext } from '../../components/HelpTopicContext';
-import { StableCursorTextField } from '../../components/StableCursorTextfield';
-import { GrantContext, GrantRecipe } from '../../types';
-import { GrantAiService } from './grantAiService';
 import { RECIPE_STRINGS } from '../../constants/grantRecipe';
+import { Configuration } from '../../services/Configuration';
+import { GrantContext, GrantRecipe } from '../../types';
 import { DUPLICATE_PROJECT_CONTEXT_ERROR } from '../../utils/recipeValidation';
+import { UrlContextService } from '../../services/urlContextService';
+import { getContextTokenLabel } from './contextTokenUtils';
+
+const urlContextService = UrlContextService.getInstance();
 
 const SUPPORTED_FILE_TYPES = [
     "text/plain",
@@ -30,19 +32,72 @@ const SUPPORTED_FILE_TYPES = [
 const LABEL_UPLOAD_TITLE = "Select files";
 const LABEL_UPLOAD_SUBTITLE = "Supported types are: .txt, .pdf, .html, .json, .md";
 
+interface ContextFieldProps {
+    value: string | null;
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    onBlur: () => void;
+}
+
+const UrlContextField = ({ value, onChange, onBlur }: ContextFieldProps) => {
+    const isUrlInvalid = !!value && !urlContextService.isValidUrl(value);
+    return (
+        <TextField
+            fullWidth={true}
+            defaultValue={value ?? ""}
+            placeholder='Enter URL link here'
+            onChange={onChange}
+            onBlur={onBlur}
+            minRows={1}
+            maxRows={3}
+            error={isUrlInvalid}
+            helperText={isUrlInvalid ? 'Please enter a valid http or https URL.' : ''}
+            InputProps={{
+                startAdornment: (
+                    <InputAdornment position="start">
+                        <LinkOutlined aria-label="URL" title="URL" />
+                    </InputAdornment>
+                )
+            }}
+        />
+    );
+};
+
+const TextContextField = ({ value, onChange, onBlur }: ContextFieldProps) => (
+    <TextField
+        fullWidth={true}
+        defaultValue={value ?? ""}
+        placeholder='Enter context information here'
+        onChange={onChange}
+        onBlur={onBlur}
+        multiline
+        minRows={1}
+        maxRows={3}
+        InputProps={{
+            startAdornment: (
+                <InputAdornment position="start">
+                    <FontSizeOutlined aria-label="Text" title="Text" />
+                </InputAdornment>
+            )
+        }}
+    />
+);
+
 interface ContextRowProps {
     index: number;
     context: GrantContext;
     onChange: (index: number, param: GrantContext) => void
     onDelete: (index: number) => void
-    onEdit?: () => void;
+    onBlur: (context: GrantContext) => void;
     isDone?: boolean;
     isDuplicate?: boolean;
 }
-const ContextRow = ({ index, context, onChange, onDelete, onEdit, isDone, isDuplicate }: ContextRowProps) => {
 
-    function handleTextChange(e: React.ChangeEvent<HTMLInputElement>): void {
-        onChange(index, { ...context, value: e.target.value });
+const ContextRow = ({ index, context, onChange, onDelete, onBlur, isDone, isDuplicate }: ContextRowProps) => {
+
+    function handleTextChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void {
+        const revised = { ...context, value: e.target.value };
+        delete revised.tokenCount;
+        onChange(index, revised);
     }
 
     return (
@@ -61,20 +116,17 @@ const ContextRow = ({ index, context, onChange, onDelete, onEdit, isDone, isDupl
                 onClick={() => onDelete(index)}>
                 <DeleteOutlined />
             </Button>
-            {(context.type === 'text') &&
-                <StableCursorTextField
-                    fullWidth={true}
-                    value={context.value}
-                    placeholder='Enter context information here'
-                    onChange={handleTextChange}
-                    onEdit={onEdit}
-                    multiline={true}
-                    minRows={1}
-                    maxRows={3}
-                />}
+            {(context.type === 'text' || context.type === 'url') && (
+                <Box sx={{ flex: 1 }}>
+                    {context.type === 'url'
+                        ? <UrlContextField value={context.value} onChange={handleTextChange} onBlur={() => onBlur(context)} />
+                        : <TextContextField value={context.value} onChange={handleTextChange} onBlur={() => onBlur(context)} />}
+                </Box>
+            )}
             {(SUPPORTED_FILE_TYPES.includes(context.type)) &&
                 <Box sx={{ flex: 1 }}>
                     <FormControl fullWidth={true} error={isDuplicate} sx={{ border: '1px solid', borderColor: isDuplicate ? 'error.main' : isDone ? 'success.main' : 'grey', padding: 2, borderRadius: 1, pr: 1, display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 1 }}>
+                        <FileOutlined aria-label="File" title="File" />
                         <Typography>File: {context.name}</Typography>
                         {isDone && (
                             <Tooltip title="Upload complete">
@@ -88,9 +140,7 @@ const ContextRow = ({ index, context, onChange, onDelete, onEdit, isDone, isDupl
                 </Box>
             }
             <Typography variant="body2" sx={{ alignSelf: 'center', minWidth: 80 }}>
-                {context.tokenCount !== undefined
-                    ? `Tokens: ${context.tokenCount}`
-                    : `Tokens: ${RECIPE_STRINGS.tokenCountUnavailable}`}
+                {getContextTokenLabel(context)}
             </Typography>
         </Stack >
     )
@@ -98,44 +148,81 @@ const ContextRow = ({ index, context, onChange, onDelete, onEdit, isDone, isDupl
 
 type GrantContextEditorProps = {
     onChange: (recipe: GrantRecipe) => void;
-    onEdit?: () => void;
     onUploadingChange?: (isUploading: boolean) => void;
     duplicateContextIndexes?: Set<number>;
 };
 
-export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ onChange, onEdit, onUploadingChange, duplicateContextIndexes = new Set<number>() }) => {
-    const grantAiService = GrantAiService.getInstance();
+export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ onChange, onUploadingChange, duplicateContextIndexes = new Set<number>() }) => {
+    const grantAiService = Configuration.getInstance().aiService;
     const notifications = useNotifications();
 
     const { setHelpTopic } = useContext(HelpTopicContext);
     const { setShowHelp } = useHelp();
     const { recipe } = useContext(GrantRecipeContext);
-    const [contexts, setContexts] = React.useState<GrantContext[]>([]);
+    const contexts = recipe.contexts ?? [];
+    const latestRecipe = useRef(recipe);
+    latestRecipe.current = recipe;
+    const mounted = useRef(true);
+    useEffect(() => {
+        mounted.current = true;
+        return () => { mounted.current = false; };
+    }, []);
+    const [rowVersion, setRowVersion] = useState(0);
     const [uploadingFileNames, setUploadingFileNames] = useState<Set<string>>(new Set());
     const [doneFileNames, setDoneFileNames] = useState<Set<string>>(new Set());
 
     const [showUploadDialog, setShowUploadDialog] = useState<boolean>(false);
-    useEffect(() => {
-        setContexts(recipe ? recipe.contexts : []);
-    }, [recipe]);
 
     async function addContexts(newContexts: GrantContext[]) {
         const revised = [...(contexts ?? []), ...newContexts]
         onChange({ ...recipe, contexts: revised });
     }
 
-    async function udpateContext(index: number, revised: GrantContext) {
+    function updateContext(index: number, revised: GrantContext) {
         const revisedContexts = contexts.slice();
         revisedContexts[index] = revised;
         onChange({ ...recipe, contexts: revisedContexts });
+    }
 
-        const tokenCount = await geminiService.calcTokenCount(recipe.modelType, revised.value || '');
-        revisedContexts[index] = { ...revised, tokenCount };
-        onChange({ ...recipe, contexts: revisedContexts });
+    // Count on blur rather than issuing an AI request for every keystroke.
+    async function countContextTokens(context: GrantContext) {
+        const modelType = recipe.modelType;
+        let tokenCount: number | null = null;
+        let countError: unknown;
+        try {
+            if (context.type === 'url') {
+                if (context.value && urlContextService.isValidUrl(context.value)) {
+                    const pageText = await urlContextService.fetchPageText(context.value);
+                    tokenCount = await grantAiService.calcTokenCount(modelType, pageText);
+                }
+            } else {
+                tokenCount = await grantAiService.calcTokenCount(modelType, context.value || '');
+            }
+        } catch (err) {
+            countError = err;
+        }
+
+        const current = latestRecipe.current;
+        const index = current.contexts.indexOf(context);
+        // Ignore results for contexts that were edited, removed, or loaded from another recipe.
+        if (!mounted.current || index < 0 || current.modelType !== modelType) return;
+        const revisedContexts = current.contexts.slice();
+        const revised = { ...context };
+        // Firestore rejects literal `undefined` field values, so omit unavailable counts.
+        delete revised.tokenCount;
+        if (tokenCount !== null) revised.tokenCount = tokenCount;
+        revisedContexts[index] = revised;
+        onChange({ ...current, contexts: revisedContexts });
+        if (countError) {
+            notifications.error(`Could not calculate context token count: ${countError instanceof Error ? countError.message : String(countError)}`);
+        }
+
     }
 
     function removeContext(index: number) {
         const removed = contexts[index];
+        // Index keys must be reset when deletion shifts the remaining uncontrolled fields.
+        setRowVersion(version => version + 1);
         const revised = contexts.filter((_, i) => i !== index);
         onChange({ ...recipe, contexts: revised });
         if (removed?.name) {
@@ -179,7 +266,7 @@ export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ onChange
             if (TEXT_READABLE_TYPES.includes(file.type)) {
                 try {
                     const text = await file.text();
-                    tokenCount = await geminiService.calcTokenCount(recipe.modelType, text);
+                    tokenCount = await grantAiService.calcTokenCount(recipe.modelType, text);
                 } catch (err) {
                     console.error("Error calculating token count for text file", err);
                     tokenCount = null;
@@ -187,13 +274,17 @@ export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ onChange
             } else {
                 tokenCount = await grantAiService.calcFileTokenCount(recipe.modelType, file);
             }
-            return ({
+            const newContext: GrantContext = {
                 type: file.type,
                 value: "",
                 name: file.name,
-                tokenCount: tokenCount ?? undefined,
                 file: file
-            } as GrantContext);
+            };
+            // Firestore rejects literal `undefined` field values, so only set tokenCount when known
+            if (tokenCount !== null) {
+                newContext.tokenCount = tokenCount;
+            }
+            return newContext;
         }));
 
         // Add completed contexts, clear spinners, show done checkmarks for 2s
@@ -210,6 +301,13 @@ export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ onChange
                 subheader={RECIPE_STRINGS.projectContextsSubtext}
                 action={
                     <Toolbar disableGutters={true} sx={{ gap: 1 }} >
+                        <Button
+                            variant="outlined"
+                            onClick={() => addContexts([{ type: "url", value: "", name: null }])}
+                            startIcon={<PlusOutlined />}
+                            sx={{ alignSelf: 'flex-start' }}>
+                            URL
+                        </Button>
                         <Button
                             variant="outlined"
                             onClick={() => setShowUploadDialog(true)}
@@ -234,12 +332,12 @@ export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ onChange
                 <Stack gap={2}>
                     {(contexts ?? []).map((context, idx) => (
                         <ContextRow
-                            key={idx}
+                            key={`${rowVersion}-${idx}`}
                             index={idx}
                             context={context}
-                            onChange={udpateContext}
+                            onChange={updateContext}
+                            onBlur={countContextTokens}
                             onDelete={removeContext}
-                            onEdit={onEdit}
                             isDone={!!context.name && doneFileNames.has(context.name)}
                             isDuplicate={duplicateContextIndexes.has(idx)} />
                     ))}

@@ -19,8 +19,8 @@ async function organizeContextsFiles(recipe: GrantRecipe): Promise<GrantContext[
         .then((files: any[]) => files.map((file: any) => file.name));
 
     const updatedContexts: GrantContext[] = [];
-    recipe.contexts.forEach(async context => {
-        if (context.type === 'text') {
+    for (const context of recipe.contexts) {
+        if (context.type === 'text' || context.type === 'url') {
             updatedContexts.push(context);
         } else if (context.file! instanceof File) {
             // Existing files will be overwritten
@@ -37,12 +37,12 @@ async function organizeContextsFiles(recipe: GrantRecipe): Promise<GrantContext[
                 console.error('not in the cloud & no file to upload', context);
             }
         }
-    });
+    }
 
     // remove unwanted files
-    cloudFiles.forEach(async fileName => {
+    for (const fileName of cloudFiles) {
         await storageService.removeFile(`${GLOUD_FOLDER}/${recipe.id}/${fileName}`)
-    })
+    }
     return updatedContexts;
 }
 

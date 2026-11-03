@@ -60,3 +60,8 @@ export type GrantProposal = Entity & {
   model: string;
   outputs: GrantOutput[];
 };
+
+export type AiResponse = {
+  content: { [key: string]: string } | string;
+  tokenCount: number | undefined;
+};
