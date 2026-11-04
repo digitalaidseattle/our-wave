@@ -19,7 +19,6 @@ import {
 import { useContext, useState } from "react";
 import { HelpTopicContext } from '../../components/HelpTopicContext';
 import type { GrantRecipe } from "../../types";
-import { StableCursorTextField } from '../../components/StableCursorTextfield';
 import { RECIPE_STRINGS } from '../../constants/grantRecipe';
 
 const TagButton = ({ onChange }: { onChange: (newValue: string | null) => void }) => {
@@ -64,15 +63,13 @@ const TagButton = ({ onChange }: { onChange: (newValue: string | null) => void }
 export const GrantInfoEditor = ({
   recipe,
   onChange,
-  showDescriptionError = false,
-  onDescriptionBlur,
-  onEdit
+  descriptionError,
+  onDescriptionBlur
 }: {
   recipe: GrantRecipe,
   onChange: (updated: GrantRecipe) => void,
-  showDescriptionError?: boolean,
+  descriptionError?: string,
   onDescriptionBlur?: () => void,
-  onEdit?: () => void
 }) => {
 
   const { setHelpTopic } = useContext(HelpTopicContext);
@@ -80,7 +77,7 @@ export const GrantInfoEditor = ({
 
   function handleDescriptionChange(newValue: string) {
     onChange({ ...recipe, description: newValue });
-  };
+  }
 
   function handleDeleteTag(tag: string): void {
     const tags = recipe.tags ?? [];
@@ -112,16 +109,15 @@ export const GrantInfoEditor = ({
             </Typography>
           </Grid>
           <Grid size={10}>
-            <StableCursorTextField
+            <TextField
               fullWidth={true}
-              value={recipe.description ?? ""}
+              defaultValue={recipe.description ?? ""}
               placeholder="Name your recipe"
               autoFocus
               required
-              error={showDescriptionError}
-              helperText={showDescriptionError ? "Description is required." : " "}
+              error={Boolean(descriptionError)}
+              helperText={descriptionError ?? " "}
               onBlur={onDescriptionBlur}
-              onEdit={onEdit}
               onChange={(evt) => handleDescriptionChange(evt.target.value)} />
           </Grid>
           <Grid size={2}><Typography>Tags</Typography></Grid>

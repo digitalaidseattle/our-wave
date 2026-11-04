@@ -1,4 +1,4 @@
-import { grantProposalService } from "../services/grantProposalService";
+import { GrantProposalService } from "../services/grantProposalService";
 import type { GrantProposal } from "../types";
 
 export async function deleteProposal(
@@ -10,5 +10,5 @@ export async function deleteProposal(
 
   const proposalId = String(proposal.id);
 
-  await grantProposalService.delete(proposalId);
+  await GrantProposalService.getInstance().delete(proposalId);
 }

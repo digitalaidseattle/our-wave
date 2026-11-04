@@ -58,4 +58,10 @@ export type GrantProposal = Entity & {
   structuredResponse?: { [key: string]: string };
   totalTokenCount: number | null;
   model: string;
+  outputs: GrantOutput[];
+};
+
+export type AiResponse = {
+  content: { [key: string]: string } | string;
+  tokenCount: number | undefined;
 };

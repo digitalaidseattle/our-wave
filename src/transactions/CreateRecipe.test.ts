@@ -1,40 +1,28 @@
-/**
- *  CreateRecipe.test.ts
- *
- *  @copyright 2024 Digital Aid Seattle
- *
- */
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { GrantRecipe } from "../types";
 
-import { describe, expect, it, vi } from "vitest";
+vi.mock("../services/grantRecipeService", () => ({
+  grantRecipeService: {
+    empty: vi.fn(),
+    insert: vi.fn(),
+  },
+}));
+
 import { grantRecipeService } from "../services/grantRecipeService";
-import { GrantRecipe } from "../types";
 import { createRecipe } from "./CreateRecipe";
-import { authService } from "../App";
-import { User } from "@digitalaidseattle/core";
 
 describe("createRecipe", () => {
-    vi.mock('../api/geminiService', () => ({
-        geminiService: ({
-            calcTokenCount: () => { }
-        }),
-    }));
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
-    it("createRecipe", () => {
-        const user = {} as User;
-        const recipe = {} as GrantRecipe;
-        const inserted = {} as GrantRecipe;
+  it("returns a blank local recipe without persisting it", async () => {
+    const recipe = { description: "" } as GrantRecipe;
+    vi.mocked(grantRecipeService.empty).mockReturnValue(recipe);
 
-        const userSpy = vi.spyOn(authService, "getUser").mockResolvedValue(user);
-        const emptySpy = vi.spyOn(grantRecipeService, "empty").mockReturnValue(recipe);
-        const insertSpy = vi.spyOn(grantRecipeService, "insert").mockResolvedValue(inserted);
+    await expect(createRecipe()).resolves.toBe(recipe);
 
-        createRecipe().then(actual => {
-            expect(userSpy).toHaveBeenCalledOnce();
-            expect(emptySpy).toHaveBeenCalledOnce();
-            expect(insertSpy).toHaveBeenCalledOnce();
-            expect(recipe.description.startsWith('Recipe')).toBe(true);
-            expect(actual).toBe(inserted)
-        });
-    });
-
+    expect(grantRecipeService.empty).toHaveBeenCalledOnce();
+    expect(grantRecipeService.insert).not.toHaveBeenCalled();
+  });
 });

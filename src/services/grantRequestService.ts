@@ -1,9 +1,10 @@
 
-import { Entity, FirestoreService } from "@digitalaidseattle/firebase";
+import { Entity } from "@digitalaidseattle/core";
+import { FirestoreService } from "@digitalaidseattle/firebase";
 
 
 export type GrantRequest = Entity & {
-  
+
   title?: string;
   description?: string;
   requestedBy?: string;

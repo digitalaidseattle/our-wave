@@ -8,8 +8,11 @@
 import { grantRecipeService } from "../services/grantRecipeService";
 import { GrantRecipe } from "../types";
 import { authService } from "../App";
+import { requireRecipeName } from "../utils/recipeValidation";
 
 export async function cloneRecipe(recipe: GrantRecipe): Promise<GrantRecipe> {
+    requireRecipeName(recipe, "clone");
+
     return authService.getUser()
         .then(user => {
             const now = new Date();

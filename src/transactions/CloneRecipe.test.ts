@@ -1,40 +1,46 @@
-/**
- *  CreateRecipe.test.ts
- *
- *  @copyright 2024 Digital Aid Seattle
- *
- */
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { User } from "@digitalaidseattle/core";
+import type { GrantRecipe } from "../types";
 
-import { describe, expect, it, vi } from "vitest";
-import { User } from "@digitalaidseattle/core";
+vi.mock("../App", () => ({
+  authService: { getUser: vi.fn() },
+}));
+
+vi.mock("../services/grantRecipeService", () => ({
+  grantRecipeService: { insert: vi.fn() },
+}));
+
 import { authService } from "../App";
 import { grantRecipeService } from "../services/grantRecipeService";
-import { GrantRecipe } from "../types";
 import { cloneRecipe } from "./CloneRecipe";
 
 describe("cloneRecipe", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
-    vi.mock('../api/geminiService', () => ({
-        geminiService: ({
-            calcTokenCount: () => { }
-        }),
+  it("clones a named recipe", async () => {
+    const user = { email: "email@me.com" } as User;
+    const recipe = { description: "desc" } as GrantRecipe;
+    const inserted = { id: "clone-id" } as GrantRecipe;
+    vi.mocked(authService.getUser).mockResolvedValue(user);
+    vi.mocked(grantRecipeService.insert).mockResolvedValue(inserted);
+
+    await expect(cloneRecipe(recipe)).resolves.toBe(inserted);
+
+    expect(grantRecipeService.insert).toHaveBeenCalledWith(expect.objectContaining({
+      description: "Clone of desc",
+      createdBy: "email@me.com",
+      updatedBy: "email@me.com",
     }));
+  });
 
-    it("cloneRecipe", () => {
-        const user = { email: 'email@me.com' } as User;
-        const recipe = { description: 'desc' } as GrantRecipe;
-        const inserted = {} as GrantRecipe;
+  it("rejects a blank recipe name before persistence", async () => {
+    await expect(cloneRecipe({ description: "  " } as GrantRecipe)).rejects.toThrow(
+      "Recipe name is required to clone."
+    );
 
-        const userSpy = vi.spyOn(authService, "getUser").mockResolvedValue(user);
-        const insertSpy = vi.spyOn(grantRecipeService, "insert").mockResolvedValue(inserted);
-
-        cloneRecipe(recipe).then(actual => {
-            expect(userSpy).toHaveBeenCalledOnce();
-            expect(insertSpy).toHaveBeenCalledOnce();
-            expect(insertSpy).toHaveBeenCalledWith(expect.
-                objectContaining({ description: 'Clone of desc', createdBy: 'email@me.com', updatedBy: 'email@me.com' }));
-            expect(actual).toBe(inserted);
-        });
-    });
-
+    expect(authService.getUser).not.toHaveBeenCalled();
+    expect(grantRecipeService.insert).not.toHaveBeenCalled();
+  });
 });

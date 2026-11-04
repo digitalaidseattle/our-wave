@@ -8,7 +8,7 @@ import { NavLink, useNavigate, useParams } from "react-router-dom";
 
 import { DownloadOutlined, EditOutlined, HomeOutlined } from "@ant-design/icons";
 import { LoadingContext, useNotifications } from "@digitalaidseattle/core";
-import { Clipboard, ConfirmationDialog } from "@digitalaidseattle/mui";
+import { Clipboard } from "@digitalaidseattle/mui";
 import DeleteIcon from "@mui/icons-material/Delete";
 import {
   Box,
@@ -29,13 +29,14 @@ import {
 import Markdown from "react-markdown";
 
 import { PROPOSAL_LABELS } from "../../constants/labels";
+import { DeleteConfirmationDialog } from "../../components/DeleteConfirmationDialog";
 import { LoadingOverlay } from "../../components/LoadingOverlay";
 import { TextEdit } from "../../components/TextEdit";
 import {
   SUPPORTED_DOWNLOAD_TYPE,
-  createProposalClipboardPlainText,
+  TextExporter,
 } from "../../services/ProposalExporter";
-import { grantProposalService } from "../../services/grantProposalService";
+import { GrantProposalService } from "../../services/grantProposalService";
 import { grantRecipeService } from "../../services/grantRecipeService";
 
 import type { GrantOutput, GrantProposal, GrantRecipe } from "../../types";
@@ -47,13 +48,6 @@ const LABELS = {
   COPY_ALL_TOOLTIP: "Copy the entire proposal with headings and sections preserved.",
 };
 
-function countWords(text: string): number {
-  return text.trim() ? text.trim().split(/\s+/).length : 0;
-}
-
-function countCharacters(text: string): number {
-  return text.length;
-}
 
 const GrantProposalsDetailPage: React.FC = () => {
   const notifications = useNotifications();
@@ -67,6 +61,8 @@ const GrantProposalsDetailPage: React.FC = () => {
   const [recipe, setRecipe] = useState<GrantRecipe | null>(null);
   const [outputs, setOutputs] = useState<GrantOutput[]>([]);
   const [rating, setRating] = useState<number>(0);
+  const [clipboardText, setClipboardText] = useState<string>("");
+
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -78,7 +74,7 @@ const GrantProposalsDetailPage: React.FC = () => {
       setLoading(true);
 
       try {
-        const proposalData = await grantProposalService.getById(proposalId);
+        const proposalData = await GrantProposalService.getInstance().getById(proposalId);
         setProposal(proposalData);
 
         const recipeId = proposalData?.grantRecipeId;
@@ -108,12 +104,34 @@ const GrantProposalsDetailPage: React.FC = () => {
   }, [id, setLoading]);
 
   useEffect(() => {
-    setOutputs(recipe?.outputsWithWordCount ?? []);
-  }, [recipe]);
+    // TODO when all proposals have outputs, the recipe check may be removed.
+    if (proposal && recipe) {
+      setOutputs(proposal.outputs ?? recipe.outputsWithWordCount ?? []);
+
+      const exporter = new TextExporter();
+      setClipboardText(exporter.createTextContent(proposal));
+    }
+
+  }, [recipe, proposal]);
 
   useEffect(() => {
-    setRating(proposal?.rating ?? 0);
-  }, [proposal?.rating]);
+    if (proposal) {
+      setRating(proposal.rating ?? 0);
+    }
+  }, [proposal]);
+
+  function countWords(text: string): number {
+    if (text) {
+      return text.trim() ? text.trim().split(/\s+/).length : 0;
+    }
+    console.warn('countWords: Text not available', proposal?.name)
+    return 0;
+  }
+
+  function countCharacters(text: string): number {
+    return text ? text.length : 0;
+  }
+
 
   const responses: {
     name: string;
@@ -169,25 +187,21 @@ const GrantProposalsDetailPage: React.FC = () => {
   function handleNameChange(text: string): void {
     if (!proposal?.id) return;
 
-    grantProposalService
+    GrantProposalService.getInstance()
       .update(proposal.id, { name: text })
       .then((updated) => setProposal({ ...proposal, ...updated }))
       .catch((err) =>
-        notifications.error(
-          `Failed to save name: ${err instanceof Error ? err.message : LABELS.UNKNOWN_ERROR}`
-        )
+        notifications.error("Failed to save name", `${err instanceof Error ? err.message : LABELS.UNKNOWN_ERROR}`)
       );
   }
 
   function handleDownload(type: SUPPORTED_DOWNLOAD_TYPE): void {
     if (!proposal) return;
 
-    grantProposalService
+    GrantProposalService.getInstance()
       .download(proposal, type)
       .catch((err) =>
-        notifications.error(
-          `Failed to download proposal: ${err instanceof Error ? err.message : LABELS.UNKNOWN_ERROR}`
-        )
+        notifications.error("Failed to download proposal", `${err instanceof Error ? err.message : LABELS.UNKNOWN_ERROR}`)
       )
       .finally(() => {
         setAnchorEl(null);
@@ -200,13 +214,11 @@ const GrantProposalsDetailPage: React.FC = () => {
 
     if (!proposal?.id) return;
 
-    grantProposalService
+    GrantProposalService.getInstance()
       .update(proposal.id, { rating: value })
       .then((updated) => setProposal({ ...proposal, ...updated }))
       .catch((err) =>
-        notifications.error(
-          `Failed to save rating: ${err instanceof Error ? err.message : LABELS.UNKNOWN_ERROR}`
-        )
+        notifications.error("Failed to save rating", `${err instanceof Error ? err.message : LABELS.UNKNOWN_ERROR}`)
       );
   }
 
@@ -227,7 +239,7 @@ const GrantProposalsDetailPage: React.FC = () => {
       setLoading(true);
       setIsDeleting(true);
 
-      await grantProposalService.deleteProposal(proposal);
+      await GrantProposalService.getInstance().deleteProposal(proposal);
 
       notifications.success(LABELS.DELETE_SUCCESS);
       setOpenDeleteDialog(false);
@@ -301,7 +313,7 @@ const GrantProposalsDetailPage: React.FC = () => {
                   </Tooltip>
                   <Tooltip title={LABELS.COPY_ALL_TOOLTIP}>
                     <Box>
-                      <Clipboard text={createProposalClipboardPlainText(proposal)} />
+                      <Clipboard text={clipboardText} />
                     </Box>
                   </Tooltip>
                   <Menu
@@ -388,7 +400,7 @@ const GrantProposalsDetailPage: React.FC = () => {
           </Card>
         </Stack>
       )}
-      <ConfirmationDialog
+      <DeleteConfirmationDialog
         title="Delete Proposal?"
         message={`Are you sure you want to delete "${proposal?.name || "this proposal"}"? This action cannot be undone.`}
         open={openDeleteDialog}

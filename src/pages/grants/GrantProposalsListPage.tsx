@@ -4,6 +4,7 @@ import {
   Box, Breadcrumbs, Button, Card, CardContent, CardHeader,
   IconButton, Rating, Toolbar, Tooltip, Typography
 } from "@mui/material";
+import { DeleteConfirmationDialog } from "../../components/DeleteConfirmationDialog";
 import {
   DataGrid,
   GridColDef,
@@ -15,7 +16,7 @@ import {
 import { useContext, useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { LoadingOverlay } from "../../components/LoadingOverlay";
-import { grantProposalService } from "../../services/grantProposalService";
+import { GrantProposalService } from "../../services/grantProposalService";
 
 import type { GrantProposal, Timestamp } from "../../types";
 import { DateUtils } from "../../utils/dateUtils";
@@ -24,6 +25,7 @@ import { PROPOSAL_LABELS } from "../../constants/labels";
 const LABELS = PROPOSAL_LABELS;
 
 const GrantProposalsListPage: React.FC = () => {
+  const grantProposalService = GrantProposalService.getInstance();
   const notifications = useNotifications();
 
   const navigate = useNavigate();
@@ -33,6 +35,7 @@ const GrantProposalsListPage: React.FC = () => {
   const [proposals, setProposals] = useState<GrantProposal[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 10 });
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
 
   function getCreatedAtSortValue(createdAt: GrantProposal["createdAt"]): number {
     return createdAt instanceof Date ? createdAt.getTime() : (createdAt as Timestamp).seconds;
@@ -55,13 +58,15 @@ const GrantProposalsListPage: React.FC = () => {
   };
 
   const handleDelete = () => {
-    // Confirm deletion
-    const confirmed = window.confirm(LABELS.DELETE_CONFIRMATION);
+    setOpenDeleteDialog(true);
+  }
 
-    if (!confirmed) {
-      return;
-    }
+  const handleDeleteCancel = () => {
+    setOpenDeleteDialog(false);
+  }
 
+  const handleDeleteConfirm = () => {
+    setOpenDeleteDialog(false);
     setLoading(true);
     const selectedProposals = proposals.filter((proposal) => {
       return proposal.id != null && selectedIds.includes(String(proposal.id));
@@ -75,7 +80,7 @@ const GrantProposalsListPage: React.FC = () => {
       })
       .catch(error => {
         console.error("Error deleting proposal:", error);
-        notifications.error(LABELS.DELETE_FAILURE + `${error instanceof Error ? error.message : LABELS.UNKNOWN_ERROR}`);
+        notifications.error(LABELS.DELETE_FAILURE, `${error instanceof Error ? error.message : undefined}`);
       })
       .finally(() => setLoading(false));
   }
@@ -243,6 +248,13 @@ const GrantProposalsListPage: React.FC = () => {
           />
         </CardContent>
       </Card >
+      <DeleteConfirmationDialog
+        title={LABELS.DELETE_PROPOSALS}
+        message={LABELS.DELETE_CONFIRMATION}
+        open={openDeleteDialog}
+        handleConfirm={handleDeleteConfirm}
+        handleCancel={handleDeleteCancel}
+      />
     </>
   );
 };

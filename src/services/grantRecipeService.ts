@@ -1,10 +1,16 @@
 import type { Identifier, User } from "@digitalaidseattle/core";
 import { FirestoreService } from "@digitalaidseattle/firebase";
+import { collection, getDocs, limit, query, QueryConstraint, where } from "firebase/firestore";
 import Handlebars from "handlebars";
 import { authService } from "../App";
 import { FIRESTORE_COLLECTIONS } from "../constants/firestoreCollections";
-import type { GrantRecipe } from "../types";
+import type { GrantContext, GrantRecipe } from "../types";
+import { requireRecipeName } from "../utils/recipeValidation";
 import { SettingsService } from "./settingsService";
+import { Configuration } from "./Configuration";
+import { UrlContextService } from "./urlContextService";
+
+export const DUPLICATE_RECIPE_NAME_ERROR = "Duplicate recipe name already exists.";
 
 class GrantRecipeService extends FirestoreService<GrantRecipe> {
 
@@ -47,18 +53,24 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
     mapper?: (json: any) => GrantRecipe,
     user?: User
   ): Promise<GrantRecipe> {
+    requireRecipeName(entity, "save");
+
     const sessionUser = user ?? await authService.getUser();
     if (!sessionUser?.email) {
       throw new Error("grantRecipeService.insert: user.email is required");
     }
 
     const now = new Date();
+    const description = entity.description.trim();
+
+    await this.assertUniqueDescription(description);
 
     // Compile prompt from template before saving
     const prompt = await this.generatePromptWithInputs(entity);
 
     const cleaned = {
       ...entity,
+      description,
       contexts: (entity.contexts ?? []).map(gc => {
         const clone = { ...gc }
         delete clone.file;
@@ -67,19 +79,26 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
     }
     delete cleaned.id;
 
-    return super.insert(
-      {
-        ...cleaned,
-        prompt,
-        createdAt: now,
-        createdBy: sessionUser.email,
-        updatedAt: now,
-        updatedBy: sessionUser.email,
-      } as GrantRecipe,
+    const savedRecipe = {
+      ...cleaned,
+      prompt,
+      createdAt: now,
+      createdBy: sessionUser.email,
+      updatedAt: now,
+      updatedBy: sessionUser.email,
+    } as GrantRecipe;
+
+    const inserted = await super.insert(
+      savedRecipe,
       select,
       mapper,
       user
     );
+
+    return {
+      ...savedRecipe,
+      id: inserted.id,
+    };
   }
 
   /**
@@ -93,15 +112,20 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
     mapper?: (json: any) => GrantRecipe,
     user?: User
   ): Promise<GrantRecipe> {
+    requireRecipeName(updatedFields, "save");
 
     const sessionUser = user ?? await authService.getUser();
     if (!sessionUser) {
       throw new Error("No valid user found.");
     }
 
+    const description = updatedFields.description.trim();
+
+    await this.assertUniqueDescription(description, entityId);
 
     const cleaned = {
       ...updatedFields,
+      description,
       contexts: (updatedFields.contexts ?? []).map(gc => {
         const clone = { ...gc }
         delete clone.file;
@@ -137,7 +161,7 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
       outputs: recipe.outputsWithWordCount.map(output => ({
         ...output,
         upperBound: output.maxWords,
-        lowerBound: lowerBoundPercentage * output.maxWords
+        lowerBound: Math.round(lowerBoundPercentage * output.maxWords)
       }))
     });
   }
@@ -152,6 +176,67 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
       prompt,
     };
   }
+
+  async queryByConstraints(...constraints: QueryConstraint[]): Promise<GrantRecipe[]> {
+    const querySnapshot = await getDocs(query(
+      collection(this.db, this.collectionName),
+      ...constraints
+    ));
+
+    return querySnapshot.docs.map(doc => ({
+      ...doc.data(),
+      id: doc.id,
+    } as GrantRecipe));
+  }
+
+  async findByDescription(description: string): Promise<GrantRecipe[]> {
+    return this.queryByConstraints(
+      where("description", "==", description.trim()),
+      limit(2)
+    );
+  }
+
+  async descriptionExists(description: string, currentRecipeId?: Identifier | null): Promise<boolean> {
+    if (description.trim().length === 0) {
+      return false;
+    }
+
+    const recipes = await this.findByDescription(description);
+    const currentId = currentRecipeId == null ? null : String(currentRecipeId);
+
+    return recipes.some(recipe => String(recipe.id) !== currentId);
+  }
+
+  async assertUniqueDescription(description: string, currentRecipeId?: Identifier | null): Promise<void> {
+    const hasDuplicateDescription = await this.descriptionExists(description, currentRecipeId);
+    if (hasDuplicateDescription) {
+      throw new Error(DUPLICATE_RECIPE_NAME_ERROR);
+    }
+  }
+
+  // Count on blur rather than issuing an AI request for every keystroke.
+  async countContextTokens(recipe: GrantRecipe, context: GrantContext): Promise<{ tokenCount: number | null, countError: unknown }> {
+    const urlContextService = UrlContextService.getInstance();
+    const grantAiService = Configuration.getInstance().aiService;
+
+    const modelType = recipe.modelType;
+    let tokenCount: number | null = null;
+    let countError: unknown;
+    try {
+      if (context.type === 'url') {
+        if (context.value && urlContextService.isValidUrl(context.value)) {
+          const pageText = await urlContextService.fetchPageText(context.value);
+          tokenCount = await grantAiService.calcTokenCount(modelType, pageText);
+        }
+      } else {
+        tokenCount = await grantAiService.calcTokenCount(modelType, context.value || '');
+      }
+    } catch (err) {
+      countError = err;
+    }
+    return { tokenCount, countError };
+  }
+
 }
 
 export const grantRecipeService = new GrantRecipeService();
