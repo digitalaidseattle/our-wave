@@ -4,9 +4,11 @@ import { collection, getDocs, limit, query, QueryConstraint, where } from "fireb
 import Handlebars from "handlebars";
 import { authService } from "../App";
 import { FIRESTORE_COLLECTIONS } from "../constants/firestoreCollections";
-import type { GrantRecipe } from "../types";
+import type { GrantContext, GrantRecipe } from "../types";
 import { requireRecipeName } from "../utils/recipeValidation";
 import { SettingsService } from "./settingsService";
+import { Configuration } from "./Configuration";
+import { UrlContextService } from "./urlContextService";
 
 export const DUPLICATE_RECIPE_NAME_ERROR = "Duplicate recipe name already exists.";
 
@@ -211,6 +213,30 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
       throw new Error(DUPLICATE_RECIPE_NAME_ERROR);
     }
   }
+
+  // Count on blur rather than issuing an AI request for every keystroke.
+  async countContextTokens(recipe: GrantRecipe, context: GrantContext): Promise<{ tokenCount: number | null, countError: unknown }> {
+    const urlContextService = UrlContextService.getInstance();
+    const grantAiService = Configuration.getInstance().aiService;
+
+    const modelType = recipe.modelType;
+    let tokenCount: number | null = null;
+    let countError: unknown;
+    try {
+      if (context.type === 'url') {
+        if (context.value && urlContextService.isValidUrl(context.value)) {
+          const pageText = await urlContextService.fetchPageText(context.value);
+          tokenCount = await grantAiService.calcTokenCount(modelType, pageText);
+        }
+      } else {
+        tokenCount = await grantAiService.calcTokenCount(modelType, context.value || '');
+      }
+    } catch (err) {
+      countError = err;
+    }
+    return { tokenCount, countError };
+  }
+
 }
 
 export const grantRecipeService = new GrantRecipeService();

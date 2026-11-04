@@ -117,4 +117,64 @@ describe("ValidationService", () => {
     } as any);
     expect(r2.valid).toBe(true);
   });
+
+  // --- Context values ---
+
+  it("rejects context value that duplicates another context", () => {
+    const a = { type: "text", name: null, value: "Mission statement" };
+    const b = { type: "text", name: null, value: "  mission STATEMENT " };
+    const r = svc.validateContextValue(b, [a, b]);
+    expect(r.valid).toBe(false);
+    expect(r.errors.value).toBeTruthy();
+  });
+
+  it("accepts unique context value and ignores itself", () => {
+    const a = { type: "text", name: null, value: "Mission statement" };
+    const b = { type: "url", name: null, value: "https://example.org" };
+    expect(svc.validateContextValue(b, [a, b]).valid).toBe(true);
+  });
+
+  it("accepts empty context values", () => {
+    const a = { type: "text", name: null, value: "" };
+    const b = { type: "text", name: null, value: null };
+    expect(svc.validateContextValue(b, [a, b]).valid).toBe(true);
+  });
+
+  it("rejects url context with an invalid url", () => {
+    const a = { type: "url", name: null, value: "not a url" };
+    const r = svc.validateContextValue(a, [a]);
+    expect(r.valid).toBe(false);
+    expect(r.errors.value).toBeTruthy();
+  });
+
+  it("rejects url context with a non-http protocol", () => {
+    const a = { type: "url", name: null, value: "ftp://example.org" };
+    expect(svc.validateContextValue(a, [a]).valid).toBe(false);
+  });
+
+  it("does not apply url validation to text contexts", () => {
+    const a = { type: "text", name: null, value: "not a url" };
+    expect(svc.validateContextValue(a, [a]).valid).toBe(true);
+  });
+
+  // --- Files ---
+
+  it("rejects file whose name matches a context value", () => {
+    const contexts = [{ type: "text", name: null, value: " Budget.PDF " }];
+    const files = [new File(["x"], "budget.pdf"), new File(["y"], "notes.txt")];
+    const r = svc.validateFiles(files, contexts);
+    expect(r.valid).toBe(false);
+    expect(r.errors["budget.pdf"]).toBeTruthy();
+    expect(r.errors["notes.txt"]).toBeUndefined();
+  });
+
+  it("accepts files whose names do not match any context value", () => {
+    const contexts = [
+      { type: "text", name: null, value: "Mission statement" },
+      { type: "text/plain", name: "notes.txt", value: "" },
+    ];
+    const r = svc.validateFiles([new File(["x"], "budget.pdf")], contexts);
+    expect(r.valid).toBe(true);
+    expect(r.errors).toEqual({});
+  });
 });

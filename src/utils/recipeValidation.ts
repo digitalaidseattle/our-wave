@@ -2,6 +2,8 @@ import type { GrantContext, GrantOutput, GrantRecipe } from "../types";
 
 export const DUPLICATE_OUTPUT_FIELD_ERROR = "Duplicate Output Field. Please enter a unique value.";
 export const DUPLICATE_PROJECT_CONTEXT_ERROR = "Duplicate Project Context. Please enter a unique value.";
+export const INVALID_URL_CONTEXT_ERROR = "Please enter a valid http or https URL.";
+export const DUPLICATE_FILE_NAME_ERROR = "Duplicate File Name. A project context already has this value.";
 
 export function hasRecipeName(recipe: Pick<GrantRecipe, "description">): boolean {
   return (recipe.description ?? "").trim().length > 0;
