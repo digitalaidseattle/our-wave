@@ -58,12 +58,8 @@ export class ValidationService implements IValidationService {
     }
 
     const isDuplicate = contexts
-      .filter(other => other !== context)
-      .some(
-        other => {
-          return (other.value ?? "").trim().toLowerCase() === value
-        }
-      );
+      .some(other => (other.value ?? "").trim().toLowerCase() === value);
+
     return isDuplicate
       ? { valid: false, errors: { value: DUPLICATE_PROJECT_CONTEXT_ERROR } }
       : { valid: true, errors: {} };

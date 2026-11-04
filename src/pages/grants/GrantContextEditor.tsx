@@ -137,7 +137,8 @@ const ContextRow = ({ index, context, onChange, onDelete, onBlur }: ContextRowPr
         const revised = { ...context, value };
         delete revised.tokenCount;
         // Show error message in the field, but still allow the value to be updated.
-        const result = validationService.validateContextValue(revised, recipe.contexts);
+        const others = recipe.contexts.filter((_, i) => i !== index);
+        const result = validationService.validateContextValue(revised, others);
         setErrorMsg(result.valid ? undefined : result.errors.value);
         onChange(index, revised);
     }
