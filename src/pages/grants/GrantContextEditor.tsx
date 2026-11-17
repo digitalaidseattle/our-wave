@@ -23,6 +23,9 @@ import { getContextTokenLabel } from './contextTokenUtils';
 const LABEL_UPLOAD_TITLE = "Select files";
 const LABEL_UPLOAD_SUBTITLE = "Supported types are: .txt, .pdf, .html, .json, .md";
 
+type WrappedGrantContext = GrantContext & {
+    error?: string;
+}
 interface ContextFieldProps {
     context: GrantContext;
     errorMsg?: string;
@@ -120,26 +123,19 @@ const FileContextField = ({ context, errorMsg }: ContextFieldProps) => (
 
 interface ContextRowProps {
     index: number;
-    context: GrantContext;
-    onChange: (index: number, param: GrantContext) => void
+    context: WrappedGrantContext;
+    onChange: (index: number, param: WrappedGrantContext) => void
     onDelete: (index: number) => void
-    onBlur: (context: GrantContext) => void;
+    onBlur: (context: WrappedGrantContext) => void;
     isDuplicate?: boolean;
 }
 
 const ContextRow = ({ index, context, onChange, onDelete, onBlur }: ContextRowProps) => {
     const grantFileService = new GrantFileService();
 
-    const { recipe } = useContext(GrantRecipeContext);
-    const [errorMsg, setErrorMsg] = useState<string | undefined>(undefined);
-
     function handleValueChange(value: string): void {
         const revised = { ...context, value };
         delete revised.tokenCount;
-        // Show error message in the field, but still allow the value to be updated.
-        const others = recipe.contexts.filter((_, i) => i !== index);
-        const result = validationService.validateContextValue(revised, others);
-        setErrorMsg(result.valid ? undefined : result.errors.value);
         onChange(index, revised);
     }
 
@@ -161,13 +157,13 @@ const ContextRow = ({ index, context, onChange, onDelete, onBlur }: ContextRowPr
             </Button>
             <Box sx={{ flex: 1 }}>
                 {context.type === 'text' && (
-                    <TextContextField context={context} errorMsg={errorMsg} onChange={handleValueChange} onBlur={() => onBlur(context)} />
+                    <TextContextField context={context} errorMsg={context.error} onChange={handleValueChange} onBlur={() => onBlur(context)} />
                 )}
                 {context.type === 'url' && (
-                    <UrlContextField context={context} errorMsg={errorMsg} onChange={handleValueChange} onBlur={() => onBlur(context)} />
+                    <UrlContextField context={context} errorMsg={context.error} onChange={handleValueChange} onBlur={() => onBlur(context)} />
                 )}
                 {(grantFileService.isFileContext(context)) && (
-                    <FileContextField context={context} errorMsg={errorMsg} />
+                    <FileContextField context={context} errorMsg={context.error} />
                 )}
             </Box>
             <Typography variant="body2" sx={{ alignSelf: 'center', minWidth: 80 }}>
@@ -190,18 +186,39 @@ export const GrantContextEditor: React.FC<GrantContextEditorProps> = ({ onChange
     const { setHelpTopic } = useContext(HelpTopicContext);
     const { setShowHelp } = useHelp();
     const { recipe } = useContext(GrantRecipeContext);
-    const contexts = recipe.contexts ?? [];
     const latestRecipe = useRef(recipe);
     latestRecipe.current = recipe;
     const mounted = useRef(true);
-    useEffect(() => {
-        mounted.current = true;
-        return () => { mounted.current = false; };
-    }, []);
+
+    const [contexts, setContexts] = useState<WrappedGrantContext[]>([]);
     const [rowVersion, setRowVersion] = useState(0);
     const [uploadingFileNames, setUploadingFileNames] = useState<Set<string>>(new Set());
 
     const [showUploadDialog, setShowUploadDialog] = useState<boolean>(false);
+
+    useEffect(() => {
+        mounted.current = true;
+        return () => { mounted.current = false; };
+    }, []);
+
+    useEffect(() => {
+        if (recipe) {
+            const wrapped: WrappedGrantContext[] = [];
+            const contexts = recipe.contexts ?? [];
+            for (let index = 0; index < contexts.length; index++) {
+                const context = contexts[index];
+                const others = recipe.contexts.filter((_, i) => i !== index);
+                const result = validationService.validateContextValue(context, others);
+                wrapped.push(
+                    {
+                        ...context,
+                        error: (result.valid ? undefined : result.errors.value)
+                    }
+                )
+            }
+            setContexts(wrapped);
+        }
+    }, [recipe]);
 
     async function addContexts(newContexts: GrantContext[]) {
         const revised = [...(contexts ?? []), ...newContexts]
