@@ -12,11 +12,12 @@ import Dropzone from "react-dropzone";
 
 interface FileUploadDialogProps {
     title?: string;
+    subtitle?: string;
     open: boolean
     onChange: (files: File[] | null) => void
 };
 
-const FileUploadDialog = ({ title = "Select files", open, onChange }: FileUploadDialogProps) => {
+const FileUploadDialog = ({ title = "Select files", subtitle, open, onChange }: FileUploadDialogProps) => {
 
     const [files, setFiles] = useState<File[]>([]);
 
@@ -49,6 +50,7 @@ const FileUploadDialog = ({ title = "Select files", open, onChange }: FileUpload
         sx={{ minHeight: '600px' }}>
         <DialogTitle sx={{ fontSize: 16, fontWeight: 600 }}>{title}</DialogTitle>
         <DialogContent>
+            {subtitle && <Typography>{subtitle}</Typography>}
             <Dropzone onDrop={acceptedFiles => setFiles([...files, ...acceptedFiles])}>
                 {({ getRootProps, getInputProps }) => (
                     <section>

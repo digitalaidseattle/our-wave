@@ -27,6 +27,10 @@ const routes = [
         element: <GrantRecipesListPage />,
       },
       {
+        path: "grant-recipes/new",
+        element: <GrantRecipesDetailPage />,
+      },
+      {
         path: "grant-recipes/:id",
         element: <GrantRecipesDetailPage />,
       },

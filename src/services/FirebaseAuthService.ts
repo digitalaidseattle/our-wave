@@ -1,9 +1,14 @@
 
-import { AuthError, AuthService, OAuthResponse } from '@digitalaidseattle/core';
+import { AuthError, AuthService, OAuthResponse, User } from '@digitalaidseattle/core';
 import { firebaseClient } from '@digitalaidseattle/firebase';
 import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup } from 'firebase/auth';
 
 class FirebaseAuthService implements AuthService {
+
+
+    isAuthorized(_user: User, _authorizedRoles: string[]): unknown {
+        throw new Error('Method not implemented.');
+    }
 
     getProviders(): string[] {
         return ["google"];

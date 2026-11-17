@@ -1,97 +1,182 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { GrantRecipe } from "../types";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { GrantProposal, GrantRecipe } from "../types";
+import { DUPLICATE_OUTPUT_FIELD_ERROR, DUPLICATE_PROJECT_CONTEXT_ERROR } from "../utils/recipeValidation";
 
-// Mock AI service
-vi.mock("../pages/grants/grantAiService", () => ({
-  grantAiService: {
-    parameterizedQuery: vi.fn(),
+const mocks = vi.hoisted(() => ({
+  getUser: vi.fn(),
+  structuredQuery: vi.fn(),
+  recipeInsert: vi.fn(),
+  recipeUpdate: vi.fn(),
+  proposalInsert: vi.fn(),
+  proposalNameExists: vi.fn(),
+}));
+
+vi.mock("../App", () => ({
+  authService: { getUser: mocks.getUser },
+}));
+
+vi.mock("../services/Configuration", () => ({
+  Configuration: {
+    getInstance: () => ({
+      aiService: { structuredQuery: mocks.structuredQuery },
+    }),
   },
 }));
 
-// Mock Firebase
-vi.mock("@digitalaidseattle/firebase", () => ({
-  firebaseClient: { app: {} },
-  FirestoreService: class { },
+vi.mock("../services/grantRecipeService", () => ({
+  grantRecipeService: {
+    insert: mocks.recipeInsert,
+    update: mocks.recipeUpdate,
+  },
 }));
 
-import { GrantAiService } from "../pages/grants/grantAiService";
+vi.mock("../services/grantProposalService", () => ({
+  GrantProposalService: {
+    getInstance: vi.fn(() => ({
+      empty: () => ({}),
+      insert: mocks.proposalInsert,
+      proposalNameExists: mocks.proposalNameExists,
+    })),
+  },
+}));
+
 import { generateProposal } from "./GenerateProposal";
 
-describe("GenerateProposal", () => {
-  const grantAiService = GrantAiService.getInstance();
+const namedRecipe = (): GrantRecipe => ({
+  id: "recipe-123",
+  createdAt: new Date(),
+  createdBy: "tester@example.com",
+  updatedAt: new Date(),
+  updatedBy: "tester@example.com",
+  lastSubmitted: null,
+  description: "Test recipe",
+  tags: [],
+  rating: 0,
+  template: "Test template",
+  prompt: "compiled prompt",
+  contexts: [],
+  outputsWithWordCount: [
+    { name: "Summary", maxWords: 3, unit: "words" },
+    { name: "Notes", maxWords: 10, unit: "characters" },
+  ],
+  inputParameters: [],
+  tokenCount: 0,
+  modelType: "gemini-2.5-flash",
+});
 
+describe("generateProposal", () => {
   beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 5, 22, 14, 27, 9)); // June 22 2026, 2:27:09 PM
     vi.clearAllMocks();
+    mocks.proposalNameExists.mockResolvedValue(false);
   });
 
-  it("builds structuredResponse from AI output", async () => {
-    const recipe: GrantRecipe = {
-      id: "recipe-123",
-      createdAt: new Date(),
-      createdBy: "tester@example.com",
-      updatedAt: new Date(),
-      updatedBy: "tester@example.com",
-      lastSubmitted: null,
-      description: "Test recipe",
-      tags: [],
-      rating: 0,
-      template: "Test {{#each outputs}}{{name}} {{/each}}",
-      prompt: "compiled prompt",
-      contexts: [],
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("builds a proposal from the AI response", async () => {
+    const recipe = namedRecipe();
+    const savedRecipe = { ...recipe, lastSubmitted: new Date() };
+    const insertedProposal = { id: "proposal-1" } as GrantProposal;
+    mocks.getUser.mockResolvedValue({ email: "tester@example.com" });
+    mocks.recipeUpdate.mockResolvedValue(savedRecipe);
+    mocks.structuredQuery.mockResolvedValue({
+      content: { Summary: "Summary text", Notes: "Notes text" },
+      tokenCount: 42,
+    });
+    mocks.proposalInsert.mockResolvedValue(insertedProposal);
+
+    await expect(generateProposal(recipe)).resolves.toBe(insertedProposal);
+
+    expect(mocks.structuredQuery).toHaveBeenCalledOnce();
+    expect(mocks.proposalInsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        grantRecipeId: "recipe-123",
+        structuredResponse: { Summary: "Summary text", Notes: "Notes text" },
+        totalTokenCount: 42,
+        outputs: [
+          { name: "Summary", maxWords: 3, unit: "words" },
+          { name: "Notes", maxWords: 10, unit: "characters" },
+        ]
+      }),
+      undefined,
+      undefined,
+      { email: "tester@example.com" }
+    );
+  });
+
+  it("rejects a blank recipe name before saving or calling AI", async () => {
+    await expect(generateProposal({ ...namedRecipe(), description: " " })).rejects.toThrow(
+      "Recipe name is required to generate a proposal."
+    );
+
+    expect(mocks.recipeUpdate).not.toHaveBeenCalled();
+    expect(mocks.structuredQuery).not.toHaveBeenCalled();
+  });
+
+  it("rejects a recipe without output fields", async () => {
+    await expect(generateProposal({ ...namedRecipe(), outputsWithWordCount: [] })).rejects.toThrow(
+      "Recipe is missing output fields"
+    );
+  });
+
+  it("rejects duplicate output field names before saving or calling AI", async () => {
+    await expect(generateProposal({
+      ...namedRecipe(),
       outputsWithWordCount: [
         { name: "Summary", maxWords: 3, unit: "words" },
-        { name: "Notes", maxWords: 10, unit: "characters" },
+        { name: " summary ", maxWords: 10, unit: "characters" },
       ],
-      inputParameters: [],
-      tokenCount: 0,
-      modelType: "gemini-2.5-flash",
-    };
+    })).rejects.toThrow(DUPLICATE_OUTPUT_FIELD_ERROR);
 
-    (grantAiService.parameterizedQuery as any).mockResolvedValue({
-      Summary: "This should be trimmed",
-      Notes: "abcdefghijklmnop",
+    expect(mocks.recipeUpdate).not.toHaveBeenCalled();
+    expect(mocks.structuredQuery).not.toHaveBeenCalled();
+  });
+
+  it("rejects duplicate project context names before saving or calling AI", async () => {
+    await expect(generateProposal({
+      ...namedRecipe(),
+      contexts: [
+        { type: "application/pdf", name: "Project.pdf", value: "" },
+        { type: "application/pdf", name: " project.pdf ", value: "" },
+      ],
+    })).rejects.toThrow(DUPLICATE_PROJECT_CONTEXT_ERROR);
+
+    expect(mocks.recipeUpdate).not.toHaveBeenCalled();
+    expect(mocks.structuredQuery).not.toHaveBeenCalled();
+  });
+
+  it("names proposal using recipe description and current date-time", async () => {
+    const recipe = namedRecipe();
+    const savedRecipe = { ...recipe, lastSubmitted: new Date() };
+    mocks.getUser.mockResolvedValue({ email: "tester@example.com" });
+    mocks.recipeUpdate.mockResolvedValue(savedRecipe);
+    mocks.structuredQuery.mockResolvedValue({
+      content: { Summary: "text" },
+      tokenCount: null,
     });
+    mocks.proposalInsert.mockResolvedValue({ id: "p-1" });
 
-    const proposal = await generateProposal(recipe);
+    await generateProposal(recipe);
 
-    expect(grantAiService.parameterizedQuery).toHaveBeenCalledTimes(1);
-    expect(proposal.grantRecipeId).toBe("recipe-123");
-
-    // AI output is preserved as-is
-    expect(proposal.structuredResponse?.Summary).toBe("This should be trimmed");
-    expect(proposal.structuredResponse?.Notes).toBe("abcdefghijklmnop");
+    const inserted = mocks.proposalInsert.mock.calls[0][0];
+    expect(inserted.name).toBe("Test recipe 6/22 2:27:09 PM");
   });
 
-  it("throws if recipe has no id", async () => {
-    await expect(
-      generateProposal({
-        outputsWithWordCount: [{ name: "Test", maxWords: 3, unit: "words" }],
-      } as any)
-    ).rejects.toThrow("Recipe ID is required");
-  });
+  it("throws when a proposal with the same name already exists", async () => {
+    const recipe = namedRecipe();
+    const savedRecipe = { ...recipe, lastSubmitted: new Date() };
+    mocks.getUser.mockResolvedValue({ email: "tester@example.com" });
+    mocks.recipeUpdate.mockResolvedValue(savedRecipe);
+    mocks.structuredQuery.mockResolvedValue({
+      content: { Summary: "text" },
+      tokenCount: null,
+    });
+    mocks.proposalNameExists.mockResolvedValue(true);
 
-  it("throws if outputsWithWordCount is empty", async () => {
-    const badRecipe: GrantRecipe = {
-      id: "no-outputs",
-      createdAt: new Date(),
-      createdBy: "",
-      updatedAt: new Date(),
-      updatedBy: "",
-      lastSubmitted: null,
-      description: "",
-      tags: [],
-      rating: 0,
-      template: "",
-      prompt: "",
-      contexts: [],
-      outputsWithWordCount: [],
-      tokenCount: 0,
-      inputParameters: [],
-      modelType: "gemini-2.5-flash",
-    };
-
-    await expect(
-      generateProposal(badRecipe)
-    ).rejects.toThrow("Recipe is missing output fields");
+    await expect(generateProposal(recipe)).rejects.toThrow(/already exists/);
+    expect(mocks.proposalInsert).not.toHaveBeenCalled();
   });
 });

@@ -6,8 +6,10 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("../services/grantProposalService", () => ({
-  grantProposalService: {
-    delete: mocks.deleteMock,
+  GrantProposalService: {
+    getInstance: vi.fn(() => ({
+      delete: mocks.deleteMock,
+    })),
   },
 }));
 

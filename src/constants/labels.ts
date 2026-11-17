@@ -16,7 +16,7 @@ export const DASHBOARD_LABELS = {
 
 export const RECIPE_LABELS = {
     TITLE: "Grant Recipes",
-    DELETE_PROPOSALS: "Delete Recipe(s)",
+    DELETE_RECIPES: "Delete Recipe(s)",
     DELETE_CONFIRMATION: "Are you sure you want to delete the recipe(s)? This action cannot be undone.",
     DELETE_SUCCESS: "Recipe(s) deleted successfully.",
     DELETE_FAILURE: "Failed to delete recipe(s): ",

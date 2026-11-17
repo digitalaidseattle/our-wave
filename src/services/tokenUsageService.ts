@@ -15,6 +15,7 @@ export type MonthlyTokenUsagePoint = {
   monthKey: string;
   monthLabel: string;
   tokensUsed: number;
+  modelTokens: Record<string, number>;
 };
 
 const UNSPECIFIED_MODEL = "Unspecified model";
@@ -90,21 +91,25 @@ export const tokenUsageService = {
       return monthDate;
     });
 
-    const totalsByMonth = proposals.reduce<Record<string, number>>((usage, proposal) => {
+    const usageByMonth = proposals.reduce<Record<string, Record<string, number>>>((usage, proposal) => {
       const proposalDate = getMonthStart(toDate(proposal.createdAt));
       const monthKey = monthKeyFormatter(proposalDate);
-      usage[monthKey] = (usage[monthKey] ?? 0) + this.getTokenCount(proposal);
+      const model = this.normalizeModelName(proposal.model);
+      usage[monthKey] = usage[monthKey] ?? {};
+      usage[monthKey][model] = (usage[monthKey][model] ?? 0) + this.getTokenCount(proposal);
 
       return usage;
     }, {});
 
     return monthStarts.map((monthStart) => {
       const monthKey = monthKeyFormatter(monthStart);
+      const modelTokens = usageByMonth[monthKey] ?? {};
 
       return {
         monthKey,
         monthLabel: monthLabelFormatter.format(monthStart),
-        tokensUsed: totalsByMonth[monthKey] ?? 0,
+        tokensUsed: Object.values(modelTokens).reduce((sum, tokensUsed) => sum + tokensUsed, 0),
+        modelTokens,
       };
     });
   },

@@ -6,8 +6,9 @@
  */
 
 import { authService, storageService } from "../App";
-import { grantRecipeService } from "../services/grantRecipeService";
+import { DUPLICATE_RECIPE_NAME_ERROR, grantRecipeService } from "../services/grantRecipeService";
 import { GrantContext, GrantRecipe } from "../types";
+import { requireRecipeName, requireUniqueRecipeConfigFields } from "../utils/recipeValidation";
 
 const GLOUD_FOLDER = import.meta.env.VITE_FIREBASE_STORAGE_FOLDER;
 
@@ -18,8 +19,8 @@ async function organizeContextsFiles(recipe: GrantRecipe): Promise<GrantContext[
         .then((files: any[]) => files.map((file: any) => file.name));
 
     const updatedContexts: GrantContext[] = [];
-    recipe.contexts.forEach(async context => {
-        if (context.type === 'text') {
+    for (const context of recipe.contexts) {
+        if (context.type === 'text' || context.type === 'url') {
             updatedContexts.push(context);
         } else if (context.file! instanceof File) {
             // Existing files will be overwritten
@@ -36,32 +37,41 @@ async function organizeContextsFiles(recipe: GrantRecipe): Promise<GrantContext[
                 console.error('not in the cloud & no file to upload', context);
             }
         }
-    });
+    }
 
     // remove unwanted files
-    cloudFiles.forEach(async fileName => {
+    for (const fileName of cloudFiles) {
         await storageService.removeFile(`${GLOUD_FOLDER}/${recipe.id}/${fileName}`)
-    })
+    }
     return updatedContexts;
 }
 
 export async function saveRecipe(recipe: GrantRecipe): Promise<GrantRecipe> {
+    requireRecipeName(recipe, "save");
+    requireUniqueRecipeConfigFields(recipe);
+
     return authService.getUser()
         .then((async user => {
+            const description = recipe.description.trim();
+            const hasDuplicateDescription = await grantRecipeService.descriptionExists(description, recipe.id);
+            if (hasDuplicateDescription) {
+                throw new Error(DUPLICATE_RECIPE_NAME_ERROR);
+            }
+
             const prompt = await grantRecipeService.generatePromptWithInputs(recipe);
             const contexts = await organizeContextsFiles(recipe);
 
             const newRecipe = {
                 ...recipe,
+                description,
                 contexts: contexts,
                 prompt: prompt
             }
 
             if (recipe.id) {
-                return grantRecipeService.update(recipe.id, newRecipe, user);
+                return grantRecipeService.update(recipe.id, newRecipe, undefined, undefined, user);
             } else {
-                return grantRecipeService.insert(newRecipe, user);
+                return grantRecipeService.insert(newRecipe, undefined, undefined, user);
             }
         }))
 }
-
