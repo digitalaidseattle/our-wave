@@ -7,7 +7,8 @@
 
 import dayjs from "dayjs";
 
-import { authService } from "../App";
+import { getCoreServices } from "@digitalaidseattle/core";
+
 import { Configuration } from "../services/Configuration";
 import { GrantProposalService } from "../services/grantProposalService";
 import { grantRecipeService } from "../services/grantRecipeService";
@@ -23,6 +24,7 @@ export async function generateProposal(recipe: GrantRecipe): Promise<GrantPropos
     requireRecipeName(recipe, "generate a proposal");
     requireUniqueRecipeConfigFields(recipe);
 
+    const authService = getCoreServices().authService!;
     const grantAiService = Configuration.getInstance().aiService;
     const grantProposalService = GrantProposalService.getInstance();
 
@@ -73,7 +75,7 @@ export async function generateProposal(recipe: GrantRecipe): Promise<GrantPropos
         throw new Error(`A proposal named "${proposalName}" already exists. Please try again in a moment.`);
     }
 
-    
+
     const proposal = {
         ...GrantProposalService.getInstance().empty(),
         name: proposalName,

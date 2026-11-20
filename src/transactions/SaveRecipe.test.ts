@@ -1,25 +1,29 @@
-import { User } from "@digitalaidseattle/core";
+import { getCoreServices, User } from "@digitalaidseattle/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { authService, storageService } from "../App";
 import { DUPLICATE_RECIPE_NAME_ERROR, grantRecipeService } from "../services/grantRecipeService";
 import { GrantRecipe } from "../types";
 import { DUPLICATE_OUTPUT_FIELD_ERROR, DUPLICATE_PROJECT_CONTEXT_ERROR } from "../utils/recipeValidation";
 import { saveRecipe } from "./SaveRecipe";
 
-vi.mock("../App", () => ({
+const { authService, storageService } = vi.hoisted(() => ({
   authService: {
     getUser: vi.fn(),
   },
   storageService: {
-    list: vi.fn().mockResolvedValue([]),
+    list: vi.fn(),
     removeFile: vi.fn(),
     upload: vi.fn(),
   },
 }));
 
+vi.mock("@digitalaidseattle/core", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@digitalaidseattle/core")>()),
+  getCoreServices: () => ({ authService, storageService }),
+}));
+
 describe("saveRecipe", () => {
   beforeEach(() => {
-    vi.mocked(storageService.list).mockResolvedValue([]);
+    vi.mocked(getCoreServices().storageService!.list).mockResolvedValue([]);
   });
 
   afterEach(() => {
@@ -41,7 +45,7 @@ describe("saveRecipe", () => {
       contexts: [],
     } as unknown as GrantRecipe;
 
-    vi.spyOn(authService, "getUser").mockResolvedValue(user);
+    vi.spyOn(getCoreServices().authService!, "getUser").mockResolvedValue(user);
     vi.spyOn(grantRecipeService, "descriptionExists").mockResolvedValue(true);
     const generatePromptSpy = vi.spyOn(grantRecipeService, "generatePromptWithInputs");
     const insertSpy = vi.spyOn(grantRecipeService, "insert");
@@ -101,7 +105,7 @@ describe("saveRecipe", () => {
     } as unknown as GrantRecipe;
     const inserted = { id: "recipe-1", description: "Unique Recipe" } as GrantRecipe;
 
-    vi.spyOn(authService, "getUser").mockResolvedValue(user);
+    vi.spyOn(getCoreServices().authService!, "getUser").mockResolvedValue(user);
     vi.spyOn(grantRecipeService, "descriptionExists").mockResolvedValue(false);
     vi.spyOn(grantRecipeService, "generatePromptWithInputs").mockResolvedValue("prompt");
     const insertSpy = vi.spyOn(grantRecipeService, "insert").mockResolvedValue(inserted);
@@ -128,10 +132,10 @@ describe("saveRecipe", () => {
     } as unknown as GrantRecipe;
     const updated = { ...recipe } as GrantRecipe;
 
-    vi.spyOn(authService, "getUser").mockResolvedValue(user);
+    vi.spyOn(getCoreServices().authService!, "getUser").mockResolvedValue(user);
     vi.spyOn(grantRecipeService, "descriptionExists").mockResolvedValue(false);
     vi.spyOn(grantRecipeService, "generatePromptWithInputs").mockResolvedValue("prompt");
-    vi.mocked(storageService.upload).mockResolvedValue("https://storage.example/proposal.pdf");
+    vi.mocked(getCoreServices().storageService!.upload).mockResolvedValue("https://storage.example/proposal.pdf");
     const updateSpy = vi.spyOn(grantRecipeService, "update").mockResolvedValue(updated);
 
     await saveRecipe(recipe);

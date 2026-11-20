@@ -11,8 +11,9 @@ const mocks = vi.hoisted(() => ({
   proposalNameExists: vi.fn(),
 }));
 
-vi.mock("../App", () => ({
-  authService: { getUser: mocks.getUser },
+vi.mock("@digitalaidseattle/core", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@digitalaidseattle/core")>()),
+  getCoreServices: () => ({ authService: { getUser: mocks.getUser } }),
 }));
 
 vi.mock("../services/Configuration", () => ({

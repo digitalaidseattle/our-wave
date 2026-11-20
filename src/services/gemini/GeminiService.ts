@@ -8,9 +8,8 @@
 import { createPartFromText, createPartFromUri, createUserContent, GoogleGenAI, Part } from "@google/genai";
 import { SettingsService } from "../settingsService";
 import { AiResponse, GrantContext } from "../../types";
-import { storageService } from "../../App";
 import { UrlContextService } from "../urlContextService";
-import { StorageFile } from "@digitalaidseattle/core";
+import { getCoreServices, StorageFile } from "@digitalaidseattle/core";
 import { GrantAiService } from "../grantAiService";
 
 const CLOUD_FOLDER = import.meta.env.VITE_FIREBASE_STORAGE_FOLDER;
@@ -74,7 +73,7 @@ export class GeminiService implements GrantAiService {
                         return gc.value ? createPartFromText(gc.value) : null;
                     default: {
                         // Any other type is a file MIME type (e.g. application/pdf)
-                        const uri = await storageService.getDownloadURL(`${CLOUD_FOLDER}/${gc.name}`);
+                        const uri = await getCoreServices().storageService!.getUrlAsync(`${CLOUD_FOLDER}/${gc.name}`);
                         return createPartFromUri(uri, contexts[idx].type);
                     }
                 }
@@ -173,7 +172,7 @@ export class GeminiService implements GrantAiService {
     async calcStorageFileTokenCount(model: string, file: StorageFile): Promise<number> {
         try {
             const ai = this.requireAi();
-            const uri = await storageService.getDownloadURL(file.fullPath);
+            const uri = await getCoreServices().storageService!.getUrlAsync(file.fullPath);
             return ai.models
                 .countTokens({
                     model: model,

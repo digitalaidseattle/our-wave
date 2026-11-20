@@ -1,7 +1,6 @@
-import type { Identifier, User } from "@digitalaidseattle/core";
+import { getCoreServices, type Identifier, type User } from "@digitalaidseattle/core";
 import { FirestoreService } from "@digitalaidseattle/firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
-import { authService } from "../App";
 import { FIRESTORE_COLLECTIONS } from "../constants/firestoreCollections";
 import type { GrantProposal } from "../types";
 import { ProposalExporter, SUPPORTED_DOWNLOAD_TYPE } from "./ProposalExporter";
@@ -49,7 +48,7 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
     mapper?: (json: any) => GrantProposal,
     user?: User
   ): Promise<GrantProposal> {
-    const sessionUser = user ?? await authService.getUser();
+    const sessionUser = user ?? await getCoreServices().authService!.getUser();
     if (!sessionUser) throw new Error("Valid user not found.");
 
     const now = new Date();
@@ -80,6 +79,7 @@ class GrantProposalService extends FirestoreService<GrantProposal> {
     mapper?: (json: any) => GrantProposal,
     user?: User
   ): Promise<GrantProposal> {
+    const authService = getCoreServices().authService!;
     const sessionUser = user ?? await authService.getUser();
     if (!sessionUser) throw new Error("Valid user not found.");
 

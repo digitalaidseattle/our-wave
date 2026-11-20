@@ -5,7 +5,7 @@
  *
  */
 
-import { authService, storageService } from "../App";
+import { getCoreServices } from "@digitalaidseattle/core";
 import { DUPLICATE_RECIPE_NAME_ERROR, grantRecipeService } from "../services/grantRecipeService";
 import { GrantContext, GrantRecipe } from "../types";
 import { requireRecipeName, requireUniqueRecipeConfigFields } from "../utils/recipeValidation";
@@ -14,7 +14,7 @@ const GLOUD_FOLDER = import.meta.env.VITE_FIREBASE_STORAGE_FOLDER;
 
 async function organizeContextsFiles(recipe: GrantRecipe): Promise<GrantContext[]> {
     // get existing files
-    const cloudFiles = await storageService
+    const cloudFiles = await getCoreServices().storageService!
         .list(`${GLOUD_FOLDER}/${recipe.id}`)
         .then((files: any[]) => files.map((file: any) => file.name));
 
@@ -24,7 +24,7 @@ async function organizeContextsFiles(recipe: GrantRecipe): Promise<GrantContext[
             updatedContexts.push(context);
         } else if (context.file! instanceof File) {
             // Existing files will be overwritten
-            const url = await storageService.upload(`${GLOUD_FOLDER}/${recipe.id}/${context.file!.name}`, context.file!);
+            const url = await getCoreServices().storageService!.upload(`${GLOUD_FOLDER}/${recipe.id}/${context.file!.name}`, context.file!);
             const newContext = { ...context, fileUrl: url };
             delete newContext.file;
             updatedContexts.push(newContext);
@@ -41,7 +41,7 @@ async function organizeContextsFiles(recipe: GrantRecipe): Promise<GrantContext[
 
     // remove unwanted files
     for (const fileName of cloudFiles) {
-        await storageService.removeFile(`${GLOUD_FOLDER}/${recipe.id}/${fileName}`)
+        await getCoreServices().storageService!.removeFile(`${GLOUD_FOLDER}/${recipe.id}/${fileName}`)
     }
     return updatedContexts;
 }
@@ -50,28 +50,31 @@ export async function saveRecipe(recipe: GrantRecipe): Promise<GrantRecipe> {
     requireRecipeName(recipe, "save");
     requireUniqueRecipeConfigFields(recipe);
 
-    return authService.getUser()
+    return getCoreServices().authService!.getUser()
         .then((async user => {
-            const description = recipe.description.trim();
-            const hasDuplicateDescription = await grantRecipeService.descriptionExists(description, recipe.id);
-            if (hasDuplicateDescription) {
-                throw new Error(DUPLICATE_RECIPE_NAME_ERROR);
-            }
+            if (user) {
+                const description = recipe.description.trim();
+                const hasDuplicateDescription = await grantRecipeService.descriptionExists(description, recipe.id);
+                if (hasDuplicateDescription) {
+                    throw new Error(DUPLICATE_RECIPE_NAME_ERROR);
+                }
 
-            const prompt = await grantRecipeService.generatePromptWithInputs(recipe);
-            const contexts = await organizeContextsFiles(recipe);
+                const prompt = await grantRecipeService.generatePromptWithInputs(recipe);
+                const contexts = await organizeContextsFiles(recipe);
 
-            const newRecipe = {
-                ...recipe,
-                description,
-                contexts: contexts,
-                prompt: prompt
-            }
+                const newRecipe = {
+                    ...recipe,
+                    description,
+                    contexts: contexts,
+                    prompt: prompt
+                }
 
-            if (recipe.id) {
-                return grantRecipeService.update(recipe.id, newRecipe, undefined, undefined, user);
-            } else {
-                return grantRecipeService.insert(newRecipe, undefined, undefined, user);
+                if (recipe.id) {
+                    return grantRecipeService.update(recipe.id, newRecipe, undefined, undefined, user);
+                } else {
+                    return grantRecipeService.insert(newRecipe, undefined, undefined, user);
+                }
             }
+            throw new Error('The user session has expired.');
         }))
 }
