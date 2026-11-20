@@ -5,9 +5,8 @@
  * 
 */
 
-import { StorageFile } from "./OurWaveStorageService";
+import { StorageFile } from "@digitalaidseattle/core";
 import { AiResponse, GrantContext } from "../types";
-
 
 export interface GrantAiService {
 

@@ -1,16 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { User } from "@digitalaidseattle/core";
+import { getCoreServices, type User } from "@digitalaidseattle/core";
 import type { GrantRecipe } from "../types";
 
-vi.mock("../App", () => ({
+const { authService } = vi.hoisted(() => ({
   authService: { getUser: vi.fn() },
+}));
+
+vi.mock("@digitalaidseattle/core", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@digitalaidseattle/core")>()),
+  getCoreServices: () => ({ authService }),
 }));
 
 vi.mock("../services/grantRecipeService", () => ({
   grantRecipeService: { insert: vi.fn() },
 }));
 
-import { authService } from "../App";
 import { grantRecipeService } from "../services/grantRecipeService";
 import { cloneRecipe } from "./CloneRecipe";
 
@@ -23,7 +27,7 @@ describe("cloneRecipe", () => {
     const user = { email: "email@me.com" } as User;
     const recipe = { description: "desc" } as GrantRecipe;
     const inserted = { id: "clone-id" } as GrantRecipe;
-    vi.mocked(authService.getUser).mockResolvedValue(user);
+    vi.mocked(getCoreServices().authService!.getUser).mockResolvedValue(user);
     vi.mocked(grantRecipeService.insert).mockResolvedValue(inserted);
 
     await expect(cloneRecipe(recipe)).resolves.toBe(inserted);
@@ -40,7 +44,7 @@ describe("cloneRecipe", () => {
       "Recipe name is required to clone."
     );
 
-    expect(authService.getUser).not.toHaveBeenCalled();
+    expect(getCoreServices().authService!.getUser).not.toHaveBeenCalled();
     expect(grantRecipeService.insert).not.toHaveBeenCalled();
   });
 });

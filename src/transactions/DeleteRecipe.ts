@@ -5,14 +5,15 @@
  *
  */
 
-import { Identifier } from "@digitalaidseattle/core";
-import { storageService } from "../App";
+import { getCoreServices, Identifier } from "@digitalaidseattle/core";
 import { grantRecipeService } from "../services/grantRecipeService";
 import { GrantRecipe } from "../types";
 
 const GLOUD_FOLDER = import.meta.env.VITE_FIREBASE_STORAGE_FOLDER;
 
 async function deleteContextsFiles(recipe: GrantRecipe): Promise<void> {
+    const storageService = getCoreServices().storageService!;
+
     // get existing files
     const cloudFiles = await storageService
         .list(`${GLOUD_FOLDER}/${recipe.id}`)

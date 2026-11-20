@@ -1,8 +1,7 @@
-import type { Identifier, User } from "@digitalaidseattle/core";
+import { getCoreServices, type Identifier, type User } from "@digitalaidseattle/core";
 import { FirestoreService } from "@digitalaidseattle/firebase";
 import { collection, getDocs, limit, query, QueryConstraint, where } from "firebase/firestore";
 import Handlebars from "handlebars";
-import { authService } from "../App";
 import { FIRESTORE_COLLECTIONS } from "../constants/firestoreCollections";
 import type { GrantRecipe } from "../types";
 import { requireRecipeName } from "../utils/recipeValidation";
@@ -53,7 +52,7 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
   ): Promise<GrantRecipe> {
     requireRecipeName(entity, "save");
 
-    const sessionUser = user ?? await authService.getUser();
+    const sessionUser = user ?? await getCoreServices().authService!.getUser();
     if (!sessionUser?.email) {
       throw new Error("grantRecipeService.insert: user.email is required");
     }
@@ -112,7 +111,7 @@ class GrantRecipeService extends FirestoreService<GrantRecipe> {
   ): Promise<GrantRecipe> {
     requireRecipeName(updatedFields, "save");
 
-    const sessionUser = user ?? await authService.getUser();
+    const sessionUser = user ?? await getCoreServices().authService!.getUser();
     if (!sessionUser) {
       throw new Error("No valid user found.");
     }

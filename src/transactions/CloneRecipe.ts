@@ -5,12 +5,14 @@
  *
  */
 
+import { getCoreServices } from "@digitalaidseattle/core";
 import { grantRecipeService } from "../services/grantRecipeService";
 import { GrantRecipe } from "../types";
-import { authService } from "../App";
 import { requireRecipeName } from "../utils/recipeValidation";
 
 export async function cloneRecipe(recipe: GrantRecipe): Promise<GrantRecipe> {
+    const authService = getCoreServices().authService!;
+
     requireRecipeName(recipe, "clone");
 
     return authService.getUser()
